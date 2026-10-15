@@ -26,18 +26,23 @@ struct ExportImageView: View {
     
     @EnvironmentObject var exportState: ExportState
     
-    var elements: [ExcalidrawElement]
+    private let allContent: ExportImageContent
+    private let selectedContent: ExportImageContent
+    private let exportCoordinator: ExcalidrawCore?
     private let baseFileName: String
     
     private var _dismissAction: (() -> Void)?
     init(
         file: ExcalidrawFile,
+        context: ImageExportContext = .init(),
         dismissAction: (() -> Void)? = nil
     ) {
         let baseName = (file.name?.isEmpty == false)
         ? (file.name ?? String(localizable: .generalUntitled))
         : String(localizable: .generalUntitled)
-        self.elements = file.elements
+        self.allContent = ExportImageContent(file: file)
+        self.selectedContent = ExportImageContent(file: file, selectedElementIDs: context.selectedElementIDs)
+        self.exportCoordinator = context.coordinator
         self.baseFileName = baseName
         self._fileName = State(initialValue: baseName)
         if let dismissAction {
@@ -55,19 +60,45 @@ struct ExportImageView: View {
     
     @State private var exportedImageData: ExportedImageData?
     @State private var image: PlatformImage?
-    @State private var loadingImage: Bool = false
+    @State private var loadingImage = true
     @State private var showFileExporter = false
     @State private var showShare: Bool = false
     @State private var fileName: String
     @State private var copied: Bool = false
     @State private var hasError: Bool = false
     @State private var latestExportRequestID = UUID()
+    @State private var renderedOptions: RenderOptions?
 
+    @State private var exportScope: ExportImageScope = .all
     @State private var keepEditable = false
     @State private var exportWithBackground = true
     @State private var imageType: Int = 0
     @State private var exportColorScheme: ColorScheme = .light
     @State private var exportScale: Int = 1
+
+    private struct RenderOptions: Hashable {
+        let scope: ExportImageScope
+        let imageType: Int
+        let keepEditable: Bool
+        let withBackground: Bool
+        let colorScheme: ColorScheme
+        let scale: Int
+    }
+
+    private var renderOptions: RenderOptions {
+        RenderOptions(
+            scope: exportScope,
+            imageType: imageType,
+            keepEditable: keepEditable,
+            withBackground: exportWithBackground,
+            colorScheme: imageType == 0 ? exportColorScheme : .light,
+            scale: imageType == 0 ? exportScale : 1
+        )
+    }
+
+    private var isExportReady: Bool {
+        exportedImageData != nil && renderedOptions == renderOptions && !loadingImage
+    }
     
     var exportType: UTType {
         switch imageType {
@@ -92,32 +123,16 @@ struct ExportImageView: View {
 #endif
             }
         }
-        .watch(value: keepEditable) { newValue in
-            exportImageData()
+        .task(id: renderOptions) {
+            await exportImageData(options: renderOptions)
         }
-        .watch(value: exportWithBackground) { newValue in
-            exportImageData(initial: true)
-        }
-        .watch(value: imageType) { newValue in
-            exportImageData()
-        }
-        .watch(value: exportScale) { _ in
-            exportImageData(initial: true)
-        }
-        .watch(value: exportColorScheme) { _ in
-            exportImageData(initial: true)
-        }
-        .watch(value: exportType) { _ in
-            exportColorScheme = .light
-        }
-        .onAppear {
-            if isPreview {
-                self.image = .init(named: "Layout-Inspector-Floating")
-                exportState.url = URL(string: "https://www.google.com")!
-                exportedImageData = .init(name: "Preview", data: Data(), url: URL(string: "https://www.google.com")!)
-                return
-            }
-            exportImageData(initial: true)
+        .onDisappear {
+            latestExportRequestID = UUID()
+            exportedImageData?.removeTemporaryFile()
+            exportedImageData = nil
+            renderedOptions = nil
+            loadingImage = true
+            exportState.status = .notRequested
         }
     }
     
@@ -137,13 +152,6 @@ struct ExportImageView: View {
                 Text(localizable: .exportImageLoadingError)
                     .foregroundColor(.red)
             }
-        }
-        .onDisappear {
-            if let url = exportedImageData?.url {
-                try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
-            }
-            exportState.status = .notRequested
-            hasError = false
         }
     }
     
@@ -175,7 +183,6 @@ struct ExportImageView: View {
                     }
                 }
             }
-            .scrollDisabled(true)
             .formStyle(.grouped)
             .navigationTitle(.localizable(.tipsShareDetailExportImageTitle))
             .navigationBarTitleDisplayMode(.inline)
@@ -206,6 +213,7 @@ struct ExportImageView: View {
         )
         .scaledToFit()
         .frame(width: 200, height: 120, alignment: .center)
+        .allowsHitTesting(isExportReady)
 #else
         Color.clear
             .overlay {
@@ -323,12 +331,15 @@ struct ExportImageView: View {
     @ViewBuilder
     private func exportImageSettingItems() -> some View {
 #if os(iOS)
+        exportScopeSettingRow
         exportColorSchemeSettingRow
         exportWithBackgroundSettingRow
         exportEditableSettingRow
         exportScaleSettingRow
 #else
         VStack(alignment: .leading, spacing: 12) {
+            exportScopeSettingRow
+
             HStack {
                 exportColorSchemePicker
 
@@ -340,6 +351,22 @@ struct ExportImageView: View {
             exportScaleSettingRow
         }
 #endif
+    }
+
+    @ViewBuilder
+    private var exportScopeSettingRow: some View {
+        HStack {
+            Text(localizable: .exportImageScopeLabel)
+            Spacer(minLength: 0)
+            Picker(.localizable(.exportImageScopeLabel), selection: $exportScope) {
+                Text(.localizable(.exportImageScopeAll)).tag(ExportImageScope.all)
+                Text(.localizable(.exportImageScopeSelected)).tag(ExportImageScope.selected)
+            }
+            .labelsHidden()
+            .pickerStyle(.segmented)
+            .disabled(selectedContent.elements.isEmpty)
+            .frame(maxWidth: containerHorizontalSizeClass == .compact ? 180 : nil)
+        }
     }
 
     @ViewBuilder
@@ -370,7 +397,7 @@ struct ExportImageView: View {
             Text(.localizable(.generalColorSchemeLight)).tag(ColorScheme.light)
             Text(.localizable(.generalColorSchemeDark)).tag(ColorScheme.dark)
         }
-        .disabled(exportType != .png)
+        .disabled(imageType != 0)
     }
 
     @ViewBuilder
@@ -414,7 +441,7 @@ struct ExportImageView: View {
             .pickerStyle(.segmented)
             .modernButtonStyle(style: .glass, shape: .capsule)
             .frame(maxWidth: containerHorizontalSizeClass == .compact ? 180 : nil)
-            .disabled(exportType != .png)
+            .disabled(imageType != 0)
         }
     }
     
@@ -424,6 +451,7 @@ struct ExportImageView: View {
             actionItems(url)
         }
         .modernButtonStyle(size: .regular, shape: .modern)
+        .disabled(!isExportReady)
 #if os(macOS)
         .frame(height: macOSActionsSectionHeight)
 #endif
@@ -458,20 +486,23 @@ struct ExportImageView: View {
 
     @ViewBuilder
     private func actionsFooterView(url: URL) -> some View {
-        if containerHorizontalSizeClass == .compact {
-            VStack {
-                actionItems(url)
-            }
-            .modernButtonStyle(style: .glass)
-        } else {
-            HStack {
-                Spacer()
-                HStack {
+        SwiftUI.Group {
+            if containerHorizontalSizeClass == .compact {
+                VStack {
                     actionItems(url)
                 }
                 .modernButtonStyle(style: .glass)
+            } else {
+                HStack {
+                    Spacer()
+                    HStack {
+                        actionItems(url)
+                    }
+                    .modernButtonStyle(style: .glass)
+                }
             }
         }
+        .disabled(!isExportReady)
     }
 
     @ViewBuilder
@@ -629,59 +660,86 @@ struct ExportImageView: View {
         }
     }
     
-    private func exportImageData(initial: Bool = false) {
-        let exportName = self.fileName.isEmpty ? self.baseFileName : self.fileName
-        let requestID = UUID()
-        Task.detached {
-            do {
-                await MainActor.run {
-                    latestExportRequestID = requestID
-                    loadingImage = true
-                    hasError = false
-                }
+    @MainActor
+    private func exportImageData(options: RenderOptions) async {
+        guard !Task.isCancelled else { return }
+        if isPreview {
+            image = .init(named: "Layout-Inspector-Floating")
+            exportedImageData = .init(name: "Preview", data: Data(), url: URL(string: "https://www.google.com")!)
+            renderedOptions = options
+            loadingImage = false
+            return
+        }
 
-                if initial {
-                    let imageData = try await exportState.exportExcalidrawElementsToImage(
-                        elements: self.elements,
-                        type: .png,
-                        name: exportName,
-                        embedScene: false,
-                        withBackground: self.exportWithBackground,
-                        colorScheme: self.exportColorScheme,
-                        exportScale: self.exportScale
-                    )
-                    await MainActor.run {
-                        guard latestExportRequestID == requestID else { return }
-                        self.image = PlatformImage(data: imageData.data)?
-                            .resizeWhileMaintainingAspectRatioToSize(size: .init(width: 200, height: 120))
-                        self.exportedImageData = imageData
-                        self.fileName = imageData.name
-                        self.loadingImage = false
-                    }
-                } else {
-                    let imageData = try await exportState.exportExcalidrawElementsToImage(
-                        elements: self.elements,
-                        type: self.imageType == 0 ? .png : .svg,
-                        name: exportName,
-                        embedScene: self.keepEditable,
-                        withBackground: self.exportWithBackground,
-                        colorScheme: self.exportColorScheme,
-                        exportScale: self.exportScale
-                    )
-                    await MainActor.run {
-                        guard latestExportRequestID == requestID else { return }
-                        self.exportedImageData = imageData
-                        self.loadingImage = false
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    guard latestExportRequestID == requestID else { return }
-                    self.loadingImage = false
-                    self.hasError = self.exportedImageData == nil
-                }
-                await alertToast(error)
+        let content = options.scope == .all ? allContent : selectedContent
+        let exportName = fileName.isEmpty ? baseFileName : fileName
+        let requestID = UUID()
+        latestExportRequestID = requestID
+        loadingImage = true
+        hasError = false
+        copied = false
+
+        var pendingExport: ExportedImageData?
+        var previewExport: ExportedImageData?
+        defer {
+            pendingExport?.removeTemporaryFile()
+            previewExport?.removeTemporaryFile()
+        }
+
+        do {
+            let output = try await exportState.exportExcalidrawElementsToImage(
+                elements: content.elements,
+                files: content.files,
+                coordinator: exportCoordinator,
+                type: options.imageType == 0 ? .png : .svg,
+                name: exportName,
+                embedScene: options.keepEditable,
+                withBackground: options.withBackground,
+                colorScheme: options.colorScheme,
+                exportScale: options.scale
+            )
+            pendingExport = output
+            try Task.checkCancellation()
+
+            // SVG remains the downloadable output; a separate PNG is used only for its preview.
+            let previewData: Data
+            if options.imageType == 0 {
+                previewData = output.data
+            } else {
+                let preview = try await exportState.exportExcalidrawElementsToImage(
+                    elements: content.elements,
+                    files: content.files,
+                    coordinator: exportCoordinator,
+                    type: .png,
+                    name: exportName,
+                    embedScene: false,
+                    withBackground: options.withBackground,
+                    colorScheme: options.colorScheme
+                )
+                previewExport = preview
+                previewData = preview.data
             }
+            try Task.checkCancellation()
+            guard latestExportRequestID == requestID else { return }
+
+            guard let previewImage = PlatformImage(data: previewData)?
+                .resizeWhileMaintainingAspectRatioToSize(size: .init(width: 200, height: 120)) else {
+                throw CocoaError(.coderReadCorrupt)
+            }
+            image = previewImage
+            exportedImageData?.removeTemporaryFile()
+            exportedImageData = output
+            pendingExport = nil
+            renderedOptions = options
+            loadingImage = false
+        } catch {
+            guard !Task.isCancelled, latestExportRequestID == requestID else { return }
+            exportedImageData?.removeTemporaryFile()
+            exportedImageData = nil
+            image = nil
+            loadingImage = false
+            hasError = true
+            alertToast(error)
         }
     }
 }

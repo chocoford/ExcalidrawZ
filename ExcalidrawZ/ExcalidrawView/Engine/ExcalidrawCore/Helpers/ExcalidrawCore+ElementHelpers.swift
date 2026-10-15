@@ -9,6 +9,19 @@ import Foundation
 
 extension ExcalidrawCore {
     @MainActor
+    func getSelectedElementIDs() async throws -> [String] {
+        let result = try await webView.callAsyncJavaScript(
+            "return window.excalidrawZHelper.getSelectedElementIds();",
+            arguments: [:],
+            contentWorld: .page
+        )
+        guard let ids = result as? [String] else {
+            throw InvalidJavaScriptResult()
+        }
+        return ids
+    }
+
+    @MainActor
     func replaceAllElements(
         _ elements: [ExcalidrawElement],
         options: ReplaceAllElementsOptions = .init()
