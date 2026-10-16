@@ -8,6 +8,34 @@
 import Foundation
 
 extension ExcalidrawCore {
+    /// Waits for resources and the scene's first paint before revealing the file.
+    @MainActor
+    func waitForSceneReady(fileID: String) async throws -> Bool {
+        let result = try await webView.callAsyncJavaScript(
+            """
+            const helper = window.excalidrawZHelper;
+            if (helper?.currentFileId !== fileID) return false;
+            const api = helper._api;
+            if (typeof api?._excalidrawZ?.waitForSceneReady !== "function") {
+              throw new Error("Canvas presentation readiness API is unavailable");
+            }
+            const controller = new AbortController();
+            const timer = setTimeout(() => {
+              controller.abort(new Error("Canvas presentation timed out"));
+            }, 8000);
+            try {
+              await api._excalidrawZ.waitForSceneReady(controller.signal);
+              return window.excalidrawZHelper === helper && helper.currentFileId === fileID;
+            } finally {
+              clearTimeout(timer);
+            }
+            """,
+            arguments: ["fileID": fileID],
+            contentWorld: .page
+        )
+        return result as? Bool == true
+    }
+
     /// Save `currentFile` or creating if neccessary.
     ///
     /// This function will get the local storage of `excalidraw.com`.

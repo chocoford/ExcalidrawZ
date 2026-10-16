@@ -230,6 +230,8 @@ struct ExcalidrawEditor: View {
                     loadingState: $canvasLoadingState,
                     hasFile: localFileBinding.wrappedValue != nil,
                     fileID: activeFile?.id,
+                    isCurrentFileLoaded: excalidrawFile?.id == activeFile?.id
+                        && documentLoadCompletion?.fileID == activeFile?.id,
                     keepsLoadingCoverPresented: isCloudStorageConflictBlockingEditor
                 )
                 .opacity(isInCollaborationSpace ? 0 : 1)

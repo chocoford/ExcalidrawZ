@@ -279,6 +279,15 @@ struct ExcalidrawCanvasView: View {
     }
     
     // MARK: - Async Listeners
+
+    @MainActor
+    private var isWaitingForCurrentDocument: Bool {
+        guard type == .normal,
+              let activeFileID = fileState.currentActiveFile?.id else { return false }
+        return file?.id != activeFileID
+            || excalidrawCore.documentSyncController.currentLoadedFileID != activeFileID
+            || excalidrawCore.documentSyncController.hasPendingFileLoad
+    }
     
     private func listenToLoadingState() async {
         var previousIsLoading: Bool?
@@ -294,7 +303,8 @@ struct ExcalidrawCanvasView: View {
             }
             if !preservesDocumentLoadError {
                 await MainActor.run {
-                    loadingState = (isLoading || hasPendingFileLoad) ? .loading : .loaded
+                    loadingState = (isLoading || hasPendingFileLoad || isWaitingForCurrentDocument)
+                        ? .loading : .loaded
                 }
             }
 
@@ -332,23 +342,21 @@ struct ExcalidrawCanvasView: View {
 #endif
             switch event {
                 case .started(let fileID):
-                    let isCurrent = await MainActor.run { file?.id == fileID }
-                    guard isCurrent else { continue }
                     await MainActor.run {
+                        guard file?.id == fileID,
+                              fileState.currentActiveFile?.id == fileID else { return }
                         loadingState = .loading
                     }
 
                 case .finished(let fileID, let completion):
-                    let isCurrent = await MainActor.run { file?.id == fileID }
+                    let isCurrent = await MainActor.run {
+                        file?.id == fileID && fileState.currentActiveFile?.id == fileID
+                    }
                     guard isCurrent else { continue }
 
                     switch completion {
                         case .succeeded:
-                            await applyLoadedFilePresentationSettings()
-                            await MainActor.run {
-                                loadingState = .loaded
-                                onDocumentLoadFinished(fileID)
-                            }
+                            guard await finishLoadedDocumentPresentation(fileID: fileID) else { continue }
 
 #if os(iOS)
                             await enterCompactDragModeAfterLoadIfNeeded()
@@ -356,6 +364,8 @@ struct ExcalidrawCanvasView: View {
 
                         case .failed(let error):
                             await MainActor.run {
+                                guard file?.id == fileID,
+                                      fileState.currentActiveFile?.id == fileID else { return }
                                 loadingState = .error(error)
                             }
 
@@ -364,12 +374,30 @@ struct ExcalidrawCanvasView: View {
                     }
 
                 case .reset:
-                    let isCoreLoading = await MainActor.run { excalidrawCore.isLoading }
                     await MainActor.run {
-                        loadingState = isCoreLoading ? .loading : .loaded
+                        loadingState = (excalidrawCore.isLoading || isWaitingForCurrentDocument)
+                            ? .loading : .loaded
                     }
             }
         }
+    }
+
+    @MainActor
+    private func isCurrentDocumentLoaded(_ fileID: String) -> Bool {
+        !Task.isCancelled
+            && file?.id == fileID
+            && fileState.currentActiveFile?.id == fileID
+            && !isWaitingForCurrentDocument
+    }
+
+    @MainActor
+    private func finishLoadedDocumentPresentation(fileID: String) async -> Bool {
+        guard isCurrentDocumentLoaded(fileID) else { return false }
+        await applyLoadedFilePresentationSettings()
+        guard isCurrentDocumentLoaded(fileID) else { return false }
+        loadingState = .loaded
+        onDocumentLoadFinished(fileID)
+        return true
     }
 
 #if os(iOS)

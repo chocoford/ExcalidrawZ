@@ -270,7 +270,8 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
                 result = try await loadPreparedFile(
                     request: request,
                     transportRequestID: transportRequestID,
-                    data: dataForLoad
+                    data: dataForLoad,
+                    waitsForSceneReady: validateCurrentParentFile
                 )
             } catch {
                 lastError = error
@@ -648,7 +649,8 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
     private func loadPreparedFile(
         request: DocumentLoadStateMachine.Request,
         transportRequestID: String,
-        data: Data
+        data: Data,
+        waitsForSceneReady: Bool
     ) async throws -> LoadFileResult? {
         guard let core else { return nil }
 
@@ -668,11 +670,21 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
 
         guard isCurrentLoadRequest(request) else { return nil }
 
-        return try await core.webActor.loadFile(
+        let result = try await core.webActor.loadFile(
             id: request.fileID,
             requestID: transportRequestID,
             data: data
         )
+        guard isCurrentLoadRequest(request) else { return nil }
+
+        // Ordinary file loads previously acknowledged after a single RAF.
+        // Reuse the Viewer's resource/React/paint readiness while load-induced
+        // stateChanged events are still suppressed, before confirming the file.
+        if waitsForSceneReady {
+            guard try await core.waitForSceneReady(fileID: request.fileID),
+                  isCurrentLoadRequest(request) else { return nil }
+        }
+        return result
     }
 
     private func beginCanvasFileLoad(

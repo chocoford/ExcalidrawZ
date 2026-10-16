@@ -19,6 +19,12 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
         let image: PlatformImage
     }
 
+    private struct LoadingPresentation: Equatable {
+        let fileID: String?
+        let state: ExcalidrawCanvasView.LoadingState
+        let keepsCoverPresented: Bool
+    }
+
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
@@ -30,6 +36,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
     @Binding var loadingState: ExcalidrawCanvasView.LoadingState
     var hasFile: Bool
     var fileID: String?
+    var isCurrentFileLoaded: Bool
     var keepsLoadingCoverPresented: Bool = false
 
     @State private var isLoadingOverlayPresented = false
@@ -40,17 +47,37 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
     @State private var loadingOverlayDismissTask: Task<Void, Never>?
     @State private var loadingOverlayCover: LoadingOverlayCover?
 
+    private var loadingPresentation: LoadingPresentation {
+        // The selection changes before the parsed file and WebView catch up.
+        // Hide the previous document in that first render, before onChange runs.
+        let isWaitingForCurrentFile = fileID != nil && hasFile && !isCurrentFileLoaded
+        let state: ExcalidrawCanvasView.LoadingState =
+            isWaitingForCurrentFile && !loadingState.isError ? .loading : loadingState
+        return LoadingPresentation(
+            fileID: fileID,
+            state: state,
+            keepsCoverPresented: keepsLoadingCoverPresented
+        )
+    }
+
+    private var showsLoadingOverlay: Bool {
+        isLoadingOverlayPresented
+            || loadingPresentation.state == .loading
+            || loadingPresentation.state.isError
+            || keepsLoadingCoverPresented
+    }
+
     func body(content: Content) -> some View {
         ZStack(alignment: .center) {
             content
-                .opacity(isLoadingOverlayPresented ? 0 : 1)
+                // Keep WebKit drawing behind the opaque cover. Making the
+                // WebView transparent can leave its previous frame visible
+                // briefly when the loading cover is removed.
                 .opacity(hasFile ? 1 : 0)
-                .allowsHitTesting(!isLoadingOverlayPresented)
-                .watch(value: loadingState, initial: true) { _, newVal in
-                    updateProgressPresentation(for: newVal)
-                }
-                .watch(value: keepsLoadingCoverPresented, initial: true) { _, _ in
-                    updateProgressPresentation(for: loadingState)
+                .allowsHitTesting(!showsLoadingOverlay)
+                .accessibilityHidden(showsLoadingOverlay || !hasFile)
+                .watch(value: loadingPresentation, initial: true) { _, presentation in
+                    updateProgressPresentation(for: presentation.state)
                 }
 
             if containerHorizontalSizeClass != .compact {
@@ -61,7 +88,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
                 emptyFilePlaceholderview()
             }
 
-            if isLoadingOverlayPresented {
+            if showsLoadingOverlay {
                 loadingOverlayBackground
 
                 if case .error(let error) = loadingState {
@@ -168,12 +195,14 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
 
     @ViewBuilder
     private var loadingOverlayBackgroundContent: some View {
-        if let image = effectiveLoadingOverlayCoverImage {
-            Image(platformImage: image)
-                .resizable()
-                .scaledToFill()
-        } else {
+        ZStack {
             fallbackLoadingOverlayBackground
+
+            if let image = effectiveLoadingOverlayCoverImage {
+                Image(platformImage: image)
+                    .resizable()
+                    .scaledToFill()
+            }
         }
     }
 
@@ -218,6 +247,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
         guard let activeFile = fileState.currentActiveFile else {
             return nil
         }
+        guard activeFile.id == fileID else { return nil }
         return FileItemPreviewCache.shared.getPreviewCache(
             forID: activeFile.id,
             colorScheme: colorScheme
@@ -240,6 +270,10 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
         progressPresentationTask = nil
         loadingOverlayDismissTask?.cancel()
         loadingOverlayDismissTask = nil
+        let presentationFileID = fileID
+        if loadingOverlayCover?.fileID != presentationFileID {
+            loadingOverlayCover = nil
+        }
 
         if keepsLoadingCoverPresented {
             if !isLoadingOverlayPresented {
@@ -263,7 +297,8 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
             if isProgressViewPresented {
                 loadingOverlayDismissTask = Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 100_000_000)
-                    guard !Task.isCancelled else { return }
+                    guard !Task.isCancelled,
+                          fileState.currentActiveFile?.id == presentationFileID else { return }
                     isProgressViewPresented = false
                     isLoadingOverlayPresented = false
                     loadingOverlayCover = nil
@@ -282,15 +317,17 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
         isLoadingOverlayPresented = true
         progressPresentationTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 150_000_000)
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled,
+                  fileState.currentActiveFile?.id == presentationFileID else { return }
             isProgressViewPresented = true
             progressPresentationTask = nil
         }
     }
 
     private func captureLoadingCoverIfAvailable() {
-        guard loadingState == .loading || loadingState.isError || keepsLoadingCoverPresented,
-              let fileID = fileState.currentActiveFile?.id,
+        guard showsLoadingOverlay,
+              let fileID,
+              fileState.currentActiveFile?.id == fileID,
               let image = loadingCoverImage else { return }
         loadingOverlayCover = LoadingOverlayCover(
             fileID: fileID,
@@ -415,12 +452,14 @@ extension View {
         loadingState: Binding<ExcalidrawCanvasView.LoadingState>,
         hasFile: Bool,
         fileID: String?,
+        isCurrentFileLoaded: Bool,
         keepsLoadingCoverPresented: Bool = false
     ) -> some View {
         modifier(ExcalidrawEditorOverlayModifier(
             loadingState: loadingState,
             hasFile: hasFile,
             fileID: fileID,
+            isCurrentFileLoaded: isCurrentFileLoaded,
             keepsLoadingCoverPresented: keepsLoadingCoverPresented
         ))
     }
