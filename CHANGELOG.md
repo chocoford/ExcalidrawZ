@@ -1,3 +1,18 @@
+## 2.5.0
+
+#### Features
+
+- Added a macOS Viewer window for presenting a clean, live canvas on a second display, with full-screen support and main-canvas controls for following, pointer and laser visibility, and pointer color. ([#189](https://github.com/chocoford/ExcalidrawZ/pull/189), [#193](https://github.com/chocoford/ExcalidrawZ/pull/193))
+- Added an option to export only selected elements as PNG or SVG on Mac, iPad, and iPhone.
+
+#### Optimizations
+
+- Refined the image export panel with clearer options, compact aligned controls, and glass styling on supported systems.
+
+#### Bug fixed
+
+- Fixed macOS Quick Look previews to prioritize canvas appearance, falling back to app and system appearance when set to Automatic. ([#185](https://github.com/chocoford/ExcalidrawZ/issues/185))
+
 ## 2.4.5
 
 #### Optimizations
