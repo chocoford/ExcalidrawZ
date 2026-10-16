@@ -18,7 +18,7 @@ import SplitView
 struct ContentViewDetail: View {
     @Environment(\.alertToast) var alertToast
 
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
     
     @Binding var isSettingsPresented: Bool
 
@@ -59,10 +59,10 @@ struct ExcalidrawSplitViewsContainer: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
 
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
     
     var body: some View {
-//        FlexibleSplitView(items: $fileState.activeFiles) { file in
+//        FlexibleSplitView(items: Bindable(fileState).activeFiles) { file in
 //            withAnimation {
 //                fileState.activeFiles.removeAll(where: {$0?.id == file?.id})
 //            }

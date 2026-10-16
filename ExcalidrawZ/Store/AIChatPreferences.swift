@@ -23,6 +23,7 @@
 //  than help).
 //
 
+import Observation
 import Foundation
 import LLMCore
 
@@ -36,13 +37,14 @@ enum AIChatInteractionMode: String, Codable, Sendable {
 }
 
 @MainActor
-final class AIChatPreferences: ObservableObject {
+@Observable
+final class AIChatPreferences {
     static let shared = AIChatPreferences()
     nonisolated static let isAIEnabledDefaultsKey = "AIChat.isEnabled"
 
     /// Master switch for AI features. When off, AI chat surfaces show
     /// an opt-in screen and no AI network refresh should be triggered.
-    @Published var isAIEnabled: Bool {
+    var isAIEnabled: Bool {
         didSet {
             saveIsAIEnabled()
             guard oldValue != isAIEnabled else { return }
@@ -56,14 +58,14 @@ final class AIChatPreferences: ObservableObject {
     /// Tier used for a fresh conversation that has no explicit pick yet,
     /// and as the fallback shown in the picker when no conversation is
     /// active. User-controlled via Settings → AI.
-    @Published var defaultTier: ExcalidrawModelTier {
+    var defaultTier: ExcalidrawModelTier {
         didSet { saveDefaultTier() }
     }
 
     /// Legacy storage values: `.agent` means AI can access and edit the
     /// current file, while `.ask` means no current-file access and edits
     /// go through a proposal canvas.
-    @Published var interactionMode: AIChatInteractionMode {
+    var interactionMode: AIChatInteractionMode {
         didSet { saveInteractionMode() }
     }
 
@@ -75,12 +77,12 @@ final class AIChatPreferences: ObservableObject {
     /// Per-file AI visibility overrides. Missing value means "use the safe
     /// default": unlocked files are visible to AI, locked files are forced
     /// invisible by the caller's lock-state check.
-    @Published private(set) var fileAccessOverrides: [String: Bool]
+    private(set) var fileAccessOverrides: [String: Bool]
 
     /// Per-conversation tier picks, keyed by conversation id. Updated
     /// from `PromptInputView`'s inline picker; the side-effect goes
     /// through `setTier(_:for:)` so persistence stays in one place.
-    @Published private(set) var conversationTierOverrides: [String: ExcalidrawModelTier]
+    private(set) var conversationTierOverrides: [String: ExcalidrawModelTier]
 
     private let defaultTierKey = "AIChat.defaultModelTier"
     private let overridesTierKey = "AIChat.conversationModelTierOverrides"

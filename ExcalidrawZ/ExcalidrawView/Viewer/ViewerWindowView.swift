@@ -12,7 +12,7 @@ import WebKit
 import ChocofordUI
 
 struct ViewerWindowView: View {
-    @ObservedObject private var controller = ViewerMirrorController.shared
+    @Bindable private var controller = ViewerMirrorController.shared
 
     var body: some View {
         ZStack {
@@ -53,7 +53,7 @@ struct ViewerWindowView: View {
 }
 
 private struct ViewerSessionContent: View {
-    @ObservedObject var session: ViewerMirrorSession
+    @Bindable var session: ViewerMirrorSession
 
     private var isReady: Bool {
         session.localConnectionState == .connected

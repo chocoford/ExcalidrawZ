@@ -28,7 +28,7 @@ private enum LinkedStorageSheetRoute: Identifiable {
 struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
 
     @Environment(\.alertToast) private var alertToast
-    @StateObject private var connections = CloudStorageConnectionStore.shared
+    @State private var connections = CloudStorageConnectionStore.shared
     @State private var sheetRoute: LinkedStorageSheetRoute?
     @State private var preparingProviderID: CloudStorageProviderID?
     @State private var isImportLocalFolderDialogPresented = false

@@ -5,24 +5,30 @@
 //  Created by Dove Zachary on 3/18/25.
 //
 
+import Observation
 import SwiftUI
 import CoreData
 import SwiftyAlert
 
-class CollaborationState: ObservableObject {
-    @Published var isCreateRoomConfirmationDialogPresented = false
-    @Published var isCreateRoomFromFileSheetPresented = false
-    @Published var isJoinRoomSheetPresented = false
+@Observable
+class CollaborationState {
+    var isCreateRoomConfirmationDialogPresented = false
+    var isCreateRoomFromFileSheetPresented = false
+    var isJoinRoomSheetPresented = false
     
-    @Published var isCreateRoomSheetPresented = false
+    var isCreateRoomSheetPresented = false
     
-    @AppStorage("userCollaborationName") private var userCollaborationName = ""
+    @ObservationIgnored @AppStorage("userCollaborationName") private var userCollaborationName = ""
     var userCollaborationInfo: CollaborationInfo {
         get {
-            CollaborationInfo(username: userCollaborationName)
+            access(keyPath: \.userCollaborationInfo)
+            return CollaborationInfo(username: userCollaborationName)
         }
         set {
-            userCollaborationName = newValue.username
+            guard userCollaborationName != newValue.username else { return }
+            withMutation(keyPath: \.userCollaborationInfo) {
+                userCollaborationName = newValue.username
+            }
         }
     }
 }
@@ -30,8 +36,8 @@ class CollaborationState: ObservableObject {
 struct NewRoomModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
-    @StateObject private var state = CollaborationState()
+    @Environment(FileState.self) private var fileState
+    @State private var state = CollaborationState()
     
     func body(content: Content) -> some View {
         content
@@ -150,7 +156,7 @@ struct NewRoomModifier: ViewModifier {
                     .presentationDetents([.height(240)])
 #endif
             }
-            .environmentObject(state)
+            .environment(state)
     }
     
     private func createRoom(name: String, file: ExcalidrawFile = ExcalidrawFile()) {

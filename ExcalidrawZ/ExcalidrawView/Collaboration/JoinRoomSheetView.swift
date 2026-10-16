@@ -14,7 +14,7 @@ struct JoinRoomSheetView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     @State private var invitationLink: String = ""
     
     enum JoinRoomError: LocalizedError {

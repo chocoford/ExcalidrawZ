@@ -16,7 +16,7 @@ struct LocalFoldersProvider<Content: View>: View {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.scenePhase) private var scenePhase
 
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     var content: (FetchedResults<LocalFolder>) -> Content
     init(
@@ -34,7 +34,7 @@ struct LocalFoldersProvider<Content: View>: View {
     )
     var folders: FetchedResults<LocalFolder>
 
-    @EnvironmentObject private var localFolderState: LocalFolderState
+    @Environment(LocalFolderState.self) private var localFolderState
 
 #if canImport(AppKit)
     typealias PlatformWindow = NSWindow

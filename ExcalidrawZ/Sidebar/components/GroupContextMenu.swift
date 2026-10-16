@@ -64,7 +64,7 @@ private enum GroupDeletionAction {
 struct GroupMenuProvider: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
     
     struct Triggers {
         var onToggleRename: () -> Void
@@ -270,7 +270,7 @@ struct GroupContextMenuViewModifier: ViewModifier {
 
 struct GroupDeletionConfirmationModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     let group: Group
     @Binding var selectedGroupObjectID: NSManagedObjectID?
@@ -341,7 +341,7 @@ struct GroupDeletionConfirmationModifier: ViewModifier {
 struct GroupMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
     
     var group: Group
     var canExpand: Bool

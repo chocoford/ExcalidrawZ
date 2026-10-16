@@ -21,8 +21,8 @@ struct LockedFileUnlockRequest {
 
 struct LockedFileUnlockView: View {
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
+    @Environment(FileState.self) private var fileState
+    @Environment(LockedContentStateStore.self) private var lockedContentState
 
     let request: LockedFileUnlockRequest
     var isLoadingUnlockedContent = false

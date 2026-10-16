@@ -16,8 +16,8 @@ private let localFileContextMenuLogger = Logger(label: "LocalFileContextMenu")
 struct LocalFileMenuProvider: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject var localFolderState: LocalFolderState
+    @Environment(FileState.self) private var fileState
+    @Environment(LocalFolderState.self) var localFolderState
 
     var file: URL?
     var content: (Triggers) -> AnyView
@@ -189,8 +189,8 @@ struct LocalFileRowMenuItems: View {
     @Environment(\.editMode) private var editMode
 #endif
     
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var localFolderState: LocalFolderState
+    @Environment(FileState.self) var fileState
+    @Environment(LocalFolderState.self) var localFolderState
 
     var file: URL?
     var onToggleRename: () -> Void

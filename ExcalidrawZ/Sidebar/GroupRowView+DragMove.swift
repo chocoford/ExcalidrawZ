@@ -38,7 +38,7 @@ struct GroupRowDragDropModifier: ViewModifier {
 }
 
 struct GroupRowDragModifier: ViewModifier {
-    @EnvironmentObject private var sidebarDragState: ItemDragState
+    @Environment(ItemDragState.self) private var sidebarDragState
 
     var group: Group
 
@@ -62,8 +62,8 @@ struct GroupRowDragModifier: ViewModifier {
 struct GroupRowDropModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var sidebarDragState: ItemDragState
+    @Environment(FileState.self) private var fileState
+    @Environment(ItemDragState.self) private var sidebarDragState
 
     var group: Group
     var allow: [UTType] = [

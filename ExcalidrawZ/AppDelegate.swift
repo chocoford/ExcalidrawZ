@@ -5,6 +5,7 @@
 //  Created by Dove Zachary on 2022/12/30.
 //
 
+import Observation
 import Foundation
 import SwiftUI
 import Logging
@@ -36,11 +37,12 @@ final class ApplicationTerminationCanvasFlushCoordinator {
 }
 
 @MainActor
-final class ApplicationTerminationPresentationCoordinator: ObservableObject {
+@Observable
+final class ApplicationTerminationPresentationCoordinator {
     static let shared = ApplicationTerminationPresentationCoordinator()
 
-    @Published private(set) var targetWindowNumber: Int?
-    @Published private(set) var stage: ApplicationTerminationStage = .screenAnnotationSaves
+    private(set) var targetWindowNumber: Int?
+    private(set) var stage: ApplicationTerminationStage = .screenAnnotationSaves
 
     private var cancelAction: (() -> Void)?
     private var forceQuitAction: (() -> Void)?

@@ -5,19 +5,21 @@
 //  Persists device-local remote roots while providers keep credentials in Keychain.
 //
 
+import Observation
 import Combine
 import Foundation
 import Logging
 
 @MainActor
-final class CloudStorageConnectionStore: ObservableObject {
+@Observable
+final class CloudStorageConnectionStore {
     static let shared = CloudStorageConnectionStore()
 
-    @Published private(set) var providerDescriptors: [CloudStorageProviderDescriptor] = []
-    @Published private(set) var accountsByProvider: [CloudStorageProviderID: [CloudStorageAccount]] = [:]
-    @Published private(set) var locations: [CloudStorageLocation]
-    @Published private(set) var connectingProviderIDs: Set<CloudStorageProviderID> = []
-    @Published private(set) var authenticationRequiredLocationIDs: Set<UUID> = []
+    private(set) var providerDescriptors: [CloudStorageProviderDescriptor] = []
+    private(set) var accountsByProvider: [CloudStorageProviderID: [CloudStorageAccount]] = [:]
+    private(set) var locations: [CloudStorageLocation]
+    private(set) var connectingProviderIDs: Set<CloudStorageProviderID> = []
+    private(set) var authenticationRequiredLocationIDs: Set<UUID> = []
 
     private var missingAccountLocationIDs: Set<UUID> = []
     private var accessFailureLocationIDs: Set<UUID> = []
@@ -26,12 +28,12 @@ final class CloudStorageConnectionStore: ObservableObject {
     private let userDefaults: UserDefaults
     private let locationsDefaultsKey = "CloudStorageLocations.v1"
     private let logger = Logger(label: "CloudStorageConnectionStore")
-    private var accountRefreshTask: Task<Void, Never>?
-    private var accountRefreshTaskID: UUID?
-    private var authorizationTasks: [
+    @ObservationIgnored private var accountRefreshTask: Task<Void, Never>?
+    @ObservationIgnored private var accountRefreshTaskID: UUID?
+    @ObservationIgnored private var authorizationTasks: [
         CloudStorageProviderID: Task<CloudStorageAccount, Error>
     ] = [:]
-    private var authorizationTaskIDs: [CloudStorageProviderID: UUID] = [:]
+    @ObservationIgnored private var authorizationTaskIDs: [CloudStorageProviderID: UUID] = [:]
 
     init(
         registry: CloudStorageProviderRegistry = .shared,

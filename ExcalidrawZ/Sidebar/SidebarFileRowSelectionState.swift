@@ -1,167 +1,94 @@
-//
-//  SidebarFileRowSelectionState.swift
-//  ExcalidrawZ
-//
-//  Created by Codex on 2026/6/25.
-//
-
-import Combine
 import CoreData
 import Foundation
+import Observation
 
-final class SidebarFileRowSelectionState: ObservableObject {
-    @Published private(set) var isSelected = false
-    @Published private(set) var isMultiSelected = false
+@MainActor
+@Observable
+final class SidebarFileRowSelectionState {
+    private(set) var isSelected = false
+    private(set) var isMultiSelected = false
 
-    private var fileObjectID: NSManagedObjectID?
-    private var cancellables: Set<AnyCancellable> = []
+    @ObservationIgnored private var fileObjectID: NSManagedObjectID?
+    @ObservationIgnored private weak var boundFileState: FileState?
+    @ObservationIgnored private var selectionObservation: ObservationSubscription?
 
     func bind(file: File, fileState: FileState) {
-        guard fileObjectID != file.objectID else { return }
-
+        guard fileObjectID != file.objectID || boundFileState !== fileState else { return }
+        selectionObservation?.cancel()
         fileObjectID = file.objectID
-        cancellables.removeAll()
-
-        updateActiveSelection(fileState: fileState)
-        updateMultiSelection(fileState: fileState)
-
-        fileState.$activeFiles
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self, weak fileState] _ in
-                guard let self, let fileState else { return }
-                self.updateActiveSelection(fileState: fileState)
+        boundFileState = fileState
+        let objectID = file.objectID
+        selectionObservation = ObservationSubscription { [weak fileState] in
+            guard let fileState else { return [false, false] }
+            let isSelected: Bool
+            if case .file(let activeFile) = fileState.currentActiveFile {
+                isSelected = activeFile.objectID == objectID
+            } else {
+                isSelected = false
             }
-            .store(in: &cancellables)
-
-        fileState.$selectedFiles
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self, weak fileState] _ in
-                guard let self, let fileState else { return }
-                self.updateMultiSelection(fileState: fileState)
-            }
-            .store(in: &cancellables)
-    }
-
-    private func updateActiveSelection(fileState: FileState) {
-        guard let fileObjectID else { return }
-        let nextValue: Bool
-        if case .file(let file) = fileState.currentActiveFile {
-            nextValue = file.objectID == fileObjectID
-        } else {
-            nextValue = false
-        }
-        if isSelected != nextValue {
-            isSelected = nextValue
-        }
-    }
-
-    private func updateMultiSelection(fileState: FileState) {
-        guard let fileObjectID else { return }
-        let nextValue = fileState.selectedFiles.contains { $0.objectID == fileObjectID }
-        if isMultiSelected != nextValue {
-            isMultiSelected = nextValue
+            return [isSelected, fileState.selectedFiles.contains { $0.objectID == objectID }]
+        } onChange: { [weak self] selection in
+            self?.isSelected = selection[0]
+            self?.isMultiSelected = selection[1]
         }
     }
 }
 
-final class SidebarGroupRowSelectionState: ObservableObject {
-    @Published private(set) var isSelected = false
+@MainActor
+@Observable
+final class SidebarGroupRowSelectionState {
+    private(set) var isSelected = false
 
-    private var groupObjectID: NSManagedObjectID?
-    private var cancellables: Set<AnyCancellable> = []
+    @ObservationIgnored private var groupObjectID: NSManagedObjectID?
+    @ObservationIgnored private weak var boundFileState: FileState?
+    @ObservationIgnored private var selectionObservation: ObservationSubscription?
 
     func bind(group: Group, fileState: FileState) {
-        guard groupObjectID != group.objectID else { return }
-
+        guard groupObjectID != group.objectID || boundFileState !== fileState else { return }
+        selectionObservation?.cancel()
         groupObjectID = group.objectID
-        cancellables.removeAll()
-
-        updateSelection(fileState: fileState)
-
-        fileState.$currentActiveGroup
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self, weak fileState] _ in
-                guard let self, let fileState else { return }
-                self.updateSelection(fileState: fileState)
+        boundFileState = fileState
+        let objectID = group.objectID
+        selectionObservation = ObservationSubscription { [weak fileState] in
+            guard let fileState else { return false }
+            if case .group(let activeGroup) = fileState.currentActiveGroup,
+               fileState.currentActiveFile == nil {
+                return activeGroup.objectID == objectID
             }
-            .store(in: &cancellables)
-
-        fileState.$activeFiles
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self, weak fileState] _ in
-                guard let self, let fileState else { return }
-                self.updateSelection(fileState: fileState)
-            }
-            .store(in: &cancellables)
-
-    }
-
-    private func updateSelection(fileState: FileState) {
-        guard let groupObjectID else { return }
-        let nextValue: Bool
-        if case .group(let group) = fileState.currentActiveGroup,
-           fileState.currentActiveFile == nil {
-            nextValue = group.objectID == groupObjectID
-        } else {
-            nextValue = false
-        }
-        if isSelected != nextValue {
-            isSelected = nextValue
+            return false
+        } onChange: { [weak self] isSelected in
+            self?.isSelected = isSelected
         }
     }
 }
 
-final class SidebarLocalFileRowSelectionState: ObservableObject {
-    @Published private(set) var isSelected = false
-    @Published private(set) var isMultiSelected = false
+@MainActor
+@Observable
+final class SidebarLocalFileRowSelectionState {
+    private(set) var isSelected = false
+    private(set) var isMultiSelected = false
 
-    private var file: URL?
-    private var cancellables: Set<AnyCancellable> = []
+    @ObservationIgnored private var file: URL?
+    @ObservationIgnored private weak var boundFileState: FileState?
+    @ObservationIgnored private var selectionObservation: ObservationSubscription?
 
     func bind(file: URL, fileState: FileState) {
-        guard self.file != file else { return }
-
+        guard self.file != file || boundFileState !== fileState else { return }
+        selectionObservation?.cancel()
         self.file = file
-        cancellables.removeAll()
-
-        updateActiveSelection(fileState: fileState)
-        updateMultiSelection(fileState: fileState)
-
-        fileState.$activeFiles
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self, weak fileState] _ in
-                guard let self, let fileState else { return }
-                self.updateActiveSelection(fileState: fileState)
+        boundFileState = fileState
+        selectionObservation = ObservationSubscription { [weak fileState] in
+            guard let fileState else { return [false, false] }
+            let isSelected: Bool
+            if case .localFile(let activeFile) = fileState.currentActiveFile {
+                isSelected = activeFile == file
+            } else {
+                isSelected = false
             }
-            .store(in: &cancellables)
-
-        fileState.$selectedLocalFiles
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self, weak fileState] _ in
-                guard let self, let fileState else { return }
-                self.updateMultiSelection(fileState: fileState)
-            }
-            .store(in: &cancellables)
-    }
-
-    private func updateActiveSelection(fileState: FileState) {
-        guard let file else { return }
-        let nextValue: Bool
-        if case .localFile(let localFile) = fileState.currentActiveFile {
-            nextValue = localFile == file
-        } else {
-            nextValue = false
-        }
-        if isSelected != nextValue {
-            isSelected = nextValue
-        }
-    }
-
-    private func updateMultiSelection(fileState: FileState) {
-        guard let file else { return }
-        let nextValue = fileState.selectedLocalFiles.contains(file)
-        if isMultiSelected != nextValue {
-            isMultiSelected = nextValue
+            return [isSelected, fileState.selectedLocalFiles.contains(file)]
+        } onChange: { [weak self] selection in
+            self?.isSelected = selection[0]
+            self?.isMultiSelected = selection[1]
         }
     }
 }

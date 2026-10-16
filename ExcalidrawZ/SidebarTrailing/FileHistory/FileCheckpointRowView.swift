@@ -310,6 +310,6 @@ private extension PrimitiveButtonStyle where Self == FileCheckpointRowButtonStyl
 #if DEBUG
 #Preview {
     FileCheckpointRowView(checkpoint: FileCheckpoint.preview)
-        .environmentObject(FileState())
+        .environment(FileState())
 }
 #endif

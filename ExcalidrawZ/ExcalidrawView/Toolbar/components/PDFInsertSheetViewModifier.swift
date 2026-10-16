@@ -10,7 +10,7 @@ import SwiftyAlert
 
 struct PDFInsertSheetViewModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var toolState: ToolState
+    @Environment(ToolState.self) private var toolState
 
     @Binding var isPresented: Bool
 

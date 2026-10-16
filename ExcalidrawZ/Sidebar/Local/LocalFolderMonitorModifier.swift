@@ -17,9 +17,9 @@ struct LocalFolderMonitorModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @Environment(\.scenePhase) private var scenePhase
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
-    @StateObject private var localFolderState = LocalFolderState()
+    @State private var localFolderState = LocalFolderState()
     
     private let logger = Logger(label: "LocalFolderMonitor")
     
@@ -39,7 +39,7 @@ struct LocalFolderMonitorModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .environmentObject(localFolderState)
+            .environment(localFolderState)
             .watch(value: folders) { newValue in
                 handleFoldersObservation(folders: newValue)
             }

@@ -40,7 +40,7 @@ struct LocalFoldersListContent: View {
 
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     let folders: FetchedResults<LocalFolder>
     let showFiles: Bool

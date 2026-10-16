@@ -347,7 +347,7 @@ private struct FileHomeItemOpenModifier: ViewModifier {
 #if os(iOS)
     @Environment(\.editMode) private var editMode
 #endif
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     var file: FileState.ActiveFile
     var onRecover: () -> Void
@@ -386,7 +386,7 @@ private struct FileHomeItemOpenModifier: ViewModifier {
 }
 
 private struct FileHomeItemTransitionVisibilityModifier: ViewModifier {
-    @EnvironmentObject private var transitionState: FileHomeItemTransitionItemState
+    @Environment(FileHomeItemTransitionItemState.self) private var transitionState
 
     var fileID: String
 
@@ -397,7 +397,7 @@ private struct FileHomeItemTransitionVisibilityModifier: ViewModifier {
 
 private struct FileHomeItemTransitionSource: View {
     @Environment(\.fileHomeItemTransitionSourceEnabled) private var isEnabled
-    @EnvironmentObject private var transitionState: FileHomeItemTransitionItemState
+    @Environment(FileHomeItemTransitionItemState.self) private var transitionState
 #if os(macOS)
     @Environment(\.fileHomeNativeTransitionBridge) private var nativeBridge
     @Environment(\.fileHomeUsesNativeTransitionSource) private var usesNativeSource
@@ -437,7 +437,7 @@ private struct FileHomeItemContentView: View {
     @Environment(\.editMode) var editMode
 #endif
 
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(LayoutState.self) private var layoutState
 
     var style: FileHomeItemStyle
     var file: FileState.ActiveFile

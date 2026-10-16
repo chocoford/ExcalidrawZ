@@ -14,10 +14,10 @@ struct AISettingsView: View {
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var llmState: LLMStateObject
-    @EnvironmentObject var store: Store
-    @ObservedObject var prefs = AIChatPreferences.shared
-    @ObservedObject var router = SettingsRouter.shared
-    @ObservedObject var mcpServerController = ExcalidrawZMCPServerController.shared
+    @Environment(Store.self) var store
+    @Bindable var prefs = AIChatPreferences.shared
+    @Bindable var router = SettingsRouter.shared
+    @Bindable var mcpServerController = ExcalidrawZMCPServerController.shared
     
     @State var selectedTab: SettingsTab = .usage
     @State var activityGrouping: ActivityGrouping = .recent

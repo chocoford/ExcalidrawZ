@@ -20,7 +20,7 @@ struct ContentView: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject var appPreference: AppPreference
+    @Environment(AppPreference.self) var appPreference
     /// Pulled from the app-level environment (see `ExcalidrawZApp`).
     /// Both are needed here because we trigger conversation
     /// pre-selection on every active-file change (see the
@@ -28,23 +28,23 @@ struct ContentView: View {
     /// read the already-pinned `aiChatConversationID` instead of
     /// each having to refresh on appear.
     @EnvironmentObject private var llmState: LLMStateObject
-    @EnvironmentObject private var aiChatState: AIChatState
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
-    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
-    @ObservedObject private var cloudStorageConnections = CloudStorageConnectionStore.shared
+    @Environment(AIChatState.self) private var aiChatState
+    @Environment(LockedContentStateStore.self) private var lockedContentState
+    @Bindable private var aiChatPreferences = AIChatPreferences.shared
+    @Bindable private var cloudStorageConnections = CloudStorageConnectionStore.shared
 #if os(macOS)
-    @ObservedObject private var applicationTerminationPresentation = ApplicationTerminationPresentationCoordinator.shared
+    @Bindable private var applicationTerminationPresentation = ApplicationTerminationPresentationCoordinator.shared
 #endif
     
     @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
     
     @State private var hideContent: Bool = false
     
-    @StateObject private var fileState = FileState()
-    @StateObject private var exportState = ExportState()
-    @StateObject private var layoutState = LayoutState()
-    @StateObject private var shareFileState = ShareFileState()
-    @StateObject private var canvasPreferencesState = CanvasPreferencesState()
+    @State private var fileState = FileState()
+    @State private var exportState = ExportState()
+    @State private var layoutState = LayoutState()
+    @State private var shareFileState = ShareFileState()
+    @State private var canvasPreferencesState = CanvasPreferencesState()
 
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -80,11 +80,11 @@ struct ContentView: View {
             .modifier(StartupSyncModifier())
             .modifier(CoreDataMigrationModifier())
             .modifier(ActiveFileSwitchBlockedToastModifier(fileState: fileState))
-            .environmentObject(fileState)
-            .environmentObject(exportState)
-            .environmentObject(layoutState)
-            .environmentObject(shareFileState)
-            .environmentObject(canvasPreferencesState)
+            .environment(fileState)
+            .environment(exportState)
+            .environment(layoutState)
+            .environment(shareFileState)
+            .environment(canvasPreferencesState)
             .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
             .swiftyAlert(logs: true)
             .bindWindow($window)
@@ -366,7 +366,7 @@ private struct ApplicationTerminationSheet: View {
 
 private struct ActiveFileSwitchBlockedToastModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
-    @ObservedObject var fileState: FileState
+    @Bindable var fileState: FileState
 
     func body(content: Content) -> some View {
         content

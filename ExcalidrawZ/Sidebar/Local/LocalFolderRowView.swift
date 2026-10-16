@@ -16,8 +16,8 @@ struct LocalFolderRowView: View {
 
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var localFolderState: LocalFolderState
+    @Environment(FileState.self) private var fileState
+    @Environment(LocalFolderState.self) private var localFolderState
 
     var folder: LocalFolder
     // @Binding var isBeingDropped: Bool

@@ -16,10 +16,10 @@ import UIKit
 struct ExcalidrawTrailingControls: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
 
-    @EnvironmentObject private var appPreference: AppPreference
-    @EnvironmentObject private var layoutState: LayoutState
-    @EnvironmentObject private var fileState: FileState
-    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
+    @Environment(AppPreference.self) private var appPreference
+    @Environment(LayoutState.self) private var layoutState
+    @Environment(FileState.self) private var fileState
+    @Bindable private var aiChatPreferences = AIChatPreferences.shared
     @AppStorage(FloatingInspectorMetrics.widthStorageKey) private var floatingInspectorWidth = FloatingInspectorMetrics.defaultWidth
     @State private var displayedHorizontalOffset: CGFloat = 0
     @State private var hasInitializedHorizontalOffset = false
@@ -250,7 +250,7 @@ struct ExcalidrawTrailingControls: View {
 
 private struct InspectorTabButton: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(LayoutState.self) private var layoutState
 
     let tab: LayoutState.InspectorTab
     let icon: SFSymbol

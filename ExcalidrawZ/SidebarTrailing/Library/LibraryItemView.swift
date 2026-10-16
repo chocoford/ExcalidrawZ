@@ -33,8 +33,8 @@ struct LibraryItemView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
     
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var libraryViewModel: LibraryViewModel
+    @Environment(FileState.self) var fileState
+    @Environment(LibraryViewModel.self) var libraryViewModel
     
     var item: LibraryItem
     var size: CGFloat = 80
@@ -58,6 +58,7 @@ struct LibraryItemView: View {
     @State private var editedName: String = ""
 
     var body: some View {
+        let _ = libraryViewModel.metadataRevision
 #if os(macOS)
         content()
             .onDrag {
@@ -240,7 +241,7 @@ struct LibraryItemView: View {
                     }
                     try context.save()
                     DispatchQueue.main.async {
-                        libraryViewModel.objectWillChange.send()
+                        libraryViewModel.refreshLibraryMetadata()
                     }
                 }
             } catch {
@@ -273,7 +274,7 @@ struct LibraryItemView: View {
                 try context.save()
             }
             await MainActor.run {
-                libraryViewModel.objectWillChange.send()
+                libraryViewModel.refreshLibraryMetadata()
             }
         } catch {
             await MainActor.run { alertToast(error) }
@@ -327,9 +328,9 @@ private struct EditLibraryItemSheet: View {
 }
 struct LibraryItemContentView: View {
     @Environment(\.colorScheme) var colorScheme
-    @EnvironmentObject var appPreference: AppPreference
+    @Environment(AppPreference.self) var appPreference
 
-    @EnvironmentObject var exportState: ExportState
+    @Environment(ExportState.self) var exportState
     
     private let previewSource: LibraryItemPreviewSource
     var size: CGFloat = 80
@@ -449,7 +450,7 @@ struct LibraryItemContentView: View {
 
 struct LibraryItemContentBackgroundModifier: ViewModifier {
     @Environment(\.colorScheme) var colorScheme
-    @EnvironmentObject var appPreference: AppPreference
+    @Environment(AppPreference.self) var appPreference
     var displayColorScheme: ColorScheme {
         appPreference.excalidrawAppearance == .dark || (appPreference.excalidrawAppearance == .auto && colorScheme == .dark) ? .dark : .light
     }

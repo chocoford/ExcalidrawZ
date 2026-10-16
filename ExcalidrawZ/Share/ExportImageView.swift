@@ -25,7 +25,7 @@ struct ExportImageView: View {
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
     @Environment(\.alertToast) var alertToast
     
-    @EnvironmentObject var exportState: ExportState
+    @Environment(ExportState.self) var exportState
     
     private let allContent: ExportImageContent
     private let selectedContent: ExportImageContent
@@ -864,7 +864,7 @@ private struct ExportImagePreviewView: View {
             if #available(macOS 13.0, *) {
                 NavigationStack {
                     ExportImageView(file: .preview)
-                        .environmentObject(ExportState())
+                        .environment(ExportState())
                 }
             }
         }

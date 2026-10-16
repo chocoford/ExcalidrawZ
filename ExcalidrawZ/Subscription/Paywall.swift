@@ -22,9 +22,9 @@ struct Paywall: View {
     @Environment(\.alertToast) var alertToast
     @Environment(\.alert) private var alert
     
-    @EnvironmentObject var store: Store
+    @Environment(Store.self) var store
     @EnvironmentObject var llmState: LLMStateObject
-    @ObservedObject var paywallPresentation = PaywallPresentationState.shared
+    @Bindable var paywallPresentation = PaywallPresentationState.shared
     
     @State var selectedSubscriptionItem: SubscriptionItem?
     @State var isPresented = false

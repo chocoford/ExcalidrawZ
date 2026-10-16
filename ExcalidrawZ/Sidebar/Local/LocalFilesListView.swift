@@ -16,8 +16,8 @@ struct LocalFilesListView: View {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.containerHorizontalSizeClass) private var horizontalSizeClass
     
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var localFolderState: LocalFolderState
+    @Environment(FileState.self) private var fileState
+    @Environment(LocalFolderState.self) private var localFolderState
     
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField
@@ -57,9 +57,9 @@ struct LocalFilesListContentView: View {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.containerHorizontalSizeClass) private var horizontalSizeClass
     
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var localFolderState: LocalFolderState
-    @EnvironmentObject private var sidebarDragState: ItemDragState
+    @Environment(FileState.self) private var fileState
+    @Environment(LocalFolderState.self) private var localFolderState
+    @Environment(ItemDragState.self) private var sidebarDragState
     
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField

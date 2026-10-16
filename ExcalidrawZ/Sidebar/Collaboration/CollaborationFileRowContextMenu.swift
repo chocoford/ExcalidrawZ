@@ -10,7 +10,7 @@ import SwiftyAlert
 
 struct CollaborationFileMenuProvider: View {
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     var file: CollaborationFile
     var content: (Triggers) -> AnyView
@@ -127,7 +127,7 @@ struct CollaborationFileMenu: View {
 
 struct CollaborationFileMenuItems: View {
     
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     var file: CollaborationFile
     // @Binding var fileToBeArchived: CollaborationFile?

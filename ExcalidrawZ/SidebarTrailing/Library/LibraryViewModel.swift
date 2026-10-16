@@ -5,13 +5,20 @@
 //  Created by Dove Zachary on 2024/9/4.
 //
 
+import Observation
 import SwiftUI
 
-class LibraryViewModel: ObservableObject {
-    @Published private(set) var libraryViewID: String = UUID().uuidString
+@Observable
+class LibraryViewModel {
+    private(set) var libraryViewID: String = UUID().uuidString
+    private(set) var metadataRevision = 0
     
     var excalidrawWebCoordinator: ExcalidrawCanvasView.Coordinator?
     
+    func refreshLibraryMetadata() {
+        metadataRevision &+= 1
+    }
+
     public func forceLibraryViewUpdate() {
         self.libraryViewID = UUID().uuidString
     }

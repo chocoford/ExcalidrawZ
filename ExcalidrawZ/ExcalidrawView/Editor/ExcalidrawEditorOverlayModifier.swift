@@ -24,8 +24,8 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
     @Environment(\.colorScheme) private var colorScheme
 
-    @EnvironmentObject var layoutState: LayoutState
-    @EnvironmentObject private var fileState: FileState
+    @Environment(LayoutState.self) var layoutState
+    @Environment(FileState.self) private var fileState
 
     @Binding var loadingState: ExcalidrawCanvasView.LoadingState
     var hasFile: Bool
@@ -309,7 +309,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
             }
             .alert(
                 String(localizable: .deletedFileRecoverAlertTitle),
-                isPresented: $layoutState.isResotreAlertIsPresented
+                isPresented: Bindable(layoutState).isResotreAlertIsPresented
             ) {
                 Button(role: .cancel) {
                     layoutState.isResotreAlertIsPresented.toggle()

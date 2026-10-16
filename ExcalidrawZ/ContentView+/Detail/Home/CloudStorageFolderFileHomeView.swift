@@ -9,13 +9,13 @@ import ChocofordUI
 
 struct CloudStorageFolderFileHomeView: View {
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     let folder: CloudStorageFolderReference
 
-    @ObservedObject private var documentStore = CloudStorageDocumentStore.shared
-    @StateObject private var browser: CloudStorageSidebarBrowserModel
-    @StateObject private var connections: CloudStorageConnectionStore
+    @Bindable private var documentStore = CloudStorageDocumentStore.shared
+    @State private var browser: CloudStorageSidebarBrowserModel
+    @State private var connections: CloudStorageConnectionStore
     @State private var selection: String?
 #if os(iOS)
     @State private var editMode: EditMode = .inactive
@@ -26,10 +26,10 @@ struct CloudStorageFolderFileHomeView: View {
 
     init(folder: CloudStorageFolderReference) {
         self.folder = folder
-        self._browser = StateObject(
-            wrappedValue: CloudStorageSidebarBrowserModel(location: folder.location)
+        self._browser = State(
+            initialValue: CloudStorageSidebarBrowserModel(location: folder.location)
         )
-        self._connections = StateObject(wrappedValue: .shared)
+        self._connections = State(initialValue: .shared)
     }
 
     var body: some View {

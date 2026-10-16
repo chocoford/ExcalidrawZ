@@ -13,7 +13,7 @@ import ChocofordUI
 
 struct CollaborationFilesList: View {
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     var sortField: ExcalidrawFileSortField
     

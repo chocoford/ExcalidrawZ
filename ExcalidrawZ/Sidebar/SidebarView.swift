@@ -15,9 +15,9 @@ struct SidebarView: View {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.searchExcalidrawAction) private var searchExcalidraw
     
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var dragState: ItemDragState
+    @Environment(AppPreference.self) var appPreference
+    @Environment(FileState.self) var fileState
+    @Environment(ItemDragState.self) var dragState
 
     var body: some View {
         if #available(macOS 26.0, iOS 26.0, *) {

@@ -14,8 +14,8 @@ struct CloudStorageDocumentSyncIndicator: View {
         case canvas
     }
 
-    @ObservedObject private var documentStore = CloudStorageDocumentStore.shared
-    @ObservedObject private var connectivity = CloudStorageConnectivityMonitor.shared
+    @Bindable private var documentStore = CloudStorageDocumentStore.shared
+    @Bindable private var connectivity = CloudStorageConnectivityMonitor.shared
 
     let reference: CloudStorageDocumentReference
     var presentation: Presentation = .iconOnly

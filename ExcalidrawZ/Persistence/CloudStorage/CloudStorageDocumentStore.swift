@@ -7,12 +7,14 @@
 //  identity as a local URL.
 //
 
+import Observation
 import Combine
 import Foundation
 import Logging
 
 @MainActor
-final class CloudStorageDocumentStore: ObservableObject {
+@Observable
+final class CloudStorageDocumentStore {
     static let shared = CloudStorageDocumentStore()
 
     struct RemoteContentCandidate {
@@ -21,12 +23,12 @@ final class CloudStorageDocumentStore: ObservableObject {
         fileprivate let cacheGeneration: UInt64
     }
 
-    @Published private(set) var itemsByLocationID: [UUID: [CloudStorageItemID: CloudStorageItem]] = [:]
-    @Published private(set) var metadataRevisionsByLocationID: [UUID: Int] = [:]
-    @Published private(set) var refreshingLocationIDs: Set<UUID> = []
-    @Published private(set) var errorsByLocationID: [UUID: String] = [:]
-    @Published private(set) var syncStatesByDocumentID: [String: CloudStorageDocumentSyncState] = [:]
-    @Published private(set) var processingFolderIDsByLocationID: [
+    private(set) var itemsByLocationID: [UUID: [CloudStorageItemID: CloudStorageItem]] = [:]
+    private(set) var metadataRevisionsByLocationID: [UUID: Int] = [:]
+    private(set) var refreshingLocationIDs: Set<UUID> = []
+    private(set) var errorsByLocationID: [UUID: String] = [:]
+    private(set) var syncStatesByDocumentID: [String: CloudStorageDocumentSyncState] = [:]
+    private(set) var processingFolderIDsByLocationID: [
         UUID: Set<CloudStorageItemID>
     ] = [:]
 
@@ -101,18 +103,18 @@ final class CloudStorageDocumentStore: ObservableObject {
     private var loadedLocationIDs: Set<UUID> = []
     private var invalidatedLocationIDs: Set<UUID> = []
     private var sessionsByLocationID: [UUID: any CloudStorageSession] = [:]
-    private var refreshTasksByLocationID: [UUID: Task<Bool, Never>] = [:]
-    private var refreshTaskIDsByLocationID: [UUID: UUID] = [:]
+    @ObservationIgnored private var refreshTasksByLocationID: [UUID: Task<Bool, Never>] = [:]
+    @ObservationIgnored private var refreshTaskIDsByLocationID: [UUID: UUID] = [:]
     private var automaticRetryDatesByLocationID: [UUID: Date] = [:]
-    private var saveTasks: [String: Task<Void, Error>] = [:]
-    private var saveTaskIDs: [String: UUID] = [:]
+    @ObservationIgnored private var saveTasks: [String: Task<Void, Error>] = [:]
+    @ObservationIgnored private var saveTaskIDs: [String: UUID] = [:]
     private var localContentGenerations: [String: UInt64] = [:]
-    private var contentSynchronizationTasks: [String: Task<Void, Never>] = [:]
+    @ObservationIgnored private var contentSynchronizationTasks: [String: Task<Void, Never>] = [:]
     private var activeContentSynchronizationPriorities: [String: CloudStorageContentSynchronizationPriority] = [:]
     private var contentSynchronizationQueue: [String: ContentSynchronizationRequest] = [:]
     private var nextContentSynchronizationSequence = 0
-    private var retryUploadTasks: [String: Task<Void, Never>] = [:]
-    private var retryUploadTaskIDs: [String: UUID] = [:]
+    @ObservationIgnored private var retryUploadTasks: [String: Task<Void, Never>] = [:]
+    @ObservationIgnored private var retryUploadTaskIDs: [String: UUID] = [:]
     private var replayingMetadataOperationIDs: Set<UUID> = []
     private var remoteContentMutationGeneration: UInt64 = 0
     private var remoteContentMutationGenerationByItem: [MetadataMutationKey: UInt64] = [:]
@@ -120,7 +122,7 @@ final class CloudStorageDocumentStore: ObservableObject {
         UUID: [CloudStorageItemID: CloudStorageItemID]
     ] = [:]
     private var resolvingConflictDocumentIDs: Set<String> = []
-    private var activeLocalCacheMutationCounts: [String: Int] = [:]
+    @ObservationIgnored private var activeLocalCacheMutationCounts: [String: Int] = [:]
 
     private let maximumConcurrentBackgroundContentSynchronizations = 2
     private let maximumConcurrentContentSynchronizations = 6

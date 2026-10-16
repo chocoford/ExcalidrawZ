@@ -5,6 +5,7 @@
 //  Created by Chocoford on 11/21/25.
 //
 
+import Observation
 import SwiftUI
 import SwiftyAlert
 import Combine
@@ -59,11 +60,12 @@ struct MigrationItem: Identifiable, Equatable {
 }
 
 @MainActor
-final class MigrationState: ObservableObject {
+@Observable
+final class MigrationState {
 
-    @Published var phase: MigrationPhase = .idle
-    @Published var isMigrationInProgress = false
-    @Published var migrations: [MigrationItem] = []
+    var phase: MigrationPhase = .idle
+    var isMigrationInProgress = false
+    var migrations: [MigrationItem] = []
     
     func initializeMigrations(_ migrationTypes: [any MigrationVersion.Type]) {
         migrations = migrationTypes.map { type in
@@ -97,7 +99,7 @@ struct CoreDataMigrationModifier: ViewModifier {
 
     @Environment(\.alertToast) private var alertToast
 
-    @StateObject private var migrationState = MigrationState()
+    @State private var migrationState = MigrationState()
     @State private var showMigrationSheet = false
     @State private var continuousCloudKitMonitor: Task<Void, Never>?
 
@@ -114,7 +116,7 @@ struct CoreDataMigrationModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .environmentObject(migrationState)
+            .environment(migrationState)
 //            .overlay {
 //                MigrationProgressSheet(
 //                    migrationState: migrationState,

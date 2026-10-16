@@ -4,8 +4,8 @@ import ChocofordUI
 import SwiftUI
 
 struct ScreenAnnotationView: View {
-    @ObservedObject var session: ScreenAnnotationSession
-    @ObservedObject var saveConfiguration: ScreenAnnotationSaveConfiguration
+    @Bindable var session: ScreenAnnotationSession
+    @Bindable var saveConfiguration: ScreenAnnotationSaveConfiguration
     let webRuntime: ScreenAnnotationWebRuntime
     let tools: [ExcalidrawTool]
     let initialToolbarPlacement: ScreenAnnotationToolbarPlacement?

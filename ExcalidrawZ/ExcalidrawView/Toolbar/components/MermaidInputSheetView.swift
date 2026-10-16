@@ -18,7 +18,7 @@ import UIKit
 struct MermaidInputSheetViewModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     @Binding var isPresented: Bool
 

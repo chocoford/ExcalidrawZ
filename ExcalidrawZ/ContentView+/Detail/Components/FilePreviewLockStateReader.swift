@@ -56,7 +56,7 @@ struct FilePreviewLockStateReader<Content: View>: View {
 private struct ObservedFilePreviewLockState<Content: View>: View {
     let file: FileState.ActiveFile
     let store: LockedContentStateStore
-    @ObservedObject var state: FilePreviewLockState
+    @Bindable var state: FilePreviewLockState
     let requestsMetadataIfUnknown: Bool
     @ViewBuilder let content: (FileContentLockState?) -> Content
 

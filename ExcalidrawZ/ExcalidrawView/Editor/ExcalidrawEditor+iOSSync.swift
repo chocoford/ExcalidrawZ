@@ -20,7 +20,7 @@ import ChocofordUI
 private struct IOSAutoSyncModifier: ViewModifier {
     @Environment(\.alertToast) var alertToast
     @Environment(\.scenePhase) var scenePhase
-    @EnvironmentObject var toolState: ToolState
+    @Environment(ToolState.self) var toolState
     
     var activeFile: FileState.ActiveFile?
     var activeFileLockState: FileContentLockState

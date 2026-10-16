@@ -188,8 +188,8 @@ struct FileHomeGridContainer<Header: View, Background: View>: View {
 }
 
 struct FileHomeContainer: View {
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
+    @Environment(FileState.self) private var fileState
+    @Environment(FileHomeItemTransitionState.self) private var fileHomeItemTransitionState
 
     var content: AnyView
 

@@ -1,3 +1,4 @@
+import Observation
 #if os(macOS)
 import AppKit
 import Combine
@@ -6,20 +7,21 @@ import Logging
 import WebKit
 
 @MainActor
-final class ScreenAnnotationSession: ObservableObject {
-    @Published private(set) var selectedTool: ExcalidrawTool = .laser
-    @Published private(set) var isToolLocked = false
-    @Published private(set) var isReady = false
-    @Published private(set) var errorMessage: String?
-    @Published private(set) var frozenBackgroundImage: NSImage?
-    @Published private(set) var isCapturingBackground = false
-    @Published private(set) var isClearingCanvas = false
-    @Published private(set) var selectionViewportBounds: CGRect?
-    @Published private(set) var selectionContext: ElementPropertiesContext?
-    @Published private(set) var isCanvasInteractionActive = false
-    @Published private(set) var isSelectionGeometryChanging = false
-    @Published private(set) var isSelectionBoundsResolving = false
-    @Published var selectedElementProperties = ElementProperties()
+@Observable
+final class ScreenAnnotationSession {
+    private(set) var selectedTool: ExcalidrawTool = .laser
+    private(set) var isToolLocked = false
+    private(set) var isReady = false
+    private(set) var errorMessage: String?
+    private(set) var frozenBackgroundImage: NSImage?
+    private(set) var isCapturingBackground = false
+    private(set) var isClearingCanvas = false
+    private(set) var selectionViewportBounds: CGRect?
+    private(set) var selectionContext: ElementPropertiesContext?
+    private(set) var isCanvasInteractionActive = false
+    private(set) var isSelectionGeometryChanging = false
+    private(set) var isSelectionBoundsResolving = false
+    var selectedElementProperties = ElementProperties()
 
     var isFrozen: Bool {
         frozenBackgroundImage != nil
@@ -27,9 +29,9 @@ final class ScreenAnnotationSession: ObservableObject {
 
     private weak var webView: WKWebView?
     private var isPreparingCanvas = false
-    private var canvasPreparationTask: Task<Void, Never>?
+    @ObservationIgnored private var canvasPreparationTask: Task<Void, Never>?
     private var canvasPreparationID = UUID()
-    private var canvasClearTask: Task<Void, Never>?
+    @ObservationIgnored private var canvasClearTask: Task<Void, Never>?
     private var canvasClearID = UUID()
     private let toolbarTools: [ExcalidrawTool]
     private var selectedElementIDs: [String] = []
@@ -38,12 +40,12 @@ final class ScreenAnnotationSession: ObservableObject {
     private var selectionSceneBounds: CGRect?
     private var camera = ExcalidrawCore.CameraState()
     private var presentedElementProperties = ElementProperties()
-    private var selectionSettleTask: Task<Void, Never>?
-    private var selectionBoundsResolutionTask: Task<Void, Never>?
+    @ObservationIgnored private var selectionSettleTask: Task<Void, Never>?
+    @ObservationIgnored private var selectionBoundsResolutionTask: Task<Void, Never>?
     private var selectionBoundsResolutionID = UUID()
-    private var boundTextResolutionTask: Task<Void, Never>?
+    @ObservationIgnored private var boundTextResolutionTask: Task<Void, Never>?
     private var boundTextResolvedSelectionIDs: [String]?
-    private var propertyUpdateTask: Task<Void, Never>?
+    @ObservationIgnored private var propertyUpdateTask: Task<Void, Never>?
     private var propertyUpdateID = UUID()
     private let logger = Logger(label: "ScreenAnnotationSession")
     private let sessionID = UUID().uuidString

@@ -7,15 +7,15 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct CloudStorageSidebarLocationRow<Icon: View>: View {
-    @EnvironmentObject private var fileState: FileState
-    @ObservedObject private var connectivity = CloudStorageConnectivityMonitor.shared
+    @Environment(FileState.self) private var fileState
+    @Bindable private var connectivity = CloudStorageConnectivityMonitor.shared
 
     let location: CloudStorageLocation
-    @ObservedObject var connections: CloudStorageConnectionStore
+    @Bindable var connections: CloudStorageConnectionStore
     let icon: Icon
     let onReconnect: () -> Void
 
-    @StateObject private var browser: CloudStorageSidebarBrowserModel
+    @State private var browser: CloudStorageSidebarBrowserModel
     @State private var isExpanded = false
 
     init(
@@ -28,8 +28,8 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
         self.connections = connections
         self.icon = icon()
         self.onReconnect = onReconnect
-        self._browser = StateObject(
-            wrappedValue: CloudStorageSidebarBrowserModel(location: location)
+        self._browser = State(
+            initialValue: CloudStorageSidebarBrowserModel(location: location)
         )
     }
 
@@ -152,12 +152,12 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
 }
 
 private struct CloudStorageSidebarFolderContents: View {
-    @EnvironmentObject private var fileState: FileState
-    @ObservedObject private var connectivity = CloudStorageConnectivityMonitor.shared
+    @Environment(FileState.self) private var fileState
+    @Bindable private var connectivity = CloudStorageConnectivityMonitor.shared
 
     let folderID: CloudStorageItemID
-    @ObservedObject var browser: CloudStorageSidebarBrowserModel
-    @ObservedObject var connections: CloudStorageConnectionStore
+    @Bindable var browser: CloudStorageSidebarBrowserModel
+    @Bindable var connections: CloudStorageConnectionStore
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -249,11 +249,11 @@ private struct CloudStorageSidebarFolderContents: View {
 }
 
 private struct CloudStorageSidebarFolderRow: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     let folder: CloudStorageItem
-    @ObservedObject var browser: CloudStorageSidebarBrowserModel
-    @ObservedObject var connections: CloudStorageConnectionStore
+    @Bindable var browser: CloudStorageSidebarBrowserModel
+    @Bindable var connections: CloudStorageConnectionStore
 
     @State private var isExpanded = false
 
@@ -332,10 +332,10 @@ private struct CloudStorageSidebarFolderRow: View {
 }
 
 private struct CloudStorageSidebarFileRow: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     let item: CloudStorageItem
-    @ObservedObject var browser: CloudStorageSidebarBrowserModel
+    @Bindable var browser: CloudStorageSidebarBrowserModel
 
     var body: some View {
         FileRowButton(
@@ -390,7 +390,7 @@ private struct CloudStorageSidebarFileRow: View {
 }
 
 private struct CloudStorageFolderSyncIndicator: View {
-    @ObservedObject private var connectivity = CloudStorageConnectivityMonitor.shared
+    @Bindable private var connectivity = CloudStorageConnectivityMonitor.shared
 
     let state: CloudStorageFolderSyncState
 

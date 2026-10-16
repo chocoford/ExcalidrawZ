@@ -14,7 +14,7 @@ import UIKit
 #if os(iOS)
 private struct CloudStorageFileHomeSelectionMenuItem: View {
     @Environment(\.editMode) private var editMode
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     var body: some View {
         if editMode?.wrappedValue.isEditing == true {
@@ -40,9 +40,9 @@ private struct CloudStorageFileHomeSelectionMenuItem: View {
 #endif
 
 struct CloudStorageLocationActionsModifier: ViewModifier {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
-    @ObservedObject private var connections = CloudStorageConnectionStore.shared
+    @Bindable private var connections = CloudStorageConnectionStore.shared
 
     let location: CloudStorageLocation
     let presentation: Presentation
@@ -136,9 +136,9 @@ struct CloudStorageLocationActionsModifier: ViewModifier {
 struct CloudStorageFileActionsModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.openURL) private var openURL
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
-    @ObservedObject private var documentStore = CloudStorageDocumentStore.shared
+    @Bindable private var documentStore = CloudStorageDocumentStore.shared
 
     let reference: CloudStorageDocumentReference
     let presentation: Presentation
@@ -406,10 +406,10 @@ struct CloudStorageFileActionsModifier: ViewModifier {
 struct CloudStorageFolderActionsModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.openURL) private var openURL
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
-    @ObservedObject private var documentStore = CloudStorageDocumentStore.shared
-    @ObservedObject private var connections = CloudStorageConnectionStore.shared
+    @Bindable private var documentStore = CloudStorageDocumentStore.shared
+    @Bindable private var connections = CloudStorageConnectionStore.shared
 
     let folder: CloudStorageFolderReference
     let presentation: Presentation

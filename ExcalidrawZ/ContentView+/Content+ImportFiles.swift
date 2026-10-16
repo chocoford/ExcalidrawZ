@@ -11,7 +11,7 @@ import SwiftyAlert
 struct MenuBarImportHandlerModifier: ViewModifier {
     @Environment(\.alert) private var alert
     
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
 #if canImport(AppKit)
     @State private var window: NSWindow?

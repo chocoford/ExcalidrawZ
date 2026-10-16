@@ -50,7 +50,7 @@ struct LocalFileRowView: View {
     @State private var isDeleteConfirmationDialogPresented = false
     
     @State private var isWaitingForOpeningFile = false
-    @StateObject private var selectionState = SidebarLocalFileRowSelectionState()
+    @State private var selectionState = SidebarLocalFileRowSelectionState()
 
     var body: some View {
         FileRowButton(
@@ -144,7 +144,7 @@ struct LocalFileRowView: View {
         .onAppear {
             selectionState.bind(file: file, fileState: fileState)
         }
-        .onReceive(fileState.$activeFiles) { activeFiles in
+        .onChange(of: fileState.activeFiles, initial: true) { _, activeFiles in
             if isWaitingForOpeningFile,
                !activeFiles.contains(where: { $0 == .localFile(file) }) {
                 isWaitingForOpeningFile = false

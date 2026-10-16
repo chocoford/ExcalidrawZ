@@ -22,12 +22,12 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
     @Environment(\.containerSize) private var containerSize
     @Environment(\.alertToast) private var alertToast
     
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject var layoutState: LayoutState
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var toolState: ToolState
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
-    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
+    @Environment(AppPreference.self) var appPreference
+    @Environment(LayoutState.self) var layoutState
+    @Environment(FileState.self) var fileState
+    @Environment(ToolState.self) var toolState
+    @Environment(LockedContentStateStore.self) private var lockedContentState
+    @Bindable private var aiChatPreferences = AIChatPreferences.shared
 
     @State private var isCollaboratorPopoverPresented = false
     @State private var lockedFileAccessRequest: LockedFileAccessRequest?
@@ -719,7 +719,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
 
 #if os(iOS)
 struct HideToolbarModifier: ViewModifier {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     var isPresented: Bool
     var placement: ToolbarPlacement
@@ -743,7 +743,7 @@ struct HideToolbarModifier: ViewModifier {
 
 
 struct NavigationBackButton: View {
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
 
     var body: some View {
         Button {
@@ -773,7 +773,7 @@ struct NavigationBackButton: View {
 }
 
 struct CollaborationMembersPopoverButton: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     @State private var isCollaboratorPopoverPresented = false
     

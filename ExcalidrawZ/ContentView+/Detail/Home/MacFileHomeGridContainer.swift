@@ -26,8 +26,8 @@ struct FileHomeGridMetrics {
 
 @available(macOS 13.0, *)
 struct MacFileHomeGridContainer<Header: View, Background: View>: View {
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var transitionState: FileHomeItemTransitionState
+    @Environment(FileState.self) private var fileState
+    @Environment(FileHomeItemTransitionState.self) private var transitionState
 
     let files: [FileState.ActiveFile]
     let itemWidth: CGFloat

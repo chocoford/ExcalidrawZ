@@ -11,7 +11,7 @@ import CoreData
 import ChocofordUI
 
 struct TemporaryFileListView: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     init(sortField: ExcalidrawFileSortField) {
         // self.sortField = sortField

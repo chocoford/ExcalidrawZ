@@ -54,8 +54,8 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
 
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var dragState: ItemDragState
+    @Environment(FileState.self) private var fileState
+    @Environment(ItemDragState.self) private var dragState
 
     var group: HomeGroup
     var parentGroups: [HomeGroup]

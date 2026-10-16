@@ -9,7 +9,7 @@ import SwiftUI
 import CoreData
 
 struct CollaborationRoomsList: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     @FetchRequest
     private var collaborationFiles: FetchedResults<CollaborationFile>
@@ -53,8 +53,8 @@ struct CollaborationRoomsList: View {
 
 
 struct CollaborationRoomItemView: View {
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var collaborationState: CollaborationState
+    @Environment(FileState.self) private var fileState
+    @Environment(CollaborationState.self) private var collaborationState
     
     var room: CollaborationFile
 

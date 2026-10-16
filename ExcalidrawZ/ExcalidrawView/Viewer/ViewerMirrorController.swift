@@ -6,29 +6,31 @@
 //  core; the Viewer mirrors the editor in the most recently key window.
 //
 
+import Observation
 #if os(macOS)
 import AppKit
 import Combine
 import Logging
 
 @MainActor
-final class ViewerMirrorController: ObservableObject {
+@Observable
+final class ViewerMirrorController {
     static let shared = ViewerMirrorController()
 
     static let windowID = "viewer"
 
-    @Published private(set) var session: ViewerMirrorSession?
+    private(set) var session: ViewerMirrorSession?
 
     /// Follow mode: the Viewer pans/zooms with the editor. Off lets the
     /// presenter zoom in privately while the Viewer holds its view.
-    @Published var isFollowingCamera: Bool {
+    var isFollowingCamera: Bool {
         didSet {
             UserDefaults.standard.set(isFollowingCamera, forKey: Self.followDefaultsKey)
             session?.isFollowingCamera = isFollowingCamera
         }
     }
 
-    @Published var pointerAppearance = ViewerPointerAppearance.load() {
+    var pointerAppearance = ViewerPointerAppearance.load() {
         didSet {
             guard pointerAppearance != oldValue else { return }
             pointerAppearance.save()
@@ -41,8 +43,8 @@ final class ViewerMirrorController: ObservableObject {
     /// Registered editor cores, most recently key (or registered) first.
     private var editors: [WeakEditor] = []
     private weak var viewerWindow: NSWindow?
-    private var keyWindowCancellable: AnyCancellable?
-    private var closeWindowCancellable: AnyCancellable?
+    @ObservationIgnored private var keyWindowCancellable: AnyCancellable?
+    @ObservationIgnored private var closeWindowCancellable: AnyCancellable?
 
     private init() {
         isFollowingCamera = UserDefaults.standard.object(forKey: Self.followDefaultsKey) as? Bool ?? true

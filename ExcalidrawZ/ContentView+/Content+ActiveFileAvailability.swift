@@ -13,7 +13,7 @@ import SwiftUI
 /// moved to Trash outside the active editor workflow.
 struct ActiveFileAvailabilityModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
-    @ObservedObject var fileState: FileState
+    @Bindable var fileState: FileState
 
     func body(content: Content) -> some View {
         content

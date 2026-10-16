@@ -10,7 +10,7 @@ import SwiftUI
 import SwiftyAlert
 
 struct PaywallModifier: ViewModifier {
-    @ObservedObject private var paywallPresentation = PaywallPresentationState.shared
+    @Bindable private var paywallPresentation = PaywallPresentationState.shared
 
     func body(content: Content) -> some View {
         content

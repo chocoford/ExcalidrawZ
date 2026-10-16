@@ -3,7 +3,7 @@ import AppKit
 import SwiftUI
 
 struct ScreenAnnotationWebView: NSViewRepresentable {
-    @ObservedObject var session: ScreenAnnotationSession
+    @Bindable var session: ScreenAnnotationSession
     let runtime: ScreenAnnotationWebRuntime
 
     func makeCoordinator() -> Coordinator {

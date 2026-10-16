@@ -15,9 +15,9 @@ import ChocofordEssentials
 struct FileHistoryInspectorContent: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
 
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var layoutState: LayoutState
-    @EnvironmentObject var appPreference: AppPreference
+    @Environment(FileState.self) var fileState
+    @Environment(LayoutState.self) var layoutState
+    @Environment(AppPreference.self) var appPreference
 
     @ViewBuilder
     private func contentView(presentation: FileCheckpointListPresentation) -> some View {

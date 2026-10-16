@@ -3,12 +3,14 @@
 //  ExcalidrawZ
 //
 
+import Observation
 import SwiftUI
 import SwiftyAlert
 
 /// One sheet attachment per file home, rather than two on every card.
 @MainActor
-final class FileHomeSheetPresentation: ObservableObject {
+@Observable
+final class FileHomeSheetPresentation {
     struct Request: Identifiable {
         enum Content {
             case rename(name: String, onConfirm: (String) -> Void)
@@ -19,7 +21,7 @@ final class FileHomeSheetPresentation: ObservableObject {
         let content: Content
     }
 
-    @Published private(set) var request: Request?
+    private(set) var request: Request?
     private var pendingRequests: [Request] = []
     private var isActive = false
     private var isDismissing = false
@@ -80,7 +82,7 @@ extension EnvironmentValues {
 @MainActor
 struct FileHomeSheetPresentationModifier: ViewModifier {
     // Own the reference without subscribing the scrolling subtree to sheet changes.
-    // Only the small host below observes objectWillChange.
+    // Only the small host below reads the sheet presentation state.
     @State private var presentation = FileHomeSheetPresentation()
 
     func body(content: Content) -> some View {
@@ -95,7 +97,7 @@ struct FileHomeSheetPresentationModifier: ViewModifier {
 }
 
 private struct FileHomeSheetPresentationHost: View {
-    @ObservedObject var presentation: FileHomeSheetPresentation
+    @Bindable var presentation: FileHomeSheetPresentation
 
     var body: some View {
         Color.clear

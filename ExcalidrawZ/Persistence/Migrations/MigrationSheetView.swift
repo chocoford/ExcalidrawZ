@@ -15,7 +15,7 @@ struct MigrationProgressSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.alertToast) private var alertToast
     
-    @ObservedObject var migrationState: MigrationState
+    @Bindable var migrationState: MigrationState
     
     var migrationManager = MigrationManager.shared
     var isDev: Bool

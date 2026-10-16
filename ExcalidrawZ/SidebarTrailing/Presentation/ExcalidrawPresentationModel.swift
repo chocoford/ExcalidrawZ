@@ -5,10 +5,12 @@
 //  Created by Codex on 2026/7/27.
 //
 
+import Observation
 import SwiftUI
 
 @MainActor
-final class ExcalidrawPresentationModel: ObservableObject {
+@Observable
+final class ExcalidrawPresentationModel {
     private static let documentLoadTimeout: TimeInterval = 65
 
     private struct LoadIdentity: Equatable {
@@ -29,10 +31,10 @@ final class ExcalidrawPresentationModel: ObservableObject {
         case failed(String)
     }
 
-    @Published private(set) var slides: [ExcalidrawPresentationSlide] = []
-    @Published private(set) var configuration = ExcalidrawPresentationConfiguration()
-    @Published private(set) var state: LoadingState = .idle
-    @Published var selectedSlideID: String?
+    private(set) var slides: [ExcalidrawPresentationSlide] = []
+    private(set) var configuration = ExcalidrawPresentationConfiguration()
+    private(set) var state: LoadingState = .idle
+    var selectedSlideID: String?
 
     private var loadID = UUID()
     private var representedFileID: String?

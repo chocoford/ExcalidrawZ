@@ -11,22 +11,22 @@ import SwiftyAlert
 struct CompactCloudStorageBrowserView: View {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.editMode) private var editMode
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(FileState.self) private var fileState
+    @Environment(LayoutState.self) private var layoutState
 
     let folder: CloudStorageFolderReference
 
-    @ObservedObject private var documentStore = CloudStorageDocumentStore.shared
-    @StateObject private var browser: CloudStorageSidebarBrowserModel
-    @StateObject private var connections = CloudStorageConnectionStore.shared
+    @Bindable private var documentStore = CloudStorageDocumentStore.shared
+    @State private var browser: CloudStorageSidebarBrowserModel
+    @State private var connections = CloudStorageConnectionStore.shared
     @State private var isCreateFolderPresented = false
     @State private var isCreatingFolder = false
     @State private var newFolderName = ""
 
     init(folder: CloudStorageFolderReference) {
         self.folder = folder
-        self._browser = StateObject(
-            wrappedValue: CloudStorageSidebarBrowserModel(location: folder.location)
+        self._browser = State(
+            initialValue: CloudStorageSidebarBrowserModel(location: folder.location)
         )
     }
 
@@ -216,7 +216,7 @@ struct CompactCloudStorageBrowserView: View {
                 }
 
                 Section {
-                    Picker("", selection: $layoutState.compactBrowserLayout) {
+                    Picker("", selection: Bindable(layoutState).compactBrowserLayout) {
                         Label(
                             .localizable(.compactBrowserLayoutGrid),
                             systemSymbol: .squareGrid2x2

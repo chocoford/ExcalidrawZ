@@ -5,10 +5,12 @@
 //  Created by Chocoford on 8/22/25.
 //
 
+import Observation
 import SwiftUI
 import CoreData
 
-class ItemDragState: ObservableObject {
+@Observable
+class ItemDragState {
     enum DragItem: Hashable {
         case group(NSManagedObjectID)
         case file(NSManagedObjectID)
@@ -19,20 +21,20 @@ class ItemDragState: ObservableObject {
         case temporaryFile(URL)
     }
     
-    @Published var currentDragItem: DragItem?
+    var currentDragItem: DragItem?
     
     enum FileRowDropTarget: Equatable {
         case after(DragItem)
         case startOfGroup(DragItem)
     }
-    @Published var currentDropFileRowTarget: FileRowDropTarget?
+    var currentDropFileRowTarget: FileRowDropTarget?
     
     enum GroupDropTarget: Equatable {
         case exact(DragItem)
         case below(DragItem)
     }
     
-    @Published var currentDropGroupTarget: GroupDropTarget?
+    var currentDropGroupTarget: GroupDropTarget?
     
     var hasAnyDragState: Bool {
         currentDragItem != nil ||
@@ -49,19 +51,19 @@ class ItemDragState: ObservableObject {
 
 struct DragStateModifier: ViewModifier {
     
-    @StateObject private var dragState = ItemDragState()
+    @State private var dragState = ItemDragState()
 
     func body(content: Content) -> some View {
         content
             .modifier(ItemDropFallbackModifier())
             .modifier(ItemDropGlobalFallbackModifier())
             .modifier(ExcalidrawLibraryDropHandler())
-            .environmentObject(dragState)
+            .environment(dragState)
     }
 }
 
 struct ItemDropFallbackModifier: ViewModifier {
-    @EnvironmentObject private var dragState: ItemDragState
+    @Environment(ItemDragState.self) private var dragState
     
     func body(content: Content) -> some View {
         content
@@ -92,7 +94,7 @@ struct ItemDropFallbackModifier: ViewModifier {
 
 
 struct ItemDropGlobalFallbackModifier: ViewModifier {
-    @EnvironmentObject private var dragState: ItemDragState
+    @Environment(ItemDragState.self) private var dragState
 #if os(macOS)
     @State private var mouseMovedMonitor: Any?
 #endif

@@ -9,7 +9,7 @@ import SwiftUI
 
 /// Sync status indicator view that displays the current file's iCloud sync status
 struct SyncStatusIndicator: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     @State private var fileStatus: FileStatus?
 
     var body: some View {

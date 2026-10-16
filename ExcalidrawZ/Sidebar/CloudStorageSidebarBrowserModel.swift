@@ -3,20 +3,22 @@
 //  ExcalidrawZ
 //
 
+import Observation
 import Combine
 import Foundation
 import Logging
 
 @MainActor
-final class CloudStorageSidebarBrowserModel: ObservableObject {
-    @Published private(set) var stateRevision = 0
+@Observable
+final class CloudStorageSidebarBrowserModel {
+    private(set) var stateRevision = 0
 
     let location: CloudStorageLocation
 
     private let documentStore: CloudStorageDocumentStore
     private let logger = Logger(label: "CloudStorageSidebarBrowserModel")
-    private var storeCancellables = Set<AnyCancellable>()
-    private var folderSyncStatesCache: [CloudStorageItemID: CloudStorageFolderSyncState]?
+    @ObservationIgnored private var storeObservation: ObservationSubscription?
+    @ObservationIgnored private var folderSyncStatesCache: [CloudStorageItemID: CloudStorageFolderSyncState]?
 
     convenience init(location: CloudStorageLocation) {
         self.init(
@@ -32,71 +34,32 @@ final class CloudStorageSidebarBrowserModel: ObservableObject {
         self.location = location
         self.documentStore = documentStore
         self.stateRevision = documentStore.metadataRevision(for: location.id)
-        let locationID = location.id
+        storeObservation = ObservationSubscription { [documentStore, location] in
+            let locationMarker = ":\(location.id.uuidString):"
+            let synchronizing = Set(documentStore.syncStatesByDocumentID.compactMap { documentID, state -> String? in
+                guard documentID.contains(locationMarker) else { return nil }
+                if state.isVisiblySynchronizing { return "active:\(documentID)" }
+                if state == .queued { return "queued:\(documentID)" }
+                return nil
+            })
+            return CloudBrowserSnapshot(
+                metadataRevision: documentStore.metadataRevision(for: location.id),
+                isRefreshing: documentStore.isRefreshing(location),
+                error: documentStore.errorMessage(for: location),
+                synchronizing: synchronizing,
+                processingFolders: documentStore.processingFolderIDsByLocationID[location.id, default: []]
+            )
+        } onChange: { [weak self] _ in
+            self?.invalidate(reason: "observedStateChanged")
+        }
+    }
 
-        documentStore.$metadataRevisionsByLocationID
-            .map { revisions in revisions[locationID, default: 0] }
-            .removeDuplicates()
-            .sink { [weak self] metadataRevision in
-                Task { @MainActor [weak self] in
-                    self?.invalidate(reason: "metadataRevision=\(metadataRevision)")
-                }
-            }
-            .store(in: &storeCancellables)
-
-        documentStore.$refreshingLocationIDs
-            .map { refreshingIDs in refreshingIDs.contains(locationID) }
-            .removeDuplicates()
-            .sink { [weak self] isRefreshing in
-                Task { @MainActor [weak self] in
-                    self?.invalidate(reason: "refreshing=\(isRefreshing)")
-                }
-            }
-            .store(in: &storeCancellables)
-
-        documentStore.$errorsByLocationID
-            .map { errors in errors[locationID] }
-            .removeDuplicates()
-            .sink { [weak self] errorMessage in
-                Task { @MainActor [weak self] in
-                    self?.invalidate(reason: "error=\(errorMessage ?? "none")")
-                }
-            }
-            .store(in: &storeCancellables)
-
-        let locationMarker = ":\(locationID.uuidString):"
-        documentStore.$syncStatesByDocumentID
-            .map { states in
-                Set(states.compactMap { documentID, state -> String? in
-                    guard documentID.contains(locationMarker) else { return nil }
-                    if state.isVisiblySynchronizing {
-                        return "active:\(documentID)"
-                    }
-                    if state == .queued {
-                        return "queued:\(documentID)"
-                    }
-                    return nil
-                })
-            }
-            .removeDuplicates()
-            .sink { [weak self] synchronizationSignature in
-                Task { @MainActor [weak self] in
-                    self?.invalidate(reason: "syncStates=\(synchronizationSignature.count)")
-                }
-            }
-            .store(in: &storeCancellables)
-
-        documentStore.$processingFolderIDsByLocationID
-            .map { folderIDsByLocationID in
-                folderIDsByLocationID[locationID, default: []]
-            }
-            .removeDuplicates()
-            .sink { [weak self] processingFolderIDs in
-                Task { @MainActor [weak self] in
-                    self?.invalidate(reason: "processingFolders=\(processingFolderIDs.count)")
-                }
-            }
-            .store(in: &storeCancellables)
+    private struct CloudBrowserSnapshot: Equatable {
+        var metadataRevision: Int
+        var isRefreshing: Bool
+        var error: String?
+        var synchronizing: Set<String>
+        var processingFolders: Set<CloudStorageItemID>
     }
 
     private func invalidate(reason: String) {

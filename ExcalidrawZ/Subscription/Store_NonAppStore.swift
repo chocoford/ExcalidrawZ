@@ -5,21 +5,23 @@
 //  Created by Dove Zachary on 4/1/25.
 //
 
+import Observation
 import SwiftUI
 import StoreKit
 
 
-class Store: ObservableObject {
+@Observable
+class Store {
     let plans: [SubscriptionItem] = [.starter, .pro, .max, .max10x]
     
-    @Published private(set) var subscriptions: [Product] = []
-    @Published private(set) var memberships: [Product] = []
+    private(set) var subscriptions: [Product] = []
+    private(set) var memberships: [Product] = []
     
-    @Published private(set) var purchasedPlans: [Product] = []
-    @Published private(set) var purchasedMemberships: [Product] = []
+    private(set) var purchasedPlans: [Product] = []
+    private(set) var purchasedMemberships: [Product] = []
 
 #if DEBUG
-    @Published var debugActiveSubscriptionItem: SubscriptionItem? = .pro
+    var debugActiveSubscriptionItem: SubscriptionItem? = .pro
 #endif
 
     var activeSubscriptionItem: SubscriptionItem? {

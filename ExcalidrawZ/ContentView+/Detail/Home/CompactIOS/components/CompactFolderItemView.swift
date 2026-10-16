@@ -12,8 +12,8 @@ import SFSafeSymbols
 #if os(iOS)
 struct CompactFolderItemView: View {
     @Environment(\.editMode) private var editMode
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(FileState.self) private var fileState
+    @Environment(LayoutState.self) private var layoutState
     
     var objectID: NSManagedObjectID
     var name: String
@@ -85,7 +85,7 @@ struct CompactFolderItemView: View {
 }
 
 struct CompactFolderItemLabel: View {
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(LayoutState.self) private var layoutState
 
     let name: String
     let type: Group.GroupType
@@ -186,7 +186,7 @@ private struct CompactFolderItemPreviewView: View {
                 }
             }
         }
-        .environmentObject(FileState())
+        .environment(FileState())
     }
 }
 

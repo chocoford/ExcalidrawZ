@@ -19,9 +19,9 @@ struct CompactExcalidrawHomeView: View {
         case search
     }
 
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var layoutState: LayoutState
-    @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
+    @Environment(FileState.self) private var fileState
+    @Environment(LayoutState.self) private var layoutState
+    @Environment(FileHomeItemTransitionState.self) private var fileHomeItemTransitionState
     
     var disableInteration: Bool {
         fileState.currentActiveFile == nil
@@ -141,7 +141,7 @@ struct CompactExcalidrawHomeView: View {
 
 
 struct CompactExcalidrawHomeTabBarAccessoryViewModifier: ViewModifier {
-    @ObservedObject private var syncState = FileStatusService.shared.syncState
+    @Bindable private var syncState = FileStatusService.shared.syncState
 
     @State private var isSyncStatePopoverPresented = false
 

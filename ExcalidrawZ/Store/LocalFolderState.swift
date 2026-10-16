@@ -5,6 +5,7 @@
 //  Created by Dove Zachary on 2/27/25.
 //
 
+import Observation
 import SwiftUI
 import Combine
 import CoreData
@@ -12,7 +13,8 @@ import Logging
 
 private let localFolderStateLogger = Logger(label: "LocalFolderState")
 
-final class LocalFolderState: ObservableObject {
+@Observable
+final class LocalFolderState {
     var refreshFilesPublisher = PassthroughSubject<Void, Never>()
     var itemRemovedPublisher = PassthroughSubject<String, Never>()
     var itemRenamedPublisher = PassthroughSubject<String, Never>()
@@ -42,7 +44,6 @@ final class LocalFolderState: ObservableObject {
 
         if forceRefreshFiles {
             await MainActor.run {
-                self.objectWillChange.send()
                 self.refreshFilesPublisher.send()
             }
         }

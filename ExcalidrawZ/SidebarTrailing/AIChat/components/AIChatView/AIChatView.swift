@@ -14,13 +14,13 @@ import SwiftUI
 import SwiftyAlert
 
 struct AIChatView: View {
-    @EnvironmentObject var layoutState: LayoutState
-    @EnvironmentObject var fileState: FileState
+    @Environment(LayoutState.self) var layoutState
+    @Environment(FileState.self) var fileState
     @EnvironmentObject var llmState: LLMStateObject
-    @EnvironmentObject var aiChatState: AIChatState
+    @Environment(AIChatState.self) var aiChatState
     @Environment(\.alertToast) var alertToast
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
-    @ObservedObject var prefs = AIChatPreferences.shared
+    @Bindable var prefs = AIChatPreferences.shared
 
     /// Conversation id lives on `FileState` (chats are scoped to the current
     /// file). We bridge it to a `Binding` for `PromptInputView`'s API and so
@@ -394,7 +394,7 @@ struct AIChatView: View {
                 ZStack(alignment: .top) {
                     PromptInputView(
                         conversationID: conversationID,
-                        pendingQueue: $aiChatState.pendingQueue,
+                        pendingQueue: Bindable(aiChatState).pendingQueue,
                         style: promptInputStyle,
                         showsCompactIOSFullChatButton: false
                     ) {

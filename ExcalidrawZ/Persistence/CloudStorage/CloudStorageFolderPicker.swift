@@ -20,7 +20,7 @@ struct CloudStorageFolderPicker: View {
     let context: CloudStorageFolderPickerContext
     let onSelect: (CloudStorageItem) -> Void
 
-    @StateObject private var model: CloudStorageFolderPickerModel
+    @State private var model: CloudStorageFolderPickerModel
     @State private var hoveredFolderID: CloudStorageItemID?
     @State private var navigationDirection: NavigationDirection = .forward
 
@@ -35,8 +35,8 @@ struct CloudStorageFolderPicker: View {
     ) {
         self.context = context
         self.onSelect = onSelect
-        self._model = StateObject(
-            wrappedValue: CloudStorageFolderPickerModel(session: context.session)
+        self._model = State(
+            initialValue: CloudStorageFolderPickerModel(session: context.session)
         )
     }
 

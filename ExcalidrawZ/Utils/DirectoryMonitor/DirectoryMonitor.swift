@@ -5,6 +5,7 @@
 //  Created by Dove Zachary on 2023/10/22.
 //
 
+import Observation
 import SwiftUI
 import Combine
 import Logging
@@ -70,7 +71,8 @@ final class DirectoryObserver {
     }
 }
 
-final class DirectoryObserverObject: ObservableObject {
+@Observable
+final class DirectoryObserverObject {
     private(set) var monitors: [DirectoryMonitor] = []
     let queue: DispatchQueue = .init(label: "DirectoryObserver")
 }

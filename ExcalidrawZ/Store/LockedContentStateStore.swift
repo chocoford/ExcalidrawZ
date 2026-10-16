@@ -5,6 +5,7 @@
 //  Created by Codex on 2026/05/27.
 //
 
+import Observation
 import Combine
 import CoreData
 import Foundation
@@ -17,8 +18,9 @@ struct LockedContentAutomaticUnlockRequest: Equatable, Sendable {
 /// The observable surface used by one file preview, independently of editor
 /// state and other files resolving their protection metadata.
 @MainActor
-final class FilePreviewLockState: ObservableObject {
-    @Published private(set) var value: FileContentLockState?
+@Observable
+final class FilePreviewLockState {
+    private(set) var value: FileContentLockState?
 
     init(_ value: FileContentLockState?) {
         self.value = value
@@ -31,11 +33,12 @@ final class FilePreviewLockState: ObservableObject {
 }
 
 @MainActor
-final class LockedContentStateStore: ObservableObject {
-    @Published private(set) var activeFileLockState: FileContentLockState = .plaintext
-    @Published private(set) var automaticUnlockRequest: LockedContentAutomaticUnlockRequest?
-    @Published private(set) var filePreviewLockStateRevision = 0
-    @Published private var fileLockStates: [String: FileContentLockState] = [:]
+@Observable
+final class LockedContentStateStore {
+    private(set) var activeFileLockState: FileContentLockState = .plaintext
+    private(set) var automaticUnlockRequest: LockedContentAutomaticUnlockRequest?
+    private(set) var filePreviewLockStateRevision = 0
+    private var fileLockStates: [String: FileContentLockState] = [:]
     // Preview views retain their own state. Offscreen previews need not stay
     // alive merely because the app retains its protection metadata cache.
     private let previewStates = NSMapTable<NSString, FilePreviewLockState>(
@@ -52,9 +55,9 @@ final class LockedContentStateStore: ObservableObject {
     private var activeManagedFile: ManagedFileReference?
     private var suppressedAutomaticUnlockFileID: String?
     private var pendingAutomaticUnlockAfterAppReturnFileID: String?
-    @Published private(set) var hasActiveUnlockSession = false
-    @Published private var unlockFailedFileIDs: Set<String> = []
-    private var idleRelockTask: Task<Void, Never>?
+    private(set) var hasActiveUnlockSession = false
+    private var unlockFailedFileIDs: Set<String> = []
+    @ObservationIgnored private var idleRelockTask: Task<Void, Never>?
     private var lastUserActivityAt = Date.distantPast
 
     private let idleRelockDelay: UInt64 = 10 * 60 * 1_000_000_000
@@ -326,7 +329,7 @@ final class LockedContentStateStore: ObservableObject {
         let didChangeUnlockSession = noteUnlockSessionActiveIfNeeded(for: lockState)
 
         let storedLockState = storedLockState(for: lockState)
-        // Identical @Published writes would invalidate all observing file cards.
+        // Identical writes would invalidate all observing file cards.
         if fileLockStates[fileID] != storedLockState {
             fileLockStates[fileID] = storedLockState
         }

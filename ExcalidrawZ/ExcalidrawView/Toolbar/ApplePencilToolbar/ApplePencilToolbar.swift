@@ -16,7 +16,7 @@ extension Notification.Name {
 #if os(iOS)
 struct ApplePencilToolbarModifier: ViewModifier {
     @Environment(\.alertToast) var alertToast
-    @EnvironmentObject private var toolState: ToolState
+    @Environment(ToolState.self) private var toolState
 
     @State private var toolbarOffset: CGSize = .zero
     @State private var prevToolbarOffset: CGSize = .zero
@@ -444,7 +444,7 @@ struct ApplePencilToolbarModifier: ViewModifier {
 struct ApplePencilToolbar: View {
     @Environment(\.alertToast) private var alertToast
     
-    @EnvironmentObject private var toolState: ToolState
+    @Environment(ToolState.self) private var toolState
     
     @Binding var isExpanded: Bool
     var expansionDirection: Axis

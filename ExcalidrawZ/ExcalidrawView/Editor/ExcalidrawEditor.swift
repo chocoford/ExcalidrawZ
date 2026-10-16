@@ -30,27 +30,27 @@ struct ExcalidrawEditor: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerSize) private var containerSize
 
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var localFolderState: LocalFolderState
+    @Environment(AppPreference.self) var appPreference
+    @Environment(FileState.self) var fileState
+    @Environment(LocalFolderState.self) var localFolderState
     /// Drives the AI chat island overlay — its presentation toggle is global,
     /// but the *anchor* (bottom-center) is editor-local, hence the overlay
     /// lives here rather than at the NavigationSplitView level.
-    @EnvironmentObject var layoutState: LayoutState
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
+    @Environment(LayoutState.self) var layoutState
+    @Environment(LockedContentStateStore.self) private var lockedContentState
 #if os(macOS)
-    @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
+    @Environment(FileHomeItemTransitionState.self) private var fileHomeItemTransitionState
 #endif
 
-    @ObservedObject private var cloudStorageConnections = CloudStorageConnectionStore.shared
-    @ObservedObject private var cloudStorageDocumentStore = CloudStorageDocumentStore.shared
+    @Bindable private var cloudStorageConnections = CloudStorageConnectionStore.shared
+    @Bindable private var cloudStorageDocumentStore = CloudStorageDocumentStore.shared
 
     let logger = Logger(label: "ExcalidrawEditor")
 
     @Binding var activeFile: FileState.ActiveFile?
     var interactionEnabled: Bool
 
-    @StateObject private var toolState = ToolState()
+    @State private var toolState = ToolState()
 
     @State private var isSettingsPresented = false
     @State private var excalidrawFile: ExcalidrawFile?
@@ -545,7 +545,7 @@ struct ExcalidrawEditor: View {
                 object: inPenMode
             )
         }
-        .environmentObject(toolState)
+        .environment(toolState)
     }
 
     @discardableResult

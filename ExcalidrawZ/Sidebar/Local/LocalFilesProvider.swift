@@ -19,8 +19,8 @@ struct LocalFilesProvider<Content: View>: View {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var localFolderState: LocalFolderState
+    @Environment(FileState.self) private var fileState
+    @Environment(LocalFolderState.self) private var localFolderState
     
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField

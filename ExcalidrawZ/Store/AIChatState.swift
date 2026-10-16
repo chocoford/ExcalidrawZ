@@ -21,6 +21,7 @@
 //  this is volatile session state.
 //
 
+import Observation
 import Foundation
 import LLMCore
 import LLMKit
@@ -40,13 +41,14 @@ enum AIChatEditError: LocalizedError {
 }
 
 @MainActor
-final class AIChatPromptDraftState: ObservableObject {
-    @Published var text: String = "" {
+@Observable
+final class AIChatPromptDraftState {
+    var text: String = "" {
         didSet {
             AIChatRenderDebug.hit("publish.promptDraft.text")
         }
     }
-    @Published var images: [PendingPastedImage] = [] {
+    var images: [PendingPastedImage] = [] {
         didSet {
             AIChatRenderDebug.hit("publish.promptDraft.images")
         }
@@ -84,7 +86,8 @@ final class AIChatPromptDraftState: ObservableObject {
 }
 
 @MainActor
-final class AIChatState: ObservableObject {
+@Observable
+final class AIChatState {
     nonisolated static let selectedConversationRefreshDelay: UInt64 = 350_000_000
 
     /// Messages typed while a reply was streaming. PromptInputView appends
@@ -94,19 +97,19 @@ final class AIChatState: ObservableObject {
     /// the island still shows when the user docks back to the inspector
     /// (and vice versa) — and stays consistent across windows for the
     /// same reason the AI quota balance is.
-    @Published var pendingQueue: [PendingQueueMessage] = []
+    var pendingQueue: [PendingQueueMessage] = []
 
     /// One-shot prefill request for the prompt draft owner. Driven by the
     /// per-user-message "Revert" action: the host sets this, the input
     /// field picks it up via `.onChange(of:)`, copies the text/files into
     /// its local draft state, and refocuses. Token-based so two reverts
     /// with the same text still fire the second time.
-    @Published var draftRequest: DraftRequest?
-    @Published var draftImageAppendRequest: DraftImageAppendRequest?
-    @Published var editSession: EditSession?
-    @Published var editCancelRequest: EditCancelRequest?
-    @Published var transientError: TransientError?
-    @Published private var cancelledGenerationTokens: [String: Int] = [:]
+    var draftRequest: DraftRequest?
+    var draftImageAppendRequest: DraftImageAppendRequest?
+    var editSession: EditSession?
+    var editCancelRequest: EditCancelRequest?
+    var transientError: TransientError?
+    private var cancelledGenerationTokens: [String: Int] = [:]
 
     struct DraftRequest: Equatable {
         let text: String
@@ -179,7 +182,7 @@ final class AIChatState: ObservableObject {
     private var draftTokenSeed: Int = 0
     private var draftImageAppendTokenSeed: Int = 0
     private var editCancelTokenSeed: Int = 0
-    private var promptDraftStates: [String: AIChatPromptDraftState] = [:]
+    @ObservationIgnored private var promptDraftStates: [String: AIChatPromptDraftState] = [:]
 
     func promptDraftState(
         conversationID: String?,
@@ -338,7 +341,7 @@ final class AIChatState: ObservableObject {
     /// single id) keeps state correct if the inspector and the
     /// floating island disagree on which conversation is foreground:
     /// each instance only watches its own conversation id.
-    @Published var compactingConversationIDs: Set<String> = []
+    var compactingConversationIDs: Set<String> = []
 
     func markCompacting(conversationID: String) {
         compactingConversationIDs.insert(conversationID)

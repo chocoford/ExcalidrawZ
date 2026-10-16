@@ -15,10 +15,10 @@ struct CollaborationEditor: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
     @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject private var collaborationState: CollaborationState
-    @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
+    @Environment(AppPreference.self) var appPreference
+    @Environment(FileState.self) var fileState
+    @Environment(CollaborationState.self) private var collaborationState
+    @Environment(FileHomeItemTransitionState.self) private var fileHomeItemTransitionState
 
     var file: CollaborationFile
 

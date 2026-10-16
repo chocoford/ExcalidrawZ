@@ -5,6 +5,7 @@
 //  Created by Codex on 2026/6/23.
 //
 
+import Observation
 import CoreData
 import Foundation
 import Logging
@@ -20,7 +21,8 @@ extension Notification.Name {
 }
 
 @MainActor
-final class FileCoverCacheCoordinator: ObservableObject {
+@Observable
+final class FileCoverCacheCoordinator {
     static let shared = FileCoverCacheCoordinator()
 
     enum Priority: Int {
@@ -96,11 +98,11 @@ final class FileCoverCacheCoordinator: ObservableObject {
     private var requestedKeys: Set<String> = []
     private var cacheGenerations: [String: UInt64] = [:]
     private var nextSequence = 0
-    private var processingTask: Task<Void, Never>?
-    private var diskLookupTasks: [String: Task<Void, Never>] = [:]
+    @ObservationIgnored private var processingTask: Task<Void, Never>?
+    @ObservationIgnored private var diskLookupTasks: [String: Task<Void, Never>] = [:]
     private var diskLookupPriorities: [String: Priority] = [:]
-    private var diskMutationTask: Task<Void, Never>?
-    private var prewarmTask: Task<Void, Never>?
+    @ObservationIgnored private var diskMutationTask: Task<Void, Never>?
+    @ObservationIgnored private var prewarmTask: Task<Void, Never>?
     private var currentColorScheme: ColorScheme = .light
     private var lastRecentlyVisiblePrewarmKey: CoverPrewarmKey?
 
@@ -108,9 +110,9 @@ final class FileCoverCacheCoordinator: ObservableObject {
     private let diskCache = FileCoverDiskCache.shared
     private let logger = Logger(label: "FileCoverCacheCoordinator")
     private let maximumRetryCount = 8
-    private var cloudStorageContentObserver: NSObjectProtocol?
-    private var cloudStorageIdentityObserver: NSObjectProtocol?
-    private var cloudStorageDeletionObserver: NSObjectProtocol?
+    @ObservationIgnored private var cloudStorageContentObserver: NSObjectProtocol?
+    @ObservationIgnored private var cloudStorageIdentityObserver: NSObjectProtocol?
+    @ObservationIgnored private var cloudStorageDeletionObserver: NSObjectProtocol?
 
     private struct CoverPrewarmKey: Equatable {
         let colorScheme: ColorScheme

@@ -18,7 +18,7 @@ struct CloudStorageSettingsView: View {
 
     @Environment(\.alertToast) private var alertToast
 
-    @StateObject private var connections = CloudStorageConnectionStore.shared
+    @State private var connections = CloudStorageConnectionStore.shared
     @State private var disconnectRequest: AccountEntry?
     @State private var disconnectingAccountID: String?
 

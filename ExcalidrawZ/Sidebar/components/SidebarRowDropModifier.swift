@@ -120,7 +120,7 @@ struct SidebarRowDropDelegate: SidebarRowDropable {
 
 
 struct SidebarRowDropModifier: ViewModifier {
-    @EnvironmentObject private var sidebarDragState: ItemDragState
+    @Environment(ItemDragState.self) private var sidebarDragState
     
     var allow: [UTType]
     var onTargeted: (_ isTargeted: Bool) -> Void

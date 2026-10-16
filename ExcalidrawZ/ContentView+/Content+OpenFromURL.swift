@@ -57,14 +57,14 @@ struct OpenFromURLModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     let logger = Logger(label: "OpenFromURLModifier")
     
     @State private var externalURLToBeOpen: URL?
     @State private var isCommandKeyDown = false
 
-    @State private var webViewIsLoadingCancellable: AnyCancellable?
+    @State private var webViewIsLoadingCancellable: ObservationSubscription?
 
 #if os(macOS)
     @State private var window: NSWindow?
@@ -292,8 +292,11 @@ struct OpenFromURLModifier: ViewModifier {
                     try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
                 }
                 
-                if fileState.excalidrawWebCoordinator?.isLoading == true {
-                    self.webViewIsLoadingCancellable = fileState.excalidrawWebCoordinator?.$isLoading.sink { isLoading in
+                if let coordinator = fileState.excalidrawWebCoordinator, coordinator.isLoading {
+                    self.webViewIsLoadingCancellable = ObservationSubscription(initial: false) { [weak coordinator] in
+                        coordinator?.isLoading ?? true
+                    } onChange: { isLoading in
+                        guard !isLoading else { return }
                         Task {
                             try? await Task.sleep(nanoseconds: UInt64(1e+9 * 2.3))
                             _ = try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(

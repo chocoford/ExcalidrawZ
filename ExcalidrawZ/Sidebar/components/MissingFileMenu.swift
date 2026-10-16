@@ -24,7 +24,7 @@ struct MissingFileMenuProvider<Content: View>: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) var alertToast
     @Environment(\.fileHomeSheetPresentation) private var sheetPresentation
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
     
 
     var file: FileState.ActiveFile?
@@ -249,7 +249,7 @@ struct MissingFileContextMenuModifier: ViewModifier {
 }
 
 struct MissingFileMenuItems: View {
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
 
     var file: FileState.ActiveFile?
     var onToogleTryToRecover: () -> Void
@@ -303,7 +303,7 @@ struct CheckpointRecoverySheet: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) var alertToast
 
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
 
     var file: FileState.ActiveFile
     var checkpoints: [FileCheckpoint]

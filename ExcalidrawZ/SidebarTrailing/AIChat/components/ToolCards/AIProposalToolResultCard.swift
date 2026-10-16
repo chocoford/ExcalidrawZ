@@ -15,7 +15,7 @@ import SwiftyAlert
 import UniformTypeIdentifiers
 
 struct AIProposalToolResultCard: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     @Environment(\.alertToast) private var alertToast
 
     let artifact: AIProposalArtifact

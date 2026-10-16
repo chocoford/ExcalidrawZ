@@ -14,9 +14,9 @@ import ChocofordUI
 struct CollaborationHome: View {
     @Environment(\.alertToast) var alertToast
     
-    @EnvironmentObject private var store: Store
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var collaborationState: CollaborationState
+    @Environment(Store.self) private var store
+    @Environment(FileState.self) private var fileState
+    @Environment(CollaborationState.self) private var collaborationState
 
     @State private var userName = ""
     
@@ -170,7 +170,7 @@ struct CollaborationHome: View {
     private func nameField() -> some View {
         TextField(
             .localizable(.collaborationHomeNameFieldLabel),
-            text: $collaborationState.userCollaborationInfo.username,
+            text: Bindable(collaborationState).userCollaborationInfo.username,
             prompt: Text(.localizable(.collaborationHomeNameFieldPlaceholder))
         )
         .textFieldStyle(.outlined)
@@ -250,7 +250,7 @@ struct CollaborationHomeBackground: View {
 
 #Preview {
     CollaborationHome()
-        .environmentObject(Store.shared)
-        .environmentObject(FileState())
-        .environmentObject(CollaborationState())
+        .environment(Store.shared)
+        .environment(FileState())
+        .environment(CollaborationState())
 }

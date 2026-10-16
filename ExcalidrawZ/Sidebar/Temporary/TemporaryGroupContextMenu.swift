@@ -15,8 +15,8 @@ private let temporaryGroupMenuLogger = Logger(label: "TemporaryGroupContextMenu"
 struct TemporaryGroupMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject private var localFolderState: LocalFolderState
+    @Environment(FileState.self) var fileState
+    @Environment(LocalFolderState.self) private var localFolderState
     
     @FetchRequest(
         sortDescriptors: [SortDescriptor(\.createdAt, order: .forward)],

@@ -5,12 +5,14 @@
 //  Created by Dove Zachary on 2023/7/10.
 //
 
+import Observation
 import SwiftUI
 import WebKit
 import Logging
 import Combine
 
-class ExcalidrawCore: NSObject, ObservableObject {
+@Observable
+class ExcalidrawCore: NSObject {
 #if canImport(AppKit)
     typealias PlatformImage = NSImage
 #elseif canImport(UIKit)
@@ -20,7 +22,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     let logger = Logger(label: "ExcalidrawCore")
     
     var parent: ExcalidrawCanvasView?
-    lazy var errorStream: AsyncStream<Error> = {
+    @ObservationIgnored lazy var errorStream: AsyncStream<Error> = {
         AsyncStream { continuation in
             publishError = {
                 continuation.yield($0)
@@ -28,33 +30,42 @@ class ExcalidrawCore: NSObject, ObservableObject {
         }
     }()
     internal var publishError: (_ error: Error) -> Void
-    var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in }
-    lazy var webActor = ExcalidrawWebActor(coordinator: self)
-    lazy var nativeEyeDropper = ExcalidrawNativeEyeDropperCoordinator(core: self)
+    @ObservationIgnored private var configuredWebView: ExcalidrawWebView?
+
+    var webView: ExcalidrawWebView {
+        if let configuredWebView { return configuredWebView }
+        configWebView()
+        return configuredWebView!
+    }
+    @ObservationIgnored lazy var webActor = ExcalidrawWebActor(coordinator: self)
+    @ObservationIgnored lazy var nativeEyeDropper = ExcalidrawNativeEyeDropperCoordinator(core: self)
     
     override init() {
         self.publishError = { error in }
         super.init()
         self.documentSyncController.attach(core: self)
-        self.configWebView()
     }
     
-    @Published var isNavigating = true
-    @Published var isDocumentLoaded = false
-    @Published var isCollabEnabled = false
-    @Published private(set) var isLoading: Bool = false
-    @Published private(set) var cameraState = CameraState()
-    @Published private(set) var selectedElementIDs: [String] = []
-    @Published private(set) var contentChangeToken = 0
+    var isNavigating = true
+    var isDocumentLoaded = false
+    var isCollabEnabled = false
+    @ObservationIgnored private var isCollaborationCanvas = false
+    private var isLoadingStateConfigured = false
+    var isLoading: Bool {
+        isLoadingStateConfigured && (isNavigating || !isDocumentLoaded || (isCollaborationCanvas && !isCollabEnabled))
+    }
+    private(set) var cameraState = CameraState()
+    private(set) var selectedElementIDs: [String] = []
+    private(set) var contentChangeToken = 0
 
-    var downloadCache: [String : Data] = [:]
+    @ObservationIgnored var downloadCache: [String : Data] = [:]
     var downloads: [URLRequest : URL] = [:]
     
     
-    @Published var canUndo = false
-    @Published var canRedo = false
-    @Published private(set) var aiCameraSession = AICameraSessionInfo()
-    @Published private(set) var mathImageEditRequest: MathImageEditRequest?
+    var canUndo = false
+    var canRedo = false
+    private(set) var aiCameraSession = AICameraSessionInfo()
+    private(set) var mathImageEditRequest: MathImageEditRequest?
     
     let documentSyncController = ExcalidrawDocumentSyncController()
     let currentFileSaveStreamBridge = ExcalidrawCore.CurrentFileSaveStreamBridge()
@@ -81,24 +92,8 @@ class ExcalidrawCore: NSObject, ObservableObject {
     @MainActor
     func setup(parent: ExcalidrawCanvasView) {
         self.parent = parent
-        switch parent.type {
-            case .normal:
-                Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
-                    .map { isNavigating, isDocumentLoaded in
-                        isNavigating || !isDocumentLoaded
-                    }
-                    .assign(to: &$isLoading)
-            case .collaboration:
-                Publishers.CombineLatest(
-                    Publishers.CombineLatest($isNavigating, $isDocumentLoaded)
-                        .map { isNavigating, isDocumentLoaded in
-                            isNavigating || !isDocumentLoaded
-                        },
-                    $isCollabEnabled
-                )
-                .map { $0 || !$1 }
-                .assign(to: &$isLoading)
-        }
+        isCollaborationCanvas = parent.type == .collaboration
+        isLoadingStateConfigured = true
     }
     
     func configWebView() {
@@ -127,7 +122,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
         
         config.userContentController = userContentController
         
-        self.webView = ExcalidrawWebView(
+        self.configuredWebView = ExcalidrawWebView(
             frame: .zero,
             configuration: config
         ) { key in

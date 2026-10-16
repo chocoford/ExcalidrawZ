@@ -12,8 +12,8 @@ import CoreData
 struct LocalFolderMenuProvider: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var localFolderState: LocalFolderState
+    @Environment(FileState.self) private var fileState
+    @Environment(LocalFolderState.self) private var localFolderState
 
     struct Triggers {
         var onToggleRename: () -> Void
@@ -94,7 +94,7 @@ struct LocalFolderMenuProvider: View {
                 }
                 try await MainActor.run {
                     try folder.refreshChildren(context: viewContext)
-                    localFolderState.objectWillChange.send()
+                    localFolderState.refreshFilesPublisher.send()
                     localFolderState.refreshFilesPublisher.send()
                 }
             } catch {
@@ -144,7 +144,7 @@ struct LocalFolderMenuProvider: View {
 }
 
 struct LocalFolderContextMenuModifier: ViewModifier {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     var folder: LocalFolder
     var canExpand: Bool
@@ -203,8 +203,8 @@ struct LocalFolderMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var localFolderState: LocalFolderState
+    @Environment(FileState.self) private var fileState
+    @Environment(LocalFolderState.self) private var localFolderState
 
     var folder: LocalFolder
     var canExpand: Bool
@@ -319,7 +319,7 @@ struct LocalFolderMenuItems: View {
                         }
                         try await MainActor.run {
                             try deleteLocalFolder(folder, context: viewContext)
-                            localFolderState.objectWillChange.send()
+                            localFolderState.refreshFilesPublisher.send()
                             localFolderState.refreshFilesPublisher.send()
                         }
                     } catch {

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct TemporaryFilesHomeView: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     init() {}
     

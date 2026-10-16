@@ -33,7 +33,7 @@ struct SearchExcalidrawAction {
 
 
 struct SearchableModifier: ViewModifier {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     @State private var isSearchSheetPresented = false
     
@@ -162,8 +162,8 @@ struct SerachContent: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     
-    @EnvironmentObject private var store: Store
-    @EnvironmentObject private var fileState: FileState
+    @Environment(Store.self) private var store
+    @Environment(FileState.self) private var fileState
     
     enum Source {
         case normal

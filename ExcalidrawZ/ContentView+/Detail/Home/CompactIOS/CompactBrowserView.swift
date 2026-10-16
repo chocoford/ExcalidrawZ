@@ -14,7 +14,7 @@ import CoreData
 // MARK: - Generic Browser Content View
 
 struct CompactBrowserCollectionView<Folder: Identifiable, FolderContent: View>: View {
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(LayoutState.self) private var layoutState
 
     let folders: [Folder]
     let files: [FileState.ActiveFile]
@@ -65,7 +65,7 @@ struct CompactBrowserCollectionView<Folder: Identifiable, FolderContent: View>: 
 struct CompactBrowserContentView<HomeGroup: ExcalidrawGroup>: View {
     @Environment(\.isPresented) private var isPresented
     @Environment(\.scenePhase) private var scenePhase
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     
     var title: String
@@ -183,7 +183,7 @@ struct CompactBrowserContentView<HomeGroup: ExcalidrawGroup>: View {
 struct CompactGroupBrowserView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var viewContext
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     var group: Group
 
@@ -219,7 +219,7 @@ struct CompactGroupBrowserView: View {
 
 struct CompactLocalFolderBrowserView: View {
     @Environment(\.managedObjectContext) private var viewContext
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     var folder: LocalFolder
 

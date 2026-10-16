@@ -5,6 +5,7 @@
 //  Created by Claude on 2025/12/31.
 //
 
+import Observation
 import SwiftUI
 import Logging
 
@@ -111,16 +112,17 @@ struct FileStatus: Equatable {
 
 // MARK: - FileStatusBox
 
-/// A per-file ObservableObject that holds the current status of a file
+/// A per-file observable model that holds the current status of a file
 ///
 /// This design ensures that when a file's status changes, only the corresponding
 /// UI row is refreshed, rather than the entire file list.
 @MainActor
-final class FileStatusBox: ObservableObject, @MainActor Identifiable {
+@Observable
+final class FileStatusBox: @MainActor Identifiable {
     private let logger = Logger(label: "FileStatusBox")
     
     /// The current status of this file
-    @Published var status: FileStatus
+    var status: FileStatus
     
     /// The file identifier this box represents
     let fileID: String
@@ -128,7 +130,7 @@ final class FileStatusBox: ObservableObject, @MainActor Identifiable {
     var id: String { fileID }
     
     /// Timestamp of last status update
-    @Published var lastUpdated: Date
+    var lastUpdated: Date
     
     init(fileID: String, status: FileStatus = .default) {
         self.fileID = fileID

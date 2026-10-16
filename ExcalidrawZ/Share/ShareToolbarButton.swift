@@ -5,6 +5,7 @@
 //  Created by Dove Zachary on 3/17/25.
 //
 
+import Observation
 import SwiftUI
 import CoreData
 import SwiftyAlert
@@ -16,12 +17,13 @@ struct ImageExportContext {
     var coordinator: ExcalidrawCore? = nil
 }
 
-class ShareFileState: ObservableObject {
+@Observable
+class ShareFileState {
     enum ShareTarget {
         case image, file
     }
     
-    @Published var currentSharedFile: ExcalidrawFile? {
+    var currentSharedFile: ExcalidrawFile? {
         didSet {
             if currentSharedFile == nil {
                 shareTarget = nil
@@ -29,7 +31,7 @@ class ShareFileState: ObservableObject {
             }
         }
     }
-    @Published var shareTarget: ShareTarget?
+    var shareTarget: ShareTarget?
     var imageExportContext = ImageExportContext()
 }
 
@@ -37,9 +39,9 @@ struct ShareToolbarButton: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var shareFileState: ShareFileState
-    @EnvironmentObject private var exportState: ExportState
+    @Environment(FileState.self) private var fileState
+    @Environment(ShareFileState.self) private var shareFileState
+    @Environment(ExportState.self) private var exportState
 
 #if canImport(AppKit)
     @State private var window: NSWindow?

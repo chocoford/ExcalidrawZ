@@ -12,9 +12,9 @@ import SwiftyAlert
 struct ArchiveRoomModifier: ViewModifier {
     @Binding var collaborationFile: CollaborationFile?
     
-    @EnvironmentObject private var parentFileState: FileState
+    @Environment(FileState.self) private var parentFileState
     
-     @StateObject private var fileState = FileState()
+     @State private var fileState = FileState()
     
     func body(content: Content) -> some View {
         content
@@ -22,7 +22,7 @@ struct ArchiveRoomModifier: ViewModifier {
                 ArchiveRoomSheetView(file: file, parentFileState: parentFileState)
                     .padding()
                     .frame(width: 350, height: 500)
-                    .environmentObject(fileState)
+                    .environment(fileState)
             }
     }
 }
@@ -32,11 +32,10 @@ struct ArchiveRoomSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.alertToast) private var alertToast
     
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     var file: CollaborationFile
-    @ObservedObject
-    var parentFileState: FileState
+    @Bindable var parentFileState: FileState
     
     var body: some View {
         VStack {

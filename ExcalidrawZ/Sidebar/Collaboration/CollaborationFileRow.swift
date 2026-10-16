@@ -14,9 +14,9 @@ import ChocofordUI
 struct CollaborationFileRow: View {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.alert) private var alert
-    @EnvironmentObject private var store: Store
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var collaborationState: CollaborationState
+    @Environment(Store.self) private var store
+    @Environment(FileState.self) private var fileState
+    @Environment(CollaborationState.self) private var collaborationState
 
     var file: CollaborationFile
     var collaborationFiles: FetchedResults<CollaborationFile>

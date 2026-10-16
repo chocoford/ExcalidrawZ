@@ -16,7 +16,7 @@ struct GroupsView: View {
     @AppStorage("FolderStructureStyle") var folderStructStyle: FolderStructureStyle = .disclosureGroup
 
     @Environment(\.managedObjectContext) private var viewContext
-    @EnvironmentObject var sidebarDragState: ItemDragState
+    @Environment(ItemDragState.self) var sidebarDragState
 
     var group: Group
     var sortField: ExcalidrawFileSortField
@@ -30,7 +30,7 @@ struct GroupsView: View {
     private var files: FetchedResults<File>
     
     @State private var refreshKey = UUID()
-    @StateObject private var selectionState = SidebarGroupRowSelectionState()
+    @State private var selectionState = SidebarGroupRowSelectionState()
     
     init(
         group: Group,

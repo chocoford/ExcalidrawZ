@@ -9,7 +9,7 @@ import SwiftUI
 import CoreData
 
 struct ExcalidrawGroupBrowser: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     @FetchRequest(
         sortDescriptors: [

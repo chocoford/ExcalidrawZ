@@ -46,7 +46,7 @@ extension UTType {
 }
 
 struct FileRowDragModifier<DraggableFile: DragMovableFile>: ViewModifier {
-    @EnvironmentObject private var sidebarDragState: ItemDragState
+    @Environment(ItemDragState.self) private var sidebarDragState
     
     var file: DraggableFile
     
@@ -78,8 +78,8 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var sidebarDragState: ItemDragState
+    @Environment(FileState.self) private var fileState
+    @Environment(ItemDragState.self) private var sidebarDragState
     
     var file: DraggableFile
     var files: FetchedResults<DraggableFile>

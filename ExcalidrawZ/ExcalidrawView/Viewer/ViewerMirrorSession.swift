@@ -5,28 +5,30 @@
 //  Owns the Viewer WebView and its local connection for the lifetime of the window.
 //
 
+import Observation
 #if os(macOS)
 import Combine
 import Foundation
 import WebKit
 
 @MainActor
-final class ViewerMirrorSession: ObservableObject {
-    @Published var isFollowingCamera: Bool {
+@Observable
+final class ViewerMirrorSession {
+    var isFollowingCamera: Bool {
         didSet {
             guard isFollowingCamera != oldValue else { return }
             localConnection?.setFollowing(isFollowingCamera)
         }
     }
-    @Published private(set) var localConnectionState: ViewerLocalConnection.State = .waitingForEditor
-    @Published private(set) var supportsPointerAppearance = false
+    private(set) var localConnectionState: ViewerLocalConnection.State = .waitingForEditor
+    private(set) var supportsPointerAppearance = false
 
     let core = ExcalidrawCore()
 
     private let editorProvider: () -> ExcalidrawCore?
     private weak var editor: ExcalidrawCore?
-    private var editorCancellables: Set<AnyCancellable> = []
-    private var viewerCancellables: Set<AnyCancellable> = []
+    @ObservationIgnored private var editorObservation: ObservationSubscription?
+    @ObservationIgnored private var viewerObservation: ObservationSubscription?
     private var localConnection: ViewerLocalConnection?
     private var isClosed = false
 
@@ -60,15 +62,12 @@ final class ViewerMirrorSession: ObservableObject {
         )
         core.webView.load(URLRequest(url: Self.pageURL))
 
-        Publishers.CombineLatest(core.$isDocumentLoaded, core.$isNavigating)
-            .map { $0 && !$1 }
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                self.localConnection?.update(editor: self.editor)
-            }
-            .store(in: &viewerCancellables)
+        viewerObservation = ObservationSubscription { [core] in
+            core.isDocumentLoaded && !core.isNavigating
+        } onChange: { [weak self] _ in
+            guard let self else { return }
+            self.localConnection?.update(editor: self.editor)
+        }
     }
 
     /// Editors register when their canvas appears, so no polling is needed
@@ -81,18 +80,16 @@ final class ViewerMirrorSession: ObservableObject {
             return
         }
 
-        editorCancellables.removeAll()
+        editorObservation?.cancel()
+        editorObservation = nil
         editor = resolved
         if let resolved {
-            Publishers.CombineLatest(resolved.$isDocumentLoaded, resolved.$isNavigating)
-                .map { $0 && !$1 }
-                .removeDuplicates()
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] _ in
-                    guard let self else { return }
-                    self.localConnection?.update(editor: self.editor)
-                }
-                .store(in: &editorCancellables)
+            editorObservation = ObservationSubscription { [weak resolved] in
+                resolved?.isDocumentLoaded == true && resolved?.isNavigating == false
+            } onChange: { [weak self] _ in
+                guard let self else { return }
+                self.localConnection?.update(editor: self.editor)
+            }
         }
         localConnection?.update(editor: resolved)
     }
@@ -115,8 +112,10 @@ final class ViewerMirrorSession: ObservableObject {
         isClosed = true
         localConnection?.close()
         localConnection = nil
-        editorCancellables.removeAll()
-        viewerCancellables.removeAll()
+        editorObservation?.cancel()
+        editorObservation = nil
+        viewerObservation?.cancel()
+        viewerObservation = nil
         editor = nil
 
         // Script message handlers retain the core; release them when the window closes.

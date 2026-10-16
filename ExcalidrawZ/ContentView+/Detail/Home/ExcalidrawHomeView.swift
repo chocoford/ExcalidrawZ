@@ -11,9 +11,9 @@ import ChocofordUI
 struct ExcalidrawHomeView: View {
     @Environment(\.colorScheme) var colorScheme
     
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var fileHomeItemTransitionState: FileHomeItemTransitionState
+    @Environment(AppPreference.self) var appPreference
+    @Environment(FileState.self) private var fileState
+    @Environment(FileHomeItemTransitionState.self) private var fileHomeItemTransitionState
     
     @Binding var isSettingsPresented: Bool
 

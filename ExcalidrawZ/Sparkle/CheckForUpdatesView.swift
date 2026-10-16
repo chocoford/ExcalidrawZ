@@ -13,7 +13,7 @@ import Sparkle
 // Note this intermediate view is necessary for the disabled state on the menu item to work properly before Monterey.
 // See https://stackoverflow.com/questions/68553092/menu-not-updating-swiftui-bug for more info
 struct CheckForUpdatesView: View {
-    @ObservedObject var checkForUpdatesViewModel: UpdateChecker
+    @Bindable var checkForUpdatesViewModel: UpdateChecker
     
     init(checkForUpdatesViewModel: UpdateChecker) {
         self.checkForUpdatesViewModel = checkForUpdatesViewModel

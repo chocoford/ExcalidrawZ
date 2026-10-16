@@ -19,9 +19,9 @@ struct LibraryView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
     @Environment(\.alertToast) var alertToast
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject var exportState: ExportState
-    @EnvironmentObject var layoutState: LayoutState
+    @Environment(AppPreference.self) var appPreference
+    @Environment(ExportState.self) var exportState
+    @Environment(LayoutState.self) var layoutState
         
     @FetchRequest(sortDescriptors: [SortDescriptor(\.id)], animation: .smooth)
     var libraries: FetchedResults<Library>
@@ -34,7 +34,7 @@ struct LibraryView: View {
         self._librariesToImport = librariesToImport
     }
     
-    @StateObject private var viewModel = LibraryViewModel()
+    @State private var viewModel = LibraryViewModel()
     
     // each library contains one library item...
     @State private var image: Image?
@@ -66,6 +66,8 @@ struct LibraryView: View {
     }
     
     var body: some View {
+        // Core Data metadata can change without replacing the library objects.
+        let _ = viewModel.metadataRevision
         ZStack {
             if #available(macOS 13.0, *), usesInspectorToolbarChrome {
                 content()
@@ -95,7 +97,7 @@ struct LibraryView: View {
             }
             self.librariesToImport = libraries
         }
-        .environmentObject(viewModel)
+        .environment(viewModel)
         .onAppear {
             viewModel.excalidrawWebCoordinator = exportState.excalidrawWebCoordinator
         }
@@ -624,7 +626,7 @@ struct LibraryView: View {
                     }
                     try context.save()
                     DispatchQueue.main.async {
-                        viewModel.objectWillChange.send()
+                        viewModel.refreshLibraryMetadata()
                     }
                 } catch {
                     alertToast(error)

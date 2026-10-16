@@ -3,14 +3,16 @@
 //  ExcalidrawZ
 //
 
+import Observation
 import SwiftUI
 
-final class PaywallPresentationState: ObservableObject {
+@Observable
+final class PaywallPresentationState {
     static let shared = PaywallPresentationState()
     static let didPresentNotification = Notification.Name("PaywallPresentationState.didPresent")
 
-    @Published var isPresented = false
-    @Published var reachReason: Store.ReachPaywallReason?
+    var isPresented = false
+    var reachReason: Store.ReachPaywallReason?
 
     private init() {}
 

@@ -13,7 +13,7 @@ import ChocofordUI
 
 struct StoreKitEntitlementRefreshModifier: ViewModifier {
     @Environment(\.scenePhase) private var scenePhase
-    @EnvironmentObject private var store: Store
+    @Environment(Store.self) private var store
 
 #if canImport(AppKit)
     @State private var window: NSWindow?

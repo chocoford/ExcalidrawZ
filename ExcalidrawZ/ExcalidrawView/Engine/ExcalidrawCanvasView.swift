@@ -17,11 +17,11 @@ struct ExcalidrawCanvasView: View {
 
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.scenePhase) var scenePhase
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var exportState: ExportState
-    @EnvironmentObject var toolState: ToolState
-    @EnvironmentObject var canvasPreferencesState: CanvasPreferencesState
+    @Environment(AppPreference.self) var appPreference
+    @Environment(FileState.self) var fileState
+    @Environment(ExportState.self) var exportState
+    @Environment(ToolState.self) var toolState
+    @Environment(CanvasPreferencesState.self) var canvasPreferencesState
     @Environment(\.excalidrawNativeViewportInsets) private var nativeViewportInsets
 #if os(iOS)
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
@@ -76,7 +76,7 @@ struct ExcalidrawCanvasView: View {
     
     // MARK: - State
     
-    @StateObject private var excalidrawCore = ExcalidrawCore()
+    @State private var excalidrawCore = ExcalidrawCore()
     @State private var hasSetupCore = false
     @State private var pendingErrorEvent: IdentifiableError?
     
@@ -157,7 +157,7 @@ struct ExcalidrawCanvasView: View {
 #endif
             .modifier(MediaItemSyncModifier())
             .modifier(MathImageEditSheetViewModifier(coordinator: excalidrawCore, onError: onError))
-            .environmentObject(excalidrawCore)
+            .environment(excalidrawCore)
 #if os(macOS)
             .onWindowEvent(.didBecomeKey) { _ in
                 applyColorMode()
@@ -283,7 +283,7 @@ struct ExcalidrawCanvasView: View {
     private func listenToLoadingState() async {
         var previousIsLoading: Bool?
 
-        for await isLoading in excalidrawCore.$isLoading.values {
+        for await isLoading in observedValues({ excalidrawCore.isLoading }) {
             if isLoading, previousIsLoading != true {
                 excalidrawCore.documentSyncController.resetFileLoadState()
             }

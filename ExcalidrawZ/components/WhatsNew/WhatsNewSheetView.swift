@@ -17,7 +17,7 @@ struct WhatsNewSheetViewModifier: ViewModifier {
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
     @AppStorage("WhatsNewLastBuild") var lastBuild = 0
     
-    @EnvironmentObject private var migrationState: MigrationState
+    @Environment(MigrationState.self) private var migrationState
     
     @State private var isPresented = false
 #if canImport(AppKit)

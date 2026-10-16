@@ -19,7 +19,7 @@ struct GroupListView: View {
     @Environment(\.alert) var alert
     @Environment(\.searchExcalidrawAction) private var searchExcalidraw
 
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
     
     init(sortField: ExcalidrawFileSortField) {
         self.sortField = sortField

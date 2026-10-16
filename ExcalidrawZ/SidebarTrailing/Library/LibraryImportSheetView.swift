@@ -368,6 +368,6 @@ struct ExcalidrawLibraryImportSheetView: View {
 #Preview {
     ExcalidrawLibraryImportSheetView(libraries: [.preview])
         .frame(width: 600)
-        .environmentObject(ExportState())
+        .environment(ExportState())
 }
 #endif

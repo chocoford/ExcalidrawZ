@@ -5,6 +5,7 @@
 //  Created by Dove Zachary on 2024/10/8.
 //
 
+import Observation
 import SwiftUI
 import WebKit
 import Combine
@@ -15,7 +16,8 @@ import UniformTypeIdentifiers
 
 private let appPreferenceLogger = Logger(label: "AppPreference")
 
-final class AppPreference: ObservableObject {
+@Observable
+final class AppPreference {
     enum SidebarMode: Hashable, Sendable {
         case all
         case filesOnly
@@ -49,8 +51,8 @@ final class AppPreference: ObservableObject {
         }
     }
     // Layout
-    @Published var sidebarMode: SidebarMode = .all
-    @Published var sidebarLayout: LayoutStyle = {
+    var sidebarMode: SidebarMode = .all
+    var sidebarLayout: LayoutStyle = {
         if #available(macOS 13.0, *) {
             return .sidebar
         } else {
@@ -58,7 +60,7 @@ final class AppPreference: ObservableObject {
         }
     }()
     
-    @Published var inspectorLayout: LayoutStyle = {
+    var inspectorLayout: LayoutStyle = {
         if #available(macOS 14.0, *) {
             return .sidebar
         } else {
@@ -97,14 +99,37 @@ final class AppPreference: ObservableObject {
             }
         }
     }
-    @AppStorage("appearance") private var storedAppearance: Appearance = .auto
-    @AppStorage("excalidrawAppearance") private var storedExcalidrawAppearance: Appearance = .auto
+    @ObservationIgnored @AppStorage("appearance") private var persistedStoredAppearance: Appearance = .auto
+    private var storedAppearance: Appearance {
+        get {
+            access(keyPath: \.storedAppearance)
+            return persistedStoredAppearance
+        }
+        set {
+            guard persistedStoredAppearance != newValue else { return }
+            withMutation(keyPath: \.storedAppearance) {
+                persistedStoredAppearance = newValue
+            }
+        }
+    }
+    @ObservationIgnored @AppStorage("excalidrawAppearance") private var persistedStoredExcalidrawAppearance: Appearance = .auto
+    private var storedExcalidrawAppearance: Appearance {
+        get {
+            access(keyPath: \.storedExcalidrawAppearance)
+            return persistedStoredExcalidrawAppearance
+        }
+        set {
+            guard persistedStoredExcalidrawAppearance != newValue else { return }
+            withMutation(keyPath: \.storedExcalidrawAppearance) {
+                persistedStoredExcalidrawAppearance = newValue
+            }
+        }
+    }
 
     var appearance: Appearance {
         get { storedAppearance }
         set {
             guard storedAppearance != newValue else { return }
-            objectWillChange.send()
             storedAppearance = newValue
             synchronizeSharedAppearance()
         }
@@ -114,7 +139,6 @@ final class AppPreference: ObservableObject {
         get { storedExcalidrawAppearance }
         set {
             guard storedExcalidrawAppearance != newValue else { return }
-            objectWillChange.send()
             storedExcalidrawAppearance = newValue
             synchronizeSharedAppearance()
         }
@@ -148,8 +172,32 @@ final class AppPreference: ObservableObject {
         }
     }
     /// Invert the inverted image in dark mode.
-    @AppStorage("autoInvertImage") var autoInvertImage = true
-    @AppStorage("autoInvertImageSettings") private var autoInvertImageSettings: String = ""
+    @ObservationIgnored @AppStorage("autoInvertImage") private var persistedAutoInvertImage: Bool = true
+    var autoInvertImage: Bool {
+        get {
+            access(keyPath: \.autoInvertImage)
+            return persistedAutoInvertImage
+        }
+        set {
+            guard persistedAutoInvertImage != newValue else { return }
+            withMutation(keyPath: \.autoInvertImage) {
+                persistedAutoInvertImage = newValue
+            }
+        }
+    }
+    @ObservationIgnored @AppStorage("autoInvertImageSettings") private var persistedAutoInvertImageSettings: String = ""
+    private var autoInvertImageSettings: String {
+        get {
+            access(keyPath: \.autoInvertImageSettings)
+            return persistedAutoInvertImageSettings
+        }
+        set {
+            guard persistedAutoInvertImageSettings != newValue else { return }
+            withMutation(keyPath: \.autoInvertImageSettings) {
+                persistedAutoInvertImageSettings = newValue
+            }
+        }
+    }
     
     var antiInvertImageSettings: AntiInvertImageSettings {
         get {
@@ -175,12 +223,47 @@ final class AppPreference: ObservableObject {
     }
 
     // User Drawing Settings
-    @AppStorage("useCustomDrawingSettings") var useCustomDrawingSettings = false
-    @AppStorage("customDrawingSettingsData") private var customDrawingSettingsData: Data = Data()
-    @AppStorage(ExcalidrawToolbarToolOrder.storageKey)
-    private var toolbarToolOrderData: Data = Data()
-    private var cachedToolbarToolOrderData: Data?
-    private var cachedToolbarToolOrder: ExcalidrawToolbarToolOrder?
+    @ObservationIgnored @AppStorage("useCustomDrawingSettings") private var persistedUseCustomDrawingSettings: Bool = false
+    var useCustomDrawingSettings: Bool {
+        get {
+            access(keyPath: \.useCustomDrawingSettings)
+            return persistedUseCustomDrawingSettings
+        }
+        set {
+            guard persistedUseCustomDrawingSettings != newValue else { return }
+            withMutation(keyPath: \.useCustomDrawingSettings) {
+                persistedUseCustomDrawingSettings = newValue
+            }
+        }
+    }
+    @ObservationIgnored @AppStorage("customDrawingSettingsData") private var persistedCustomDrawingSettingsData: Data = Data()
+    private var customDrawingSettingsData: Data {
+        get {
+            access(keyPath: \.customDrawingSettingsData)
+            return persistedCustomDrawingSettingsData
+        }
+        set {
+            guard persistedCustomDrawingSettingsData != newValue else { return }
+            withMutation(keyPath: \.customDrawingSettingsData) {
+                persistedCustomDrawingSettingsData = newValue
+            }
+        }
+    }
+    @ObservationIgnored @AppStorage(ExcalidrawToolbarToolOrder.storageKey) private var persistedToolbarToolOrderData: Data = Data()
+    private var toolbarToolOrderData: Data {
+        get {
+            access(keyPath: \.toolbarToolOrderData)
+            return persistedToolbarToolOrderData
+        }
+        set {
+            guard persistedToolbarToolOrderData != newValue else { return }
+            withMutation(keyPath: \.toolbarToolOrderData) {
+                persistedToolbarToolOrderData = newValue
+            }
+        }
+    }
+    @ObservationIgnored private var cachedToolbarToolOrderData: Data?
+    @ObservationIgnored private var cachedToolbarToolOrder: ExcalidrawToolbarToolOrder?
 
     var customDrawingSettings: UserDrawingSettings {
         get {
@@ -219,7 +302,6 @@ final class AppPreference: ObservableObject {
             let storedData = newValue.storedData
             cachedToolbarToolOrderData = storedData
             cachedToolbarToolOrder = newValue
-            objectWillChange.send()
             toolbarToolOrderData = storedData
         }
     }

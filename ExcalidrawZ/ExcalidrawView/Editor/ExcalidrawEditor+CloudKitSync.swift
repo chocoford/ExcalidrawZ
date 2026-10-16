@@ -11,7 +11,7 @@ import Combine
 
 /// ViewModifier that handles CloudKit sync events for database files.
 private struct CloudKitSyncModifier: ViewModifier {
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
 
     let activeFile: FileState.ActiveFile?
     let onReloadNeeded: () -> Void

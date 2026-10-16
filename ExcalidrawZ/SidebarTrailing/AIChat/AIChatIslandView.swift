@@ -17,10 +17,10 @@ import ChocofordUI
 struct AIChatIslandView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
 
-    @EnvironmentObject private var layoutState: LayoutState
-    @EnvironmentObject var fileState: FileState
+    @Environment(LayoutState.self) private var layoutState
+    @Environment(FileState.self) var fileState
     @EnvironmentObject private var llmState: LLMStateObject
-    @EnvironmentObject var aiChatState: AIChatState
+    @Environment(AIChatState.self) var aiChatState
 
     /// Editor (parent) size, fed in from `ExcalidrawEditor` via a background
     /// `GeometryReader`. Used to clamp the drag offset back inside the editor
@@ -240,7 +240,7 @@ struct AIChatIslandView: View {
 
             PromptInputView(
                 conversationID: conversationIDBinding,
-                pendingQueue: $aiChatState.pendingQueue,
+                pendingQueue: Bindable(aiChatState).pendingQueue,
                 style: .regular
             )
             .disabled(fileState.isAIChatConversationLoading || fileState.currentActiveFileIsInTrash)
@@ -502,7 +502,7 @@ private struct AIChatIslandHeaderPayload: Equatable {
 /// bottom-toolbar overlay: "Thinking…", live tool-call labels, committed
 /// assistant text, and the short linger after a terminal frame.
 struct AIChatReplyTickerHost<Content: View>: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     @EnvironmentObject private var llmState: LLMStateObject
 
     @State private var displayedReplyText: String?

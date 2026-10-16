@@ -5,6 +5,7 @@
 //  Created by Dove Zachary on 2024/10/8.
 //
 
+import Observation
 import SwiftUI
 import WebKit
 import Combine
@@ -13,15 +14,16 @@ import UniformTypeIdentifiers
 @preconcurrency import CoreData
 import ChocofordEssentials
 
-final class FileState: ObservableObject {
+@Observable
+final class FileState {
     let logger = Logger(label: "FileState")
 
     private let openInPlaceAccessStore = OpenInPlaceAccessStore()
     
     var stateUpdateQueue: DispatchQueue = DispatchQueue(label: "StateUpdateQueue")
     
-    var currentGroupPublisherCancellables: [AnyCancellable] = []
-    var currentFilePublisherCancellables: [AnyCancellable] = []
+    @ObservationIgnored var currentGroupPublisherCancellables: [AnyCancellable] = []
+    @ObservationIgnored var currentFilePublisherCancellables: [AnyCancellable] = []
     private var isRestoringActiveGroupAfterBlockedSwitch = false
     private var pendingActiveFileCloseTransitionIDs: Set<String> = []
     private var activeFileCloseTransitionContinuations: [
@@ -51,7 +53,7 @@ final class FileState: ObservableObject {
         }
     }
     
-    @Published var currentActiveGroup: ActiveGroup? {
+    var currentActiveGroup: ActiveGroup? {
         didSet {
             if shouldRestoreActiveGroupAfterBlockedSwitch(from: oldValue) {
                 return
@@ -409,8 +411,8 @@ final class FileState: ObservableObject {
         let kind: Kind
     }
     
-    @Published private(set) var activeFileIndex: Int? = 0
-    @Published private(set) var activeFiles: [ActiveFile?] = [nil] {
+    private(set) var activeFileIndex: Int? = 0
+    private(set) var activeFiles: [ActiveFile?] = [nil] {
         willSet {
             guard let activeFileIndex else { return }
             self.activeFileIndex = min(newValue.endIndex - 1, activeFileIndex)
@@ -934,16 +936,16 @@ final class FileState: ObservableObject {
         }
     }
     
-    @Published var selectedGroups: Set<NSManagedObjectID> = []
-    // @Published var selectedLocalFolders: Set<LocalFolder> = []
+    var selectedGroups: Set<NSManagedObjectID> = []
+    // var selectedLocalFolders: Set<LocalFolder> = []
     
-    @Published var selectedFiles: Set<File> = []
-    @Published var selectedStartFile: File?
+    var selectedFiles: Set<File> = []
+    var selectedStartFile: File?
     
-    @Published var selectedLocalFiles: Set<URL> = []
-    @Published var selectedStartLocalFile: URL?
+    var selectedLocalFiles: Set<URL> = []
+    var selectedStartLocalFile: URL?
     
-    @Published var temporaryFiles: [URL] = [] {
+    var temporaryFiles: [URL] = [] {
         didSet {
             updateOpenInPlaceOwnership(from: oldValue, to: temporaryFiles)
         }
@@ -1008,11 +1010,11 @@ final class FileState: ObservableObject {
         }
     }
     
-    @Published var selectedTemporaryFiles: Set<URL> = []
-    @Published var selectedStartTemporaryFile: URL?
+    var selectedTemporaryFiles: Set<URL> = []
+    var selectedStartTemporaryFile: URL?
 
-    @Published var selectedCloudStorageFiles: Set<CloudStorageDocumentReference> = []
-    @Published var selectedStartCloudStorageFile: CloudStorageDocumentReference?
+    var selectedCloudStorageFiles: Set<CloudStorageDocumentReference> = []
+    var selectedStartCloudStorageFile: CloudStorageDocumentReference?
     
     // Collab
     var isInCollaborationSpace: Bool {
@@ -1031,8 +1033,8 @@ final class FileState: ObservableObject {
         case aiGenerationInProgress
     }
 
-    @Published var activeFileSwitchBlockedReason: ActiveFileSwitchBlockedReason?
-    @Published var activeFileSwitchBlockedToken: Int = 0
+    var activeFileSwitchBlockedReason: ActiveFileSwitchBlockedReason?
+    var activeFileSwitchBlockedToken: Int = 0
 
     /// The currently active AI chat conversation id.
     ///
@@ -1043,8 +1045,8 @@ final class FileState: ObservableObject {
     /// the AIChatView/AIChatIslandView read and write through here so the
     /// inspector and the floating island stay in sync across presentation
     /// toggles.
-    @Published var aiChatConversationID: String? = nil
-    @Published var isAIChatConversationLoading: Bool = false
+    var aiChatConversationID: String? = nil
+    var isAIChatConversationLoading: Bool = false
 
     /// Active AI chat session, if any. While this is non-nil:
     ///
@@ -1061,7 +1063,7 @@ final class FileState: ObservableObject {
     /// One session per (FileState, conversationID) — each user message
     /// inside the same conversation re-enters begin/end with a fresh
     /// (pre, post) pair anchored to that message round.
-    @Published var aiChatSession: AIChatSessionState?
+    var aiChatSession: AIChatSessionState?
 
     /// Nested MCP mutation depth. While non-zero, normal canvas save paths
     /// still persist file content but must not create user-edit checkpoints;
@@ -1096,10 +1098,10 @@ final class FileState: ObservableObject {
     }
 
     /// Files that is currently under collaboration.
-    @Published var collaboratingFiles: [CollaborationFile] = []
-    @Published var collaboratingFilesState: [CollaborationFile : ExcalidrawCanvasView.LoadingState] = [:]
-    @Published var collaborators: [CollaborationFile : [Collaborator]] = [:]
-    @Published var isFinalizingActiveFileClose = false
+    var collaboratingFiles: [CollaborationFile] = []
+    var collaboratingFilesState: [CollaborationFile : ExcalidrawCanvasView.LoadingState] = [:]
+    var collaborators: [CollaborationFile : [Collaborator]] = [:]
+    var isFinalizingActiveFileClose = false
 
     var activeCollaborationFileIsLoading: Bool {
         guard case .collaborationFile(let file) = currentActiveFile else {
@@ -1136,7 +1138,21 @@ final class FileState: ObservableObject {
         }
     }
     
-    @AppStorage("ExcalidrawFileSortField") var sortField: ExcalidrawFileSortField = .updatedAt
+    @ObservationIgnored @AppStorage("ExcalidrawFileSortField")
+    private var storedSortField: ExcalidrawFileSortField = .updatedAt
+
+    var sortField: ExcalidrawFileSortField {
+        get {
+            access(keyPath: \.sortField)
+            return storedSortField
+        }
+        set {
+            guard storedSortField != newValue else { return }
+            withMutation(keyPath: \.sortField) {
+                storedSortField = newValue
+            }
+        }
+    }
     
     var excalidrawWebCoordinator: ExcalidrawCanvasView.Coordinator?
     var excalidrawCollaborationWebCoordinator: ExcalidrawCanvasView.Coordinator?
@@ -1150,7 +1166,7 @@ final class FileState: ObservableObject {
     private var pendingProgrammaticCanvasCommitDates: [String: Date] = [:]
     private var recentLocalCanvasMutationDates: [String: Date] = [:]
     
-    var recoverWatchUpdateWorkItem: DispatchWorkItem?
+    @ObservationIgnored var recoverWatchUpdateWorkItem: DispatchWorkItem?
     
     private func recoverWatchUpdate() {
         recoverWatchUpdateWorkItem?.cancel()
@@ -1353,7 +1369,7 @@ final class FileState: ObservableObject {
                 self.logger.debug("File update saved")
                 await MainActor.run {
                     // already throttled
-                    self.objectWillChange.send()
+                    self.invalidateFileMetadata()
                 }
             } catch {
                 self.logger.error("Failed to update file \(file.name ?? "Untitled"): \(error)")
@@ -1380,7 +1396,7 @@ final class FileState: ObservableObject {
             suppressCheckpoint: suppressCheckpoint,
             logger: logger
         )
-        objectWillChange.send()
+        invalidateFileMetadata()
     }
 
     static func saveCapturedCanvasUpdate(
@@ -1748,7 +1764,7 @@ final class FileState: ObservableObject {
         if suppressCheckpoint {
             await MainActor.run {
                 self.didUpdateFile = true
-                self.objectWillChange.send()
+                self.invalidateFileMetadata()
             }
             return
         }
@@ -1765,7 +1781,7 @@ final class FileState: ObservableObject {
 
         await MainActor.run {
             self.didUpdateFile = true
-            self.objectWillChange.send()
+            self.invalidateFileMetadata()
         }
     }
 
@@ -1825,7 +1841,7 @@ final class FileState: ObservableObject {
                 
                 await MainActor.run {
                     self.didUpdateFile = true
-                    self.objectWillChange.send()
+                    self.invalidateFileMetadata()
                 }
             } catch {
                 self.logger.error("Failed to update collaboration file: \(error)")
@@ -2088,7 +2104,7 @@ final class FileState: ObservableObject {
                     await PersistenceController.shared.spotlightIndexingService.indexFile(id: id)
                 }
             }
-            self.objectWillChange.send()
+            self.invalidateFileMetadata()
         }
     }
     
@@ -2098,7 +2114,7 @@ final class FileState: ObservableObject {
         Task {
             await PersistenceController.shared.spotlightIndexingService.scheduleRebuild()
         }
-        self.objectWillChange.send()
+        self.invalidateFileMetadata()
     }
     
     @discardableResult
@@ -2376,6 +2392,13 @@ final class FileState: ObservableObject {
         return true
     }
 
+    /// Core Data mutates these referenced objects without replacing the navigation
+    /// values. Invalidate their Observation dependencies without changing identity.
+    private func invalidateFileMetadata() {
+        withMutation(keyPath: \.activeFiles) {}
+        withMutation(keyPath: \.currentActiveGroup) {}
+    }
+
     private func resetCurrentGroupChangesListener() {
         currentGroupPublisherCancellables.forEach {$0.cancel()}
         currentGroupPublisherCancellables = []
@@ -2383,7 +2406,7 @@ final class FileState: ObservableObject {
             currentGroupPublisherCancellables = [
                 group.publisher(for: \.name).sink { [weak self] _ in
                     DispatchQueue.main.async {
-                        self?.objectWillChange.send()
+                        self?.invalidateFileMetadata()
                     }
                 }
             ]
@@ -2394,7 +2417,7 @@ final class FileState: ObservableObject {
     }
 
     /// Reset the current file changes listener.
-    /// Everytime the current file changes, the listeners will send a `objectWillChange` event.
+    /// KVO bridges changes to Core Data metadata into the active-file dependency.
     private func resetCurrentFileChangesListener() {
         currentFilePublisherCancellables.forEach{$0.cancel()}
         
@@ -2402,17 +2425,17 @@ final class FileState: ObservableObject {
             currentFilePublisherCancellables = [
                 currentFile.publisher(for: \.name).sink { [weak self] _ in
                     DispatchQueue.main.async {
-                        self?.objectWillChange.send()
+                        self?.invalidateFileMetadata()
                     }
                 },
                 currentFile.publisher(for: \.updatedAt).sink { [weak self] _ in
                     DispatchQueue.main.async {
-                        self?.objectWillChange.send()
+                        self?.invalidateFileMetadata()
                     }
                 },
                 currentFile.publisher(for: \.inTrash).sink { [weak self] _ in
                     DispatchQueue.main.async {
-                        self?.objectWillChange.send()
+                        self?.invalidateFileMetadata()
                     }
                 }
             ]

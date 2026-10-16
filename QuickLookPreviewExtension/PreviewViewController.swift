@@ -5,6 +5,7 @@
 //  Created by Dove Zachary on 2024/10/8.
 //
 
+import Observation
 import SwiftUI
 import QuickLook
 import Logging
@@ -14,9 +15,10 @@ import CoreData
 
 import SwiftyAlert
 
-class PreviewState: ObservableObject {
-    @Published var file: ExcalidrawFile?
-    @Published var error: Error?
+@Observable
+class PreviewState {
+    var file: ExcalidrawFile?
+    var error: Error?
 }
 
 #if canImport(AppKit)
@@ -24,7 +26,6 @@ import AppKit
 import QuickLookUI
 class PreviewViewController: NSViewController, QLPreviewingController {
     let logger = Logger(label: "PreviewViewController")
-    /// Can not use `@StateObject` here
     var state = PreviewState()
     override func loadView() {
         super.loadView()
@@ -45,7 +46,6 @@ import UIKit
 
 class PreviewViewController: UIViewController, QLPreviewingController {
     let logger = Logger(label: "PreviewViewController")
-    /// Can not use `@StateObject` here
     var state = PreviewState()
     
     override func viewDidLoad() {

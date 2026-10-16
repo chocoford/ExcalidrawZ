@@ -26,7 +26,7 @@ struct LinkedStorageSidebarSection: View {
     @Environment(\.sidebarHoverSuppressed) private var hoverSuppressed
     @Environment(\.sidebarHoverAnimationsEnabled) private var hoverAnimationsEnabled
     @AppStorage("ShowLinkedStorageEmptyPlaceholder") private var showEmptyPlaceholder = true
-    @StateObject private var connections = CloudStorageConnectionStore.shared
+    @State private var connections = CloudStorageConnectionStore.shared
     @State private var sheetRoute: SheetRoute?
     @State private var preparingProviderID: CloudStorageProviderID?
     @State private var isHovered = false

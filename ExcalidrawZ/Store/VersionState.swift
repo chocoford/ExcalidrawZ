@@ -5,11 +5,13 @@
 //  Created by Dove Zachary on 2023/4/4.
 //
 
+import Observation
 import Foundation
 
-class VersionState: ObservableObject {
+@Observable
+class VersionState {
     
-    @Published var version: String
+    var version: String
     
     init() {
         version = Bundle.main.infoDictionary!["CFBundleVersion"] as! String

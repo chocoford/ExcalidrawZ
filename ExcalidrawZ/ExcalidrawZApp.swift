@@ -237,14 +237,14 @@ struct ExcalidrawZApp: App {
     // Can not run agent in a sandboxed app.
     // let service = SMAppService.agent(plistName: "com.chocoford.excalidraw.ExcalidrawServer.agent.plist")
     
-    @StateObject private var appPrefernece = AppPreference()
-    @StateObject private var store = Store.shared
+    @State private var appPrefernece = AppPreference()
+    @State private var store = Store.shared
 #if os(macOS) && !APP_STORE
-    @StateObject private var updateChecker = UpdateChecker()
+    @State private var updateChecker = UpdateChecker()
 #endif
     @StateObject private var llmState: LLMStateObject
-    @StateObject private var aiChatState = AIChatState()
-    @StateObject private var lockedContentState = LockedContentStateStore()
+    @State private var aiChatState = AIChatState()
+    @State private var lockedContentState = LockedContentStateStore()
 
     @State private var isArchiveFilesExporterPresented = false
     @State private var didScheduleAIConversationCacheWarmup = false
@@ -262,10 +262,10 @@ struct ExcalidrawZApp: App {
                     context: PersistenceController.shared.container.viewContext,
                 ) { _ in }
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-                .environmentObject(appPrefernece)
-                .environmentObject(store)
-                .environmentObject(aiChatState)
-                .environmentObject(lockedContentState)
+                .environment(appPrefernece)
+                .environment(store)
+                .environment(aiChatState)
+                .environment(lockedContentState)
                 .environment(\.filePreviewLockStateStore, lockedContentState)
                 .llmProvider(state: llmState, client: .shared)
                 .lockedContentAutoRelock(lockedContentState: lockedContentState)
@@ -421,13 +421,13 @@ struct ExcalidrawZApp: App {
                 .containerSizeClassInjection()
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-                .environmentObject(appPrefernece)
-                .environmentObject(store)
-                .environmentObject(lockedContentState)
+                .environment(appPrefernece)
+                .environment(store)
+                .environment(lockedContentState)
                 .environment(\.filePreviewLockStateStore, lockedContentState)
                 .llmProvider(state: llmState, client: .shared)
 #if !APP_STORE
-                .environmentObject(updateChecker)
+                .environment(updateChecker)
 #endif
         }
 #endif

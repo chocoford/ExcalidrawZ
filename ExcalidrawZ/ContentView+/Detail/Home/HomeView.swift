@@ -33,7 +33,7 @@ struct BoundsPreferenceKey: PreferenceKey {
 struct HomeView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     @State private var isSearchPresented: Bool = false
     
@@ -165,9 +165,9 @@ struct HomeView: View {
 struct RecentlyFilesProvider: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject private var localFolderState: LocalFolderState
-    @ObservedObject private var cloudStorageConnections = CloudStorageConnectionStore.shared
-    @ObservedObject private var cloudStorageDocumentStore = CloudStorageDocumentStore.shared
+    @Environment(LocalFolderState.self) private var localFolderState
+    @Bindable private var cloudStorageConnections = CloudStorageConnectionStore.shared
+    @Bindable private var cloudStorageDocumentStore = CloudStorageDocumentStore.shared
 
     var content: ([FileState.ActiveFile]) -> AnyView
     
@@ -508,7 +508,7 @@ private struct APreviewView: View {
 
 #Preview {
     APreviewView()
-        .environmentObject(FileState())
+        .environment(FileState())
         .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }
 #endif // DEBUG

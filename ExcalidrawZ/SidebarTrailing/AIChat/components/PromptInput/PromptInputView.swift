@@ -176,10 +176,10 @@ struct AIChatInputCapabilityError: LocalizedError {
 
 struct PromptInputView<Background: View, Header: View>: View {
     @EnvironmentObject var llmState: LLMStateObject
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var aiChatState: AIChatState
-    @EnvironmentObject var store: Store
-    @EnvironmentObject var lockedContentState: LockedContentStateStore
+    @Environment(FileState.self) var fileState
+    @Environment(AIChatState.self) var aiChatState
+    @Environment(Store.self) var store
+    @Environment(LockedContentStateStore.self) var lockedContentState
     @Environment(\.alertToast) var alertToast
 
     @Binding var conversationID: String?
@@ -232,7 +232,7 @@ struct PromptInputView<Background: View, Header: View>: View {
     /// Global default + per-conversation tier overrides, persisted across
     /// launches. Drives the active model profile and reflected back from picker
     /// taps / Settings changes.
-    @ObservedObject var prefs = AIChatPreferences.shared
+    @Bindable var prefs = AIChatPreferences.shared
 
     /// In-flight send task. While non-nil, the assistant is generating a reply.
     /// Cancelling this task propagates Swift cooperative cancellation through
@@ -246,7 +246,7 @@ struct PromptInputView<Background: View, Header: View>: View {
     @State var compactIOSFloatingTextAreaIsOverflowing: Bool = false
     @State var isCompactIOSFloatingFullscreenInputPresented: Bool = false
 #if os(iOS)
-    @EnvironmentObject var layoutState: LayoutState
+    @Environment(LayoutState.self) var layoutState
     @State var iOSSelectedPhotoPickerItems: [PhotosPickerItem] = []
     @State var isIOSPhotoLibraryPickerPresented: Bool = false
     @State var isIOSCameraPickerPresented: Bool = false

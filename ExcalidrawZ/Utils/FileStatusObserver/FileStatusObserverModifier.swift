@@ -28,6 +28,7 @@ extension View {
                     onlyICloudStatusChanges: onlyICloudStatusChanges,
                     onChange: onChange
                 )
+                .id(activeFile.id)
             }
         }
     }
@@ -72,7 +73,7 @@ struct FileStatusProvider<Content: View>: View {
 /// Read the existing per-file state directly. No mirrored @State, initial
 /// publisher callback or transparent observer background is needed here.
 private struct FileStatusProviderContent<Content: View>: View {
-    @ObservedObject var fileStatusBox: FileStatusBox
+    @Bindable var fileStatusBox: FileStatusBox
     let content: (FileStatus?) -> Content
 
     var body: some View {
@@ -103,7 +104,7 @@ private struct FileStatusObserverView: View {
 
     var body: some View {
         Color.clear
-            .onReceive(fileStatusBox.$status) { newValue in
+            .onChange(of: fileStatusBox.status, initial: true) { _, newValue in
                 guard deliveryState.shouldDeliver(
                     newValue,
                     fileID: file.id,

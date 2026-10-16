@@ -16,11 +16,11 @@ struct SettingsView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
+    @Bindable private var aiChatPreferences = AIChatPreferences.shared
 
     /// App-level deep-link bus — see `SettingsRouter` for the rationale on
     /// why this isn't `LayoutState`.
-    @ObservedObject private var router = SettingsRouter.shared
+    @Bindable private var router = SettingsRouter.shared
 
     @State private var selection: Route?
 
@@ -321,8 +321,8 @@ extension SettingsView {
 //struct SettingsView_Previews: PreviewProvider {
 //    static var previews: some View {
 //        SettingsView()
-//            .environmentObject(AppSettingsStore())
-//            .environmentObject(UpdateChecker())
+//            .environment(AppSettingsStore())
+//            .environment(UpdateChecker())
 //    }
 //}
 #endif

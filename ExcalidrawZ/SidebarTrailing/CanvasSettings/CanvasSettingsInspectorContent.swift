@@ -14,10 +14,10 @@ import ChocofordUI
 struct CanvasSettingsInspectorContent: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
 
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var layoutState: LayoutState
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject var canvasPrefs: CanvasPreferencesState
+    @Environment(FileState.self) var fileState
+    @Environment(LayoutState.self) var layoutState
+    @Environment(AppPreference.self) var appPreference
+    @Environment(CanvasPreferencesState.self) var canvasPrefs
 
     /// Tool lock isn't part of canvas preferences — it's still driven by `toggleToolbarAction("Q")`.
     @State private var toolLockEnabled: Bool = false
@@ -136,7 +136,7 @@ struct CanvasSettingsInspectorContent: View {
     private var selectModePicker: some View {
         Picker(
             String(localizable: .canvasPreferencesSelectOnTitle),
-            selection: $canvasPrefs.boxSelectionMode
+            selection: Bindable(canvasPrefs).boxSelectionMode
         ) {
             Text(
                 localizable: .canvasPreferencesSelectOnOptionWrap
@@ -161,27 +161,27 @@ struct CanvasSettingsInspectorContent: View {
             toggleRow(
                 String(localizable: .canvasPreferencesSnapToMidpointsTitle),
                 shortcut: "⌥S",
-                isOn: $canvasPrefs.objectsSnapModeEnabled
+                isOn: Bindable(canvasPrefs).objectsSnapModeEnabled
             )
             toggleRow(
                 String(localizable: .canvasPreferencesToggleGridTitle),
                 shortcut: "⌘'",
-                isOn: $canvasPrefs.gridModeEnabled
+                isOn: Bindable(canvasPrefs).gridModeEnabled
             )
             toggleRow(
                 String(localizable: .canvasPreferencesZenModeTitle),
                 shortcut: "⌥Z",
-                isOn: $canvasPrefs.zenModeEnabled
+                isOn: Bindable(canvasPrefs).zenModeEnabled
             )
             toggleRow(
                 String(localizable: .canvasPreferencesViewModeTitle),
                 shortcut: "⌥R",
-                isOn: $canvasPrefs.viewModeEnabled
+                isOn: Bindable(canvasPrefs).viewModeEnabled
             )
             toggleRow(
                 String(localizable: .canvasPreferencesStatesTitle),
                 shortcut: "⌥/",
-                isOn: $canvasPrefs.stats
+                isOn: Bindable(canvasPrefs).stats
             )
         }
     }
@@ -197,7 +197,7 @@ struct CanvasSettingsInspectorContent: View {
             toggleRow(
                 String(localizable: .canvasPreferencesSnapToMidpointsTitle),
                 shortcut: nil,
-                isOn: $canvasPrefs.isMidpointSnappingEnabled
+                isOn: Bindable(canvasPrefs).isMidpointSnappingEnabled
             )
         }
     }
