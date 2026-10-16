@@ -18,24 +18,26 @@ import SFSafeSymbols
 extension WhatsNewView {
     @ViewBuilder
     func featuresContent() -> some View {
+#if os(macOS)
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewNativeColorPickerTitle),
-            description: .localizable(.whatsNewNativeColorPickerDescription),
+            title: .localizable(.whatsNewViewerTitle),
+            description: .localizable(.whatsNewViewerDescription),
         ) {
-            Image(systemName: "eyedropper")
+            Image(systemName: "macwindow.on.rectangle")
+                .resizable()
+                .symbolRenderingMode(.hierarchical)
+        }
+#endif
+
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewSelectedImageExportTitle),
+            description: .localizable(.whatsNewSelectedImageExportDescription),
+        ) {
+            Image(systemName: "square.dashed")
                 .resizable()
                 .symbolRenderingMode(.hierarchical)
         }
 
-        // Recaps the 2.4.0 release for current users; do not archive with 2.4.1.
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewCloudStorageTitle),
-            description: .localizable(.whatsNewCloudStorageDescription),
-        ) {
-            Image(systemName: "externaldrive.connected.to.line.below")
-                .resizable()
-                .symbolRenderingMode(.hierarchical)
-        }
     }
 
     @ViewBuilder
@@ -47,6 +49,16 @@ extension WhatsNewView {
                         version: Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
                     ) {
                         featuresContent()
+                    }
+                    WhatsNewVersionSection(version: "v2.4.1") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewNativeColorPickerTitle),
+                            description: .localizable(.whatsNewNativeColorPickerDescription),
+                        ) {
+                            Image(systemName: "eyedropper")
+                                .resizable()
+                                .symbolRenderingMode(.hierarchical)
+                        }
                     }
                     WhatsNewVersionSection(version: "v2.4.0") {
                         WhatsNewFeatureRow {

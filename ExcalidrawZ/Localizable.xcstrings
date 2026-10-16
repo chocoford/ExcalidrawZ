@@ -140366,6 +140366,462 @@
         }
       }
     },
+    "whatsNewViewerTitle": {
+      "comment": "macOS What's New title for the live Viewer window.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viewer"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "独立展示窗口"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "獨立展示視窗"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visor"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visionneuse"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Betrachter"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ビューワ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "뷰어"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visualizzatore"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просмотрщик"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عارض"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "दर्शक"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görüntüleyici"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trình xem"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ผู้ชม"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kijker"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podglądarka"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visualizador"
+          }
+        }
+      }
+    },
+    "whatsNewViewerDescription": {
+      "comment": "macOS What's New description for presenting a live canvas on another display.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Viewer from Presentation to show a clean, live canvas on a second display. Supports full screen, pointer and laser, with follow and pointer controls in the main window."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从演示面板打开 Viewer，将实时画布展示在第二块屏幕上。支持全屏、鼠标与激光笔，跟随和指针设置都在主画布控制。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從簡報面板開啟 Viewer，將即時畫布展示在第二個螢幕上。支援全螢幕、游標與雷射筆，跟隨和游標設定都在主畫布控制。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre el Visor desde la Presentación para mostrar un lienzo limpio y en vivo en una segunda pantalla. Soporta pantalla completa, puntero y láser, con controles de seguimiento y puntero en la ventana principal."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir la visionneuse depuis la présentation pour afficher une toile propre et en direct sur un deuxième écran. Prend en charge le mode plein écran, le pointeur et le laser, avec des contrôles de suivi et de pointeur dans la fenêtre principale."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnen Sie den Betrachter aus der Präsentation, um eine saubere, live Leinwand auf einem zweiten Display anzuzeigen. Unterstützt Vollbild, Zeiger und Laser, mit Follow- und Zeigersteuerungen im Hauptfenster."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プレゼンテーションからビューワを開き、2つ目のディスプレイにクリーンでライブなキャンバスを表示します。フルスクリーン、ポインタ、レーザーをサポートし、メインウィンドウでフォローとポインターのコントロールがあります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "프레젠테이션에서 뷰어를 열어 두 번째 디스플레이에 깨끗하고 실시간 캔버스를 보여줍니다. 전체 화면, 포인터 및 레이저 지원, 그리고 메인 창에서 따르기 및 포인터 컨트롤이 가능합니다."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri il Visualizzatore dalla Presentazione per mostrare una tela pulita e dal vivo su un secondo display. Supporta schermo intero, puntatore e laser, con controlli di follow e puntatore nella finestra principale."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Откройте Просмотрщик из Презентации, чтобы показать чистое, живое полотно на втором дисплее. Поддерживает полный экран, указатель и лазер, с управлением следованием и указателем в главном окне."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "افتح العارض من العرض لإظهار لوحة نظيفة وحية على شاشة ثانية. يدعم الشاشة الكاملة، المؤشر والليزر، مع عناصر التحكم في المتابعة والمؤشر في النافذة الرئيسية."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "प्रस्तुति से दर्शक खोलें ताकि दूसरे डिस्प्ले पर एक साफ, जीवंत कैनवास दिख सके। पूर्ण स्क्रीन, पॉइंटर और लेज़र का समर्थन करता है, मुख्य विंडो में पालन और पॉइंटर नियंत्रण के साथ।"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunumdan Görüntüleyici'yi açarak ikinci bir ekranda temiz, canlı bir tuvali gösterin. Ana pencerede takip ve işaretçi kontrolleri ile tam ekran, işaretçi ve lazer desteği sunar."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở Trình xem từ Bài thuyết trình để hiển thị một canvas trực tiếp, sạch sẽ trên màn hình thứ hai. Hỗ trợ chế độ toàn màn hình, con trỏ và laser, với các điều khiển theo dõi và con trỏ trong cửa sổ chính."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิดผู้ชมจากการนำเสนอเพื่อแสดงผืนผ้าใบที่สะอาดและสดในจอที่สอง รองรับโหมดเต็มหน้าจอ, ตัวชี้และเลเซอร์, พร้อมควบคุมการติดตามและตัวชี้ในหน้าต่างหลัก"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Kijker vanuit Presentatie om een schone, live canvas op een tweede scherm te tonen. Ondersteunt volledig scherm, pointer en laser, met follow en pointercontroles in het hoofdvenster."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Podglądarkę z Prezentacji, aby wyświetlić czyste, żywe płótno na drugim wyświetlaczu. Obsługuje tryb pełnoekranowy, wskaźnik i laser, z kontrolkami śledzenia i wskaźnika w głównym oknie."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra o Visualizador a partir da Apresentação para mostrar uma tela limpa e ao vivo em um segundo display. Suporta tela cheia, ponteiro e laser, com controles de acompanhamento e ponteiro na janela principal."
+          }
+        }
+      }
+    },
+    "whatsNewSelectedImageExportTitle": {
+      "comment": "What's New title for exporting selected elements as an image on all platforms.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export Your Selection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出选中部分"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯出選取範圍"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportar Tu Selección"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporter votre sélection"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportieren Sie Ihre Auswahl"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選択した内容をエクスポート"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택한 항목 내보내기"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esporta la tua Selezione"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Экспорт вашего выбора"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تصدير اختيارك"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अपनी चयन का निर्यात करें"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçiminizi Dışa Aktarın"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xuất Lựa Chọn Của Bạn"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ส่งออกการเลือกของคุณ"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporteer uw selectie"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksportuj swój wybór"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportar Sua Seleção"
+          }
+        }
+      }
+    },
+    "whatsNewSelectedImageExportDescription": {
+      "comment": "What's New description for the All and Selected image export scopes and export options.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export the whole canvas or just your selection as PNG or SVG. Preview the result before copying, saving, or sharing, and keep the drawing editable if you need to."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将全部画布或仅选中部分导出为 PNG 或 SVG，预览后即可复制、保存或分享，也可保留可编辑内容。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將整個畫布或僅選取的部分匯出為 PNG 或 SVG，預覽後即可複製、儲存或分享，也可保留可編輯內容。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporta todo el lienzo o solo tu selección como PNG o SVG. Previsualiza el resultado antes de copiar, guardar o compartir, y mantén el dibujo editable si lo necesitas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporter la toile entière ou seulement votre sélection au format PNG ou SVG. Prévisualisez le résultat avant de copier, d'enregistrer ou de partager, et gardez le dessin modifiable si vous en avez besoin."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportieren Sie die gesamte Leinwand oder nur Ihre Auswahl als PNG oder SVG. Vorschau des Ergebnisses vor dem Kopieren, Speichern oder Teilen, und halten Sie die Zeichnung bearbeitbar, wenn Sie dies benötigen."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全体のキャンバスまたは選択した内容をPNGまたはSVGとしてエクスポートします。結果をコピー、保存、または共有する前にプレビューし、必要に応じて描画を編集可能に保ちます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전체 캔버스 또는 선택한 항목을 PNG 또는 SVG로 내보냅니다. 복사, 저장 또는 공유하기 전에 결과를 미리 보고, 필요한 경우 그림을 편집 가능하게 유지합니다."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esporta l'intera tela o solo la tua selezione come PNG o SVG. Anteprima del risultato prima di copiare, salvare o condividere, e mantieni il disegno modificabile se necessario."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Экспортируйте всё полотно или только ваш выбор в формате PNG или SVG. Просмотрите результат перед копированием, сохранением или совместным использованием, и сохраняйте рисунок редактируемым, если это необходимо."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قم بتصدير اللوحة بالكامل أو فقط اختيارك كصورة PNG أو SVG. معاينة النتيجة قبل النسخ أو الحفظ أو المشاركة، واحتفظ بالرسمة قابلة للتعديل إذا كنت بحاجة إلى ذلك."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कैंवास का पूरा या केवल आपका चयन PNG या SVG के रूप में निर्यात करें। कॉपी, सेव या साझा करने से पहले परिणाम का पूर्वावलोकन करें, और यदि आपको आवश्यकता हो तो चित्रण को संपादनीय बनाए रखें।"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm tuvali veya sadece seçiminizi PNG veya SVG olarak dışa aktarın. Kopyalamadan, kaydetmeden veya paylaşmadan önce sonucu önizleyin ve çizimi düzenlenebilir tutun."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xuất toàn bộ canvas hoặc chỉ lựa chọn của bạn dưới định dạng PNG hoặc SVG. Xem trước kết quả trước khi sao chép, lưu hoặc chia sẻ, và giữ cho bản vẽ có thể chỉnh sửa nếu bạn cần."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ส่งออกทั้งผืนผ้าใบหรือเฉพาะการเลือกของคุณเป็น PNG หรือ SVG ดูตัวอย่างผลลัพธ์ก่อนคัดลอก, บันทึก, หรือแชร์ และทำให้การวาดเป็นแบบแก้ไขได้หากต้องการ"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporteer het hele canvas of alleen uw selectie als PNG of SVG. Bekijk het resultaat voordat u het kopieert, opslaat of deelt, en houd de tekening bewerkbaar als u dat nodig hebt."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksportuj całe płótno lub tylko swój wybór jako PNG lub SVG. Podglądaj wynik przed kopiowaniem, zapisywaniem lub udostępnianiem, i zachowaj rysunek w edytowalnym stanie, jeśli zajdzie taka potrzeba."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporte toda a tela ou apenas sua seleção como PNG ou SVG. Visualize o resultado antes de copiar, salvar ou compartilhar, e mantenha o desenho editável se precisar."
+          }
+        }
+      }
+    },
     "whatsNewNativeColorPickerTitle": {
       "extractionState": "manual",
       "localizations": {
