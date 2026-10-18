@@ -39,6 +39,7 @@ class ExcalidrawCore: NSObject {
     }
     @ObservationIgnored lazy var webActor = ExcalidrawWebActor(coordinator: self)
     @ObservationIgnored lazy var nativeEyeDropper = ExcalidrawNativeEyeDropperCoordinator(core: self)
+    @ObservationIgnored @MainActor lazy var nativePaste = ExcalidrawNativePasteCoordinator(core: self)
     
     override init() {
         self.publishError = { error in }

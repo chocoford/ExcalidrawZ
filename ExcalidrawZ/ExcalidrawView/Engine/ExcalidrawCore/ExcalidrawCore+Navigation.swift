@@ -110,6 +110,7 @@ extension ExcalidrawCore: WKNavigationDelegate {
         self.parent?.loadingState = .loading
         Task { @MainActor in
             self.nativeEyeDropper.invalidate()
+            self.nativePaste.invalidate()
         }
         DispatchQueue.main.async {
             self.isNavigating = true

@@ -1,3 +1,9 @@
+## 2.5.1
+
+#### Features
+
+- Added support for pasting HEIF and HEIC images directly into the canvas on Mac, iPad, and iPhone, with correct colors and orientation.
+
 ## 2.5.0
 
 #### Features
