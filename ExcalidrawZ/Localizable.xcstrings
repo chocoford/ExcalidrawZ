@@ -1,6 +1,29 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "nativePasteImageConversionFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The clipboard image could not be converted."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法转换剪贴板中的图片。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法轉換剪貼簿中的圖片。"
+          }
+        }
+      }
+    },
     "cloudStorageConnect": {
       "extractionState": "manual",
       "localizations": {

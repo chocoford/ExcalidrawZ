@@ -31,6 +31,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in }
     lazy var webActor = ExcalidrawWebActor(coordinator: self)
     lazy var nativeEyeDropper = ExcalidrawNativeEyeDropperCoordinator(core: self)
+    @MainActor lazy var nativePaste = ExcalidrawNativePasteCoordinator(core: self)
     
     override init() {
         self.publishError = { error in }
