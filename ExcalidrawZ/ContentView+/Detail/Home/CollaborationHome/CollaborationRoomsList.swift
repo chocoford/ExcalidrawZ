@@ -38,6 +38,8 @@ struct CollaborationRoomsList: View {
         ) {
             content()
         }
+        // Keep the card minimum from constraining the containing split view.
+        .frame(minWidth: 0, maxWidth: .infinity)
     }
     
     

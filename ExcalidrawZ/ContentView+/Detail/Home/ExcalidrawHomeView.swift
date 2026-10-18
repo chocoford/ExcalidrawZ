@@ -56,7 +56,12 @@ struct ExcalidrawHomeView: View {
     var body: some View {
         ZStack {
             homeLayer
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Retain the hidden home for transitions without imposing its minimum width on the canvas.
+                .frame(
+                    minWidth: fileHomeItemTransitionState.canShowItemContainerView ? nil : 0,
+                    maxWidth: .infinity,
+                    maxHeight: .infinity
+                )
                 .allowsHitTesting(fileHomeItemTransitionState.canShowItemContainerView)
                 .accessibilityHidden(!fileHomeItemTransitionState.canShowItemContainerView)
                 .zIndex(fileHomeItemTransitionState.canShowItemContainerView ? 1 : 0)
