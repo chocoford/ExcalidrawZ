@@ -59,7 +59,7 @@ struct DebugPanelView: View {
                 adjustSection
                 logsSection
             }
-            .padding(12)
+            .inspectorContentPadding()
         }
         .scrollIndicators(.hidden)
     }

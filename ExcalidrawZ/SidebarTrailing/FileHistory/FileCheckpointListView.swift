@@ -157,8 +157,7 @@ struct FileCheckpointListView<Checkpoint: FileCheckpointRepresentable>: View {
                 FileCheckpointRowView(checkpoint: checkpoint)
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .inspectorContentPadding()
     }
 
     @ViewBuilder

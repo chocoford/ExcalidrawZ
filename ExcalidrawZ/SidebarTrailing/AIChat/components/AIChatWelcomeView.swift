@@ -54,15 +54,15 @@ struct AIChatWelcomeView: View {
                 .padding(.bottom, 18)
             
             breakpoint
-                .padding(.horizontal, 16)
+                .inspectorContentPadding(.horizontal)
                 .padding(.bottom, 18)
             
             getStartedButton
-                .padding(.horizontal, 16)
+                .inspectorContentPadding(.horizontal)
                 .padding(.bottom, 20)
             
             featureList
-                .padding(.horizontal, 16)
+                .inspectorContentPadding(.horizontal)
                 .padding(.bottom, 24)
             
             Spacer(minLength: 16)
@@ -215,12 +215,11 @@ struct AIChatWelcomeView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 16)
             }
             .offset(y: isHeroTextPresented ? 0 : 16)
             .opacity(isHeroTextPresented ? 1 : 0)
         }
-        .padding(.horizontal, 12)
+        .inspectorContentPadding(.horizontal)
         .blur(radius: isDismissing ? 2 : 0)
     }
     

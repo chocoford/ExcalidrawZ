@@ -118,7 +118,6 @@ private struct ChatScrollContainer<Content: View>: View {
                         .onAppear { handleAnchorAppear() }
                         .onDisappear { handleAnchorDisappear() }
                 }
-                .padding(.horizontal, 10)
             }
             .chatScrollClipDisabled()
             .chatScrollDismissesKeyboardInteractively()

@@ -317,7 +317,7 @@ struct AIChatView: View {
             chatMessageStage(bottomContentPadding: 0)
 
             chatInputControls
-                .padding(.bottom, 10)
+                .inspectorContentPadding(.bottom)
                 .readHeight($chatInputControlsHeight)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -421,7 +421,7 @@ struct AIChatView: View {
                 }
             }
         }
-        .padding(.horizontal, 10)
+        .inspectorContentPadding(.horizontal)
         // Animate the approval card's appearance/disappearance so
         // the input box doesn't jump when the card flips visibility.
         // Drive the animation off the *gate result* (request present

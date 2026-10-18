@@ -43,14 +43,6 @@ struct CanvasSettingsInspectorContent: View {
         isCompactIOS ? 10 : 8
     }
 
-    private var horizontalPadding: CGFloat {
-        isCompactIOS ? 20 : 16
-    }
-
-    private var verticalPadding: CGFloat {
-        isCompactIOS ? 18 : 16
-    }
-
     var body: some View {
 #if os(macOS)
         if appPreference.inspectorLayout == .sidebar {
@@ -91,8 +83,7 @@ struct CanvasSettingsInspectorContent: View {
 
                 drawingPreferencesSection
             }
-            .padding(.horizontal, horizontalPadding)
-            .padding(.vertical, verticalPadding)
+            .inspectorContentPadding()
         }
         .watch(value: fileState.currentActiveFile) { _ in
             // New file → drop the manual override so the toggle reflects the new

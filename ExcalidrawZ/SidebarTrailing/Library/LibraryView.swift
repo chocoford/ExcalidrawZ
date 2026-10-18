@@ -49,8 +49,6 @@ struct LibraryView: View {
     @State private var selectedItems = Set<LibraryItem>()
 
     @State private var searchQuery: String = ""
-    private let searchHeaderReservedHeight: CGFloat = 52
-
     @State private var isLibraryBrowserPresented: Bool = false
     /// Set inside the browser sheet when the user opts to import from file —
     /// consumed in `onDismiss` to trigger the file importer once the sheet has
@@ -283,11 +281,11 @@ struct LibraryView: View {
                         bottomBar()
 #if os(iOS)
                             .padding(.vertical, 8)
-                            .padding(.horizontal, 16)
+                            .inspectorContentPadding(.horizontal)
                             .frame(height: 56, alignment: .top)
 #else
                             .padding(.vertical, 2)
-                            .padding(.horizontal, 8)
+                            .inspectorContentPadding(.horizontal)
                             .frame(height: 32)
 #endif
                     }
@@ -350,7 +348,6 @@ struct LibraryView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 10)
             }
             VStack(spacing: 8) {
                 importButton()
@@ -364,6 +361,7 @@ struct LibraryView: View {
             
             Spacer()
         }
+        .inspectorContentPadding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
@@ -378,26 +376,14 @@ struct LibraryView: View {
                         selections: inSelectionMode ? $selectedItems : nil,
                         searchQuery: searchQuery
                     )
-                    .padding(.horizontal, 10)
                 }
-
-                Color.clear.frame(height: 100)
             }
-            .padding(.top, searchHeaderReservedHeight)
+            .inspectorContentPadding([.horizontal, .bottom])
         }
-        .overlay(alignment: .top) {
-            searchHeader()
+        .safeAreaInset(edge: .top, spacing: 0) {
+            searchField
+                .inspectorContentPadding()
         }
-    }
-
-    @ViewBuilder
-    private func searchHeader() -> some View {
-        searchField
-            .padding(.horizontal, 10)
-            .padding(.top, 8)
-            .padding(.bottom, 4)
-            .frame(height: searchHeaderReservedHeight, alignment: .top)
-            .zIndex(1)
     }
     
     @ViewBuilder

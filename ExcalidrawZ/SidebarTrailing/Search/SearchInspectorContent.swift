@@ -39,14 +39,6 @@ struct SearchInspectorContent: View {
         isCompactIOS ? 16 : 12
     }
 
-    private var horizontalPadding: CGFloat {
-        isCompactIOS ? 20 : 16
-    }
-
-    private var verticalPadding: CGFloat {
-        isCompactIOS ? 14 : 16
-    }
-
     private var navigationSpacing: CGFloat {
         isCompactIOS ? 10 : 6
     }
@@ -96,8 +88,7 @@ struct SearchInspectorContent: View {
             navigationRow
             resultsList
         }
-        .padding(.horizontal, horizontalPadding)
-        .padding(.vertical, verticalPadding)
+        .inspectorContentPadding()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .watch(value: query) { newValue in
             scheduleSearch(for: newValue)
