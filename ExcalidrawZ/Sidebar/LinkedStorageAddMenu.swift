@@ -102,14 +102,16 @@ struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
             Button {
                 isImportLocalFolderDialogPresented = true
             } label: {
-                HStack {
-                    LinkedStorageLocalFolderIcon(size: 16)
+                SwiftUI.Label {
                     Text(String(
                         localized: "linkedStorageLinkLocalFolder",
                         defaultValue: "Link Local Folder"
                     ))
+                } icon: {
+                    LinkedStorageLocalFolderIcon(size: 16)
                 }
             }
+            .labelStyle(.titleAndIcon)
 
             Section(String(
                 localized: "linkedStorageCloudStorageSection",
@@ -119,11 +121,13 @@ struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
                     Button {
                         addLocation(to: descriptor.id)
                     } label: {
-                        HStack {
-                            CloudStorageProviderIcon(providerID: descriptor.id, size: 16)
+                        SwiftUI.Label {
                             Text(descriptor.displayName)
+                        } icon: {
+                            CloudStorageProviderIcon(providerID: descriptor.id, size: 16)
                         }
                     }
+                    .labelStyle(.titleAndIcon)
                     .badge(menuBadge(for: descriptor))
                 }
             }

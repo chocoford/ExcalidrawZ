@@ -296,52 +296,11 @@ struct LibraryView: View {
         }
     }
 
-    @ViewBuilder
     private var searchField: some View {
-        HStack(spacing: 8) {
-            Image(systemSymbol: .magnifyingglass)
-                .foregroundStyle(.secondary)
-            TextField(
-                "",
-                text: $searchQuery,
-                prompt: Text(localizable: .libraryItemsSearchPrompt)
-            )
-            .textFieldStyle(.plain)
-            if !searchQuery.isEmpty {
-                Button {
-                    searchQuery = ""
-                } label: {
-                    Image(systemSymbol: .xmarkCircleFill)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background {
-            searchFieldBackground
-        }
-    }
-
-    @ViewBuilder
-    private var searchFieldBackground: some View {
-        Capsule()
-            .fill(.clear)
-            .background {
-                if #available(macOS 26.0, iOS 26.0, *) {
-                    Capsule()
-                        .fill(.clear)
-                        .glassEffect(.regular.interactive(), in: Capsule())
-                } else {
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                }
-            }
-            .overlay {
-                Capsule()
-                    .strokeBorder(Color.primary.opacity(0.10), lineWidth: 0.5)
-            }
+        InspectorSearchField(
+            text: $searchQuery,
+            prompt: Text(localizable: .libraryItemsSearchPrompt)
+        )
     }
     
 #if os(iOS)
