@@ -1,6 +1,234 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "whatsNewHEIFImagePasteTitle": {
+      "comment": "What's New 2.5.1 title for pasting HEIF and HEIC images on all platforms.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste HEIF & HEIC Images"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘贴 HEIF / HEIC 图片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "貼上 HEIF / HEIC 圖片"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لصق صور HEIF وHEIC"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEIF- und HEIC-Bilder einfügen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pegar imágenes HEIF y HEIC"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coller des images HEIF et HEIC"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEIF और HEIC इमेज पेस्ट करें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incolla immagini HEIF e HEIC"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEIF・HEIC画像をペースト"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEIF 및 HEIC 이미지 붙여넣기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEIF- en HEIC-afbeeldingen plakken"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wklejanie obrazów HEIF i HEIC"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colar imagens HEIF e HEIC"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вставка изображений HEIF и HEIC"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "วางรูปภาพ HEIF และ HEIC"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEIF ve HEIC Görselleri Yapıştırın"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dán ảnh HEIF và HEIC"
+          }
+        }
+      }
+    },
+    "whatsNewHEIFImagePasteDescription": {
+      "comment": "What's New 2.5.1 description for native HEIF and HEIC clipboard image support.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste photos in HEIF or HEIC format directly into your drawings, with correct colors and orientation."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将 HEIF 或 HEIC 格式的照片直接粘贴到画布，正确处理色彩与方向。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將 HEIF 或 HEIC 格式的照片直接貼到畫布，正確處理色彩與方向。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الصق الصور بتنسيق HEIF أو HEIC مباشرة في رسوماتك، مع الحفاظ على الألوان والاتجاه الصحيحين."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Füge Fotos im HEIF- oder HEIC-Format direkt in deine Zeichnungen ein. Farben und Ausrichtung werden korrekt übernommen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pega fotos en formato HEIF o HEIC directamente en tus dibujos, con los colores y la orientación correctos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collez des photos au format HEIF ou HEIC directement dans vos dessins, avec des couleurs et une orientation correctes."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEIF या HEIC फ़ॉर्मेट की फ़ोटो सही रंगों और दिशा के साथ सीधे अपनी ड्रॉइंग में पेस्ट करें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incolla foto in formato HEIF o HEIC direttamente nei tuoi disegni, con colori e orientamento corretti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEIF・HEIC形式の写真を、正しい色と向きでキャンバスに直接ペーストできます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEIF 또는 HEIC 형식의 사진을 올바른 색상과 방향으로 캔버스에 바로 붙여넣을 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plak foto's in HEIF- of HEIC-formaat rechtstreeks in je tekeningen, met de juiste kleuren en oriëntatie."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wklejaj zdjęcia w formacie HEIF lub HEIC bezpośrednio do rysunków, z prawidłowymi kolorami i orientacją."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cole fotos nos formatos HEIF ou HEIC diretamente nos seus desenhos, com as cores e a orientação corretas."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вставляйте фотографии в формате HEIF или HEIC прямо в рисунки с правильными цветами и ориентацией."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "วางรูปภาพรูปแบบ HEIF หรือ HEIC ลงบนผืนผ้าใบได้โดยตรง พร้อมสีและทิศทางที่ถูกต้อง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEIF veya HEIC biçimindeki fotoğrafları doğru renkler ve yönlendirmeyle doğrudan çizimlerinize yapıştırın."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dán ảnh định dạng HEIF hoặc HEIC trực tiếp vào bản vẽ với màu sắc và hướng ảnh chính xác."
+          }
+        }
+      }
+    },
     "nativePasteImageConversionFailed": {
       "extractionState": "manual",
       "localizations": {
@@ -20,6 +248,96 @@
           "stringUnit": {
             "state": "translated",
             "value": "無法轉換剪貼簿中的圖片。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La imagen del portapapeles no pudo ser convertida."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'image du presse-papiers n'a pas pu être convertie."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Bild in der Zwischenablage konnte nicht konvertiert werden."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クリップボードの画像を変換できませんでした。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "클립보드 이미지를 변환할 수 없습니다."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'immagine negli appunti non può essere convertita."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось преобразовать изображение из буфера обмена."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يتم تحويل صورة الحافظة."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "क्लिपबोर्ड छवि को परिवर्तित नहीं किया जा सका।"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Panodaki görüntü dönüştürülemedi."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể chuyển đổi hình ảnh từ clipboard."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่สามารถแปลงรูปภาพจากคลิปบอร์ดได้."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De afbeelding uit het klembord kon niet worden geconverteerd."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obrazek z schowka nie mógł zostać skonwertowany."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A imagem da área de transferência não pôde ser convertida."
           }
         }
       }

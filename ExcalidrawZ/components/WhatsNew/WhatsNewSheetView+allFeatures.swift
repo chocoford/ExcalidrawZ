@@ -18,6 +18,17 @@ import SFSafeSymbols
 extension WhatsNewView {
     @ViewBuilder
     func featuresContent() -> some View {
+        // 2.5.1. Archive this and the 2.5.0 recap separately in a future release.
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewHEIFImagePasteTitle),
+            description: .localizable(.whatsNewHEIFImagePasteDescription),
+        ) {
+            Image(systemName: "photo.badge.plus")
+                .resizable()
+                .symbolRenderingMode(.hierarchical)
+        }
+
+        // Current-release recap: keep the 2.5.0 features visible alongside 2.5.1.
 #if os(macOS)
         WhatsNewFeatureRow(
             title: .localizable(.whatsNewViewerTitle),
