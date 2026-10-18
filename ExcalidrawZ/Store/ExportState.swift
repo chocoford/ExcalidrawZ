@@ -17,6 +17,12 @@ struct ExportedImageData {
     var name: String
     var data: Data
     var url: URL
+    var temporaryDirectory: URL? = nil
+
+    func removeTemporaryFile() {
+        guard let temporaryDirectory else { return }
+        try? FileManager.default.removeItem(at: temporaryDirectory)
+    }
 }
 
 final class ExportState: ObservableObject {
@@ -101,6 +107,8 @@ final class ExportState: ObservableObject {
     
     func exportExcalidrawElementsToImage(
         elements: [ExcalidrawElement],
+        files: [String: ExcalidrawFile.ResourceFile]? = nil,
+        coordinator: ExcalidrawCore? = nil,
         type: ImageType,
         name: String,
         embedScene: Bool,
@@ -108,7 +116,7 @@ final class ExportState: ObservableObject {
         colorScheme: ColorScheme,
         exportScale: Int = 1
     ) async throws -> ExportedImageData {
-        guard let excalidrawWebCoordinator else {
+        guard let coordinator = coordinator ?? excalidrawWebCoordinator else {
             struct NoWebCoordinatorError: LocalizedError {
                 var errorDescription: String? {
                     "Miss web coordinator"
@@ -121,8 +129,9 @@ final class ExportState: ObservableObject {
         let utType: UTType
         switch type {
             case .png:
-                imageData = try await excalidrawWebCoordinator.exportElementsToPNGData(
+                imageData = try await coordinator.exportElementsToPNGData(
                     elements: elements,
+                    files: files,
                     embedScene: embedScene,
                     withBackground: withBackground,
                     colorScheme: colorScheme,
@@ -130,8 +139,9 @@ final class ExportState: ObservableObject {
                 )
                 utType = embedScene ? .excalidrawPNG : .png
             case .svg:
-                imageData = try await excalidrawWebCoordinator.exportElementsToSVGData(
+                imageData = try await coordinator.exportElementsToSVGData(
                     elements: elements,
+                    files: files,
                     embedScene: embedScene,
                     withBackground: withBackground,
                     colorScheme: colorScheme
@@ -139,15 +149,23 @@ final class ExportState: ObservableObject {
                 utType = embedScene ? .excalidrawSVG :.svg
         }
         
-        let directory: URL = try getTempDirectory()
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let filename = name
         let url = directory.appendingPathComponent(filename, conformingTo: utType)
-        try imageData.write(to: url)
+        do {
+            try imageData.write(to: url)
+        } catch {
+            try? FileManager.default.removeItem(at: directory)
+            throw error
+        }
         
         return ExportedImageData(
             name: filename,
             data: imageData,
-            url: url
+            url: url,
+            temporaryDirectory: directory
         )
     }
 }

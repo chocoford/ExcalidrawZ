@@ -71,7 +71,7 @@ private struct ViewerSessionContent: View {
                 VStack(spacing: 12) {
                     switch session.localConnectionState {
                         case .waitingForEditor:
-                            Text("Open a canvas to show it here.")
+                            Text(.localizable(.viewerWaitingForCanvasMessage))
                         case .connecting:
                             ProgressView()
                                 .progressViewStyle(.circular)
@@ -79,10 +79,12 @@ private struct ViewerSessionContent: View {
                         case .unsupported:
                             Image(systemName: "rectangle.slash")
                                 .font(.largeTitle)
-                            Text("This editor version does not support Viewer.")
+                            Text(.localizable(.viewerUnsupportedEditorMessage))
                         case .failed:
-                            Text("Unable to connect to the canvas.")
-                            Button("Retry") { session.retryConnection() }
+                            Text(.localizable(.viewerConnectionFailedMessage))
+                            Button(.localizable(.generalButtonRetry)) {
+                                session.retryConnection()
+                            }
                         case .connected:
                             EmptyView()
                     }
