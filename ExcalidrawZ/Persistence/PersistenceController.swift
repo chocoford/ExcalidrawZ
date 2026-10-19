@@ -44,8 +44,11 @@ class PersistenceController {
     ///   - inMemory: inMemory
     ///   - cloudKitEnabled: Enabled status for app internal.
     init(inMemory: Bool = false, cloudKitEnabled: Bool = true) {
-        self.logger.info("[PersistenceController] init with\(cloudKitEnabled ? "" : "out") cloudKit")
-        if cloudKitEnabled {
+        let cloudKitOptions = cloudKitEnabled
+            ? ICloudContainerConfiguration.current.cloudKitContainerOptions
+            : nil
+        self.logger.info("[PersistenceController] init with\(cloudKitOptions != nil ? "" : "out") cloudKit")
+        if cloudKitOptions != nil {
             container = NSPersistentCloudKitContainer(name: "Model")
         } else {
             container = NSPersistentContainer(name: "Model")
@@ -73,11 +76,7 @@ class PersistenceController {
         cloudStoreDescription.configuration = "Cloud"
 
         // Only configure CloudKit options when CloudKit is enabled
-        if cloudKitEnabled {
-            cloudStoreDescription.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
-                containerIdentifier: "iCloud.com.chocoford.excalidraw"
-            )
-        }
+        cloudStoreDescription.cloudKitContainerOptions = cloudKitOptions
 
         cloudStoreDescription.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
         cloudStoreDescription.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)

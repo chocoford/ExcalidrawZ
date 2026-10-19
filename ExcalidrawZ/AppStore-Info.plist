@@ -112,6 +112,8 @@
 	</array>
 	<key>ExcalidrawZAppGroupIdentifier</key>
 	<string>$(APP_GROUP_IDENTIFIER)</string>
+	<key>ExcalidrawZICloudContainerIdentifier</key>
+	<string>$(ICLOUD_CONTAINER)</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>msauthv2</string>

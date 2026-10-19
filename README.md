@@ -143,6 +143,8 @@ APP_GROUP_IDENTIFIER = group.com.yourname.ExcalidrawZ
 
 Replace these example values with identifiers registered to your Apple Developer team. The shared configuration leaves `DEVELOPMENT_TEAM` empty; set your team in the local overrides. The app and QuickLook extension must use the same App Group. All targets, including the extension and tests, inherit the team from `Config/Project.xcconfig`, which includes your local overrides. These overrides apply to all build configurations.
 
+`ICLOUD_CONTAINER` controls both the app's cloud entitlements and its CloudKit and iCloud Drive access. The shared default is `iCloud.com.chocoford.excalidraw`. Use your own registered container for a separate development app. Missing, empty, or unresolved container configuration disables cloud access instead of selecting the default container at runtime.
+
 ### Runtime configuration
 
 Create `Config/Secrets.plist` relative to the repository root. The project already references this file and includes it in both app targets' resources. The app's configuration loader stops with `Unable to load Secrets.plist` if the file is missing or invalid.
