@@ -40,6 +40,7 @@ enum PDFInsertMode: String, CaseIterable {
 struct PDFInsertSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     
     var pdfInfo: PDFDropInfo?
     var onInsert: (Data, PDFInsertMode, String, Int?) async throws -> Void
@@ -65,11 +66,16 @@ struct PDFInsertSheet: View {
     @State private var errorMessage: String?
     
     var body: some View {
-        ZStack {
-            if usesCompactLayout {
-                compactSheetContent
-            } else {
-                regularSheetContent
+        sheetContent
+        .safeAreaInset(edge: .bottom) {
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.callout)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .background(.background)
+                    .accessibilityIdentifier("pdfInsert.error")
             }
         }
         .fileImporter(
@@ -93,9 +99,33 @@ struct PDFInsertSheet: View {
         }
     }
 
+    @ViewBuilder
+    private var sheetContent: some View {
+#if os(iOS)
+        NavigationStack {
+            SwiftUI.Group {
+                if usesCompactLayout {
+                    compactSheetContent
+                } else {
+                    regularSheetContent
+                }
+            }
+            .navigationTitle(.localizable(.insertPDFSheetTitle))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(content: pdfInsertToolbar)
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+#else
+        regularSheetContent
+            .navigationTitle(.localizable(.insertPDFSheetTitle))
+            .toolbar(content: pdfInsertToolbar)
+#endif
+    }
+
     private var usesCompactLayout: Bool {
 #if os(iOS)
-        containerHorizontalSizeClass == .compact
+        containerHorizontalSizeClass == .compact || dynamicTypeSize.isAccessibilitySize
 #else
         false
 #endif
@@ -104,251 +134,236 @@ struct PDFInsertSheet: View {
     @ViewBuilder
     private var regularSheetContent: some View {
         HStack(spacing: 0) {
-            // Left side: Settings
-            VStack(alignment: .leading, spacing: 20) {
-                // File Selection
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(localizable: .insertPDFSheetPDFFileLabel)
-                        .font(.headline)
-                    
-                    if let fileName = fileName {
-                        HStack {
-                            Image(systemSymbol: .docFill)
-                                .foregroundStyle(.red)
-                            Text(fileName)
-                                .lineLimit(1)
-                            Spacer()
-                            Button {
-                                isFilePickerPresented = true
-                            } label: {
-                                Text(.localizable(.insertPDFSheetButtonChange))
-                            }
-                            .modernButtonStyle(style: .glass, shape: .modern)
-                        }
-                        .padding(12)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(999)
-                    } else {
-                        Button {
-                            isFilePickerPresented = true
-                        } label: {
-                            Label {
-                                Text(.localizable(.insertPDFSheetSelectPDFFileLabel))
-                            } icon: {
-                                Image(systemSymbol: .docBadgePlus)
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                        .modernButtonStyle(style: .glassProminent, size: .regular, shape: .capsule)
-                        .controlSize(.large)
-                    }
-                }
-                
-                Divider()
-                
-                // Mode Selection
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(localizable: .insertPDFSheetDisplayModeLabel)
-                        .font(.headline)
-                    
-                    ForEach(PDFInsertMode.allCases, id: \.self) { mode in
-                        Button {
-                            selectedMode = mode
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(mode.title)
-                                        .font(.body)
-                                        .foregroundStyle(.primary)
-                                    Text(mode.description)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                
-                                Image(systemSymbol: selectedMode == mode ? .checkmarkCircleFill : .circle)
-                                    .foregroundStyle(selectedMode == mode ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(HierarchicalShapeStyle.secondary))
-                            }
-                            .contentShape(Rectangle())
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 20)
-                            .background {
-                                Capsule()
-                                    .fill(selectedMode == mode ? Color.accentColor.opacity(0.1) : Color.clear)
-                            }
-                            .overlay(
-                                Capsule()
-                                    .stroke(selectedMode == mode ? Color.accentColor : Color.gray.opacity(0.3), lineWidth: 1)
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                
-                // Tiled mode options
-                if selectedMode == .tiled {
-                    Divider()
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(localizable: .insertPDFSheetOptionsLabel)
-                            .font(.headline)
-                        
-                        HStack {
-                            Text(localizable: .insertPDFSheetLayoutOptionsLabel)
-                            
-                            Spacer(minLength: 0)
-                            
-                            Picker("Direction", selection: $direction) {
-                                Text(localizable: .insertPDFSheetDirectionVertical).tag(TilesDiection.vertical)
-                                Text(localizable: .insertPDFSheetDirectionHorizontal).tag(TilesDiection.horizontal)
-                            }
-                            .labelsHidden()
-                            .pickerStyle(.segmented)
-                            .modernButtonStyle(style: .glass, shape: .capsule)
-                        }
-                        
-                        // Items per line
-                        HStack {
-                            Text(localizable: direction == .vertical ? .insertPDFSheetItemsPerRow : .insertPDFSheetItemsPerColumn)
-                            Spacer(minLength: 0)
-                            HStack {
-                                TextField("", value: $itemsPerLine, formatter: NumberFormatter())
-                                    .textFieldStyle(.roundedBorder)
-                                    .frame(width: 48)
-                                Stepper("", value: $itemsPerLine, in: 1...10)
-                            }
-                            .labelsHidden()
-                        }
-                        
-                        Spacer()
-                        
-                    }
-                }
-                
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.caption)
-                        .foregroundColor(.red)
-                        .padding(8)
-                        .background(Color.red.opacity(0.1))
-                        .cornerRadius(6)
-                }
-                
-                Spacer()
+            // Keep settings reachable when the sheet is short or text is large.
+            ScrollView {
+                regularSettings
             }
             .frame(width: 300)
             .padding()
-            
+
             Divider()
-            
-            // Right side: Preview
-            VStack {
-                Text(localizable: .insertPDFSheetPreviewLabel)
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
-                    .padding(.top)
-                
-                if pdfData == nil {
-                    VStack(spacing: 16) {
-                        if #available(macOS 15.0, iOS 18.0, *) {
-                            Image(systemSymbol: .textRectanglePage)
-                                .font(.system(size: 64))
-                                .foregroundColor(.gray)
-                        } else {
-                            Image(systemSymbol: .docTextImage)
-                                .font(.system(size: 64))
-                                .foregroundColor(.gray)
-                        }
-                        Text(localizable: .insertPDFSheetSelectPrompt)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    previewContent()
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.gray.opacity(0.05))
+
+            regularPreview
         }
-        .navigationTitle(.localizable(.insertPDFSheetTitle))
-        .toolbar(content: regularPDFInsertToolbar)
 #if os(macOS)
         .frame(width: 800, height: 600)
 #endif
     }
 
+    private var regularSettings: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // File Selection
+            VStack(alignment: .leading, spacing: 8) {
+                Text(localizable: .insertPDFSheetPDFFileLabel)
+                    .font(.headline)
+
+                if let fileName = fileName {
+                    HStack {
+                        Image(systemSymbol: .docFill)
+                            .foregroundStyle(.red)
+                        Text(fileName)
+                            .lineLimit(1)
+                        Spacer()
+                        Button {
+                            isFilePickerPresented = true
+                        } label: {
+                            Text(.localizable(.insertPDFSheetButtonChange))
+                        }
+                        .modernButtonStyle(style: .glass, shape: .modern)
+                    }
+                    .padding(12)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(999)
+                } else {
+                    Button {
+                        isFilePickerPresented = true
+                    } label: {
+                        Label {
+                            Text(.localizable(.insertPDFSheetSelectPDFFileLabel))
+                        } icon: {
+                            Image(systemSymbol: .docBadgePlus)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .modernButtonStyle(style: .glassProminent, size: .regular, shape: .capsule)
+                    .controlSize(.large)
+                }
+            }
+
+            Divider()
+
+            // Mode Selection
+            VStack(alignment: .leading, spacing: 8) {
+                Text(localizable: .insertPDFSheetDisplayModeLabel)
+                    .font(.headline)
+
+                ForEach(PDFInsertMode.allCases, id: \.self) { mode in
+                    Button {
+                        selectedMode = mode
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(mode.title)
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
+                                Text(mode.description)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer()
+
+                            Image(systemSymbol: selectedMode == mode ? .checkmarkCircleFill : .circle)
+                                .foregroundStyle(selectedMode == mode ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(HierarchicalShapeStyle.secondary))
+                        }
+                        .contentShape(Rectangle())
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 20)
+                        .background {
+                            Capsule()
+                                .fill(selectedMode == mode ? Color.accentColor.opacity(0.1) : Color.clear)
+                        }
+                        .overlay(
+                            Capsule()
+                                .stroke(selectedMode == mode ? Color.accentColor : Color.gray.opacity(0.3), lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("pdfInsert.mode.\(mode.rawValue)")
+                }
+            }
+
+            // Tiled mode options
+            if selectedMode == .tiled {
+                Divider()
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(localizable: .insertPDFSheetOptionsLabel)
+                        .font(.headline)
+
+                    HStack {
+                        Text(localizable: .insertPDFSheetLayoutOptionsLabel)
+
+                        Spacer(minLength: 0)
+
+                        Picker("Direction", selection: $direction) {
+                            Text(localizable: .insertPDFSheetDirectionVertical).tag(TilesDiection.vertical)
+                            Text(localizable: .insertPDFSheetDirectionHorizontal).tag(TilesDiection.horizontal)
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .modernButtonStyle(style: .glass, shape: .capsule)
+                    }
+
+                    // Items per line
+                    HStack {
+                        Text(localizable: direction == .vertical ? .insertPDFSheetItemsPerRow : .insertPDFSheetItemsPerColumn)
+                        Spacer(minLength: 0)
+                        HStack {
+                            TextField("", value: $itemsPerLine, formatter: NumberFormatter())
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 48)
+                            Stepper("", value: $itemsPerLine, in: 1...10)
+                                .accessibilityLabel(Text(localizable: direction == .vertical ? .insertPDFSheetItemsPerRow : .insertPDFSheetItemsPerColumn))
+                                .accessibilityIdentifier("pdfInsert.itemsPerLine")
+                        }
+                        .labelsHidden()
+                    }
+
+                }
+            }
+
+        }
+    }
+
+    private var regularPreview: some View {
+        VStack {
+            Text(localizable: .insertPDFSheetPreviewLabel)
+                .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+                .padding(.top)
+
+            if pdfData == nil {
+                VStack(spacing: 16) {
+                    if #available(macOS 15.0, iOS 18.0, *) {
+                        Image(systemSymbol: .textRectanglePage)
+                            .font(.system(size: 64))
+                            .foregroundColor(.gray)
+                    } else {
+                        Image(systemSymbol: .docTextImage)
+                            .font(.system(size: 64))
+                            .foregroundColor(.gray)
+                    }
+                    Text(localizable: .insertPDFSheetSelectPrompt)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                previewContent()
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.gray.opacity(0.05))
+    }
+
     @ViewBuilder
     private var compactSheetContent: some View {
 #if os(iOS)
-        NavigationStack {
-            Form {
-                Section {
-                    compactFileSelectionRow
-                } header: {
-                    Text(localizable: .insertPDFSheetPDFFileLabel)
-                }
+        Form {
+            Section {
+                compactFileSelectionRow
+            } header: {
+                Text(localizable: .insertPDFSheetPDFFileLabel)
+            }
 
+            Section {
+                ForEach(PDFInsertMode.allCases, id: \.self) { mode in
+                    compactModeRow(mode)
+                }
+            } header: {
+                Text(localizable: .insertPDFSheetDisplayModeLabel)
+            }
+
+            if selectedMode == .tiled {
                 Section {
-                    ForEach(PDFInsertMode.allCases, id: \.self) { mode in
-                        compactModeRow(mode)
+                    Picker(selection: $direction) {
+                        Text(localizable: .insertPDFSheetDirectionVertical).tag(TilesDiection.vertical)
+                        Text(localizable: .insertPDFSheetDirectionHorizontal).tag(TilesDiection.horizontal)
+                    } label: {
+                        Text(localizable: .insertPDFSheetLayoutOptionsLabel)
                     }
-                } header: {
-                    Text(localizable: .insertPDFSheetDisplayModeLabel)
-                }
+                    .pickerStyle(.menu)
 
-                if selectedMode == .tiled {
-                    Section {
-                        Picker(selection: $direction) {
-                            Text(localizable: .insertPDFSheetDirectionVertical).tag(TilesDiection.vertical)
-                            Text(localizable: .insertPDFSheetDirectionHorizontal).tag(TilesDiection.horizontal)
-                        } label: {
-                            Text(localizable: .insertPDFSheetLayoutOptionsLabel)
+                    Stepper(value: $itemsPerLine, in: 1...10) {
+                        HStack {
+                            Text(localizable: direction == .vertical ? .insertPDFSheetItemsPerRow : .insertPDFSheetItemsPerColumn)
+                            Spacer()
+                            Text("\(itemsPerLine)")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
                         }
-                        .pickerStyle(.menu)
-
-                        Stepper(value: $itemsPerLine, in: 1...10) {
-                            HStack {
-                                Text(localizable: direction == .vertical ? .insertPDFSheetItemsPerRow : .insertPDFSheetItemsPerColumn)
-                                Spacer()
-                                Text("\(itemsPerLine)")
-                                    .foregroundStyle(.secondary)
-                                    .monospacedDigit()
-                            }
-                        }
-                    } header: {
-                        Text(localizable: .insertPDFSheetOptionsLabel)
                     }
-                }
-
-                Section {
-                    compactPreviewContent
                 } header: {
-                    Text(localizable: .insertPDFSheetPreviewLabel)
-                }
-
-                if let errorMessage {
-                    Section {
-                        Text(errorMessage)
-                            .font(.caption)
-                            .foregroundColor(.red)
-                    }
+                    Text(localizable: .insertPDFSheetOptionsLabel)
                 }
             }
-            .formStyle(.grouped)
-            .navigationTitle(.localizable(.insertPDFSheetTitle))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: compactPDFInsertToolbar)
+
+            Section {
+                compactPreviewContent
+            } header: {
+                Text(localizable: .insertPDFSheetPreviewLabel)
+            }
+
         }
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
+        .formStyle(.grouped)
 #else
         regularSheetContent
 #endif
     }
 
     @ToolbarContentBuilder
-    private func regularPDFInsertToolbar() -> some ToolbarContent {
+    private func pdfInsertToolbar() -> some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
             Button {
                 dismiss()
@@ -356,6 +371,7 @@ struct PDFInsertSheet: View {
                 Text(.localizable(.generalButtonCancel))
             }
             .modernButtonStyle(style: .glass, shape: .modern)
+            .accessibilityIdentifier("pdfInsert.cancel")
         }
         ToolbarItem(placement: .confirmationAction) {
             Button {
@@ -365,26 +381,7 @@ struct PDFInsertSheet: View {
             }
             .modernButtonStyle(style: .glassProminent, shape: .modern)
             .disabled(pdfData == nil || isLoading)
-        }
-    }
-
-    @ToolbarContentBuilder
-    private func compactPDFInsertToolbar() -> some ToolbarContent {
-        ToolbarItem(placement: .cancellationAction) {
-            Button {
-                dismiss()
-            } label: {
-                Image(systemSymbol: .xmark)
-            }
-        }
-        ToolbarItem(placement: .confirmationAction) {
-            Button {
-                insertPDF()
-            } label: {
-                Text(.localizable(.insertPDFSheetButtonInsert))
-            }
-            .modernButtonStyle(style: .glassProminent)
-            .disabled(pdfData == nil || isLoading)
+            .accessibilityIdentifier("pdfInsert.confirm")
         }
     }
 
@@ -435,6 +432,7 @@ struct PDFInsertSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("pdfInsert.mode.\(mode.rawValue)")
     }
 
     @ViewBuilder
@@ -656,7 +654,7 @@ struct PDFInsertSheet: View {
     }
     
     private func insertPDF() {
-        guard let pdfData else { return }
+        guard let pdfData, !isLoading else { return }
         
         isLoading = true
         errorMessage = nil
