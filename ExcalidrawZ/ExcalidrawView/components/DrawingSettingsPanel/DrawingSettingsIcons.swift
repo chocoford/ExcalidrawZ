@@ -192,24 +192,17 @@ private struct StrokeVariabilityIcon: View {
     let strokeWidths: [CGFloat]
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                StrokeVariabilityWaveShape(segment: 0)
-                    .stroke(.primary, style: StrokeStyle(lineWidth: strokeWidths[0], lineCap: .round, lineJoin: .round))
-                StrokeVariabilityWaveShape(segment: 1)
-                    .stroke(.primary, style: StrokeStyle(lineWidth: strokeWidths[1], lineCap: .round, lineJoin: .round))
-                StrokeVariabilityWaveShape(segment: 2)
-                    .stroke(.primary, style: StrokeStyle(lineWidth: strokeWidths[2], lineCap: .round, lineJoin: .round))
-                StrokeVariabilityWaveShape(segment: 3)
-                    .stroke(.primary, style: StrokeStyle(lineWidth: strokeWidths[3], lineCap: .round, lineJoin: .round))
-            }
-            .frame(width: Self.viewBox.width, height: Self.viewBox.height, alignment: .topLeading)
-            .scaleEffect(
-                x: proxy.size.width / Self.viewBox.width,
-                y: proxy.size.height / Self.viewBox.height
-            )
-            .frame(width: proxy.size.width, height: proxy.size.height)
+        ZStack {
+            StrokeVariabilityWaveShape(segment: 0)
+                .stroke(.primary, style: StrokeStyle(lineWidth: strokeWidths[0], lineCap: .round, lineJoin: .round))
+            StrokeVariabilityWaveShape(segment: 1)
+                .stroke(.primary, style: StrokeStyle(lineWidth: strokeWidths[1], lineCap: .round, lineJoin: .round))
+            StrokeVariabilityWaveShape(segment: 2)
+                .stroke(.primary, style: StrokeStyle(lineWidth: strokeWidths[2], lineCap: .round, lineJoin: .round))
+            StrokeVariabilityWaveShape(segment: 3)
+                .stroke(.primary, style: StrokeStyle(lineWidth: strokeWidths[3], lineCap: .round, lineJoin: .round))
         }
+        .frame(width: Self.viewBox.width, height: Self.viewBox.height)
     }
 }
 
@@ -248,7 +241,8 @@ private struct StrokeVariabilityWaveShape: Shape {
                     control2: CGPoint(x: rect.minX + 18, y: rect.minY + 16)
                 )
         }
-        return path
+        // Center the x=4...19 span and y=12 baseline, including room for the round caps.
+        return path.offsetBy(dx: rect.width / 2 - 11.5, dy: rect.height / 2 - 12)
     }
 }
 

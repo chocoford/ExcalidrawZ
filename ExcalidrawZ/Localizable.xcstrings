@@ -1,6 +1,462 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "whatsNewNativeExperienceTitle": {
+      "comment": "What's New 3.0 title for the native experience updated during the Observation migration.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refreshed Native Experience"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原生体验焕新"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原生體驗煥新"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تجربة أصلية مُحسّنة"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Überarbeitetes natives Erlebnis"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Experiencia nativa renovada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une expérience native renouvelée"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "बेहतर नेटिव अनुभव"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esperienza nativa rinnovata"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ネイティブ体験を刷新"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새로워진 네이티브 경험"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vernieuwde native ervaring"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odświeżone natywne środowisko"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Experiência nativa renovada"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновлённый нативный интерфейс"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ประสบการณ์เนทีฟที่ปรับปรุงใหม่"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yenilenen Yerel Deneyim"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trải nghiệm gốc được cải tiến"
+          }
+        }
+      }
+    },
+    "whatsNewNativeExperienceDescription": {
+      "comment": "What's New 3.0 description of canvas, sidebar, and panel state synchronization. Avoid performance benchmarks or implementation terminology in user-facing copy.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A refreshed native experience keeps the canvas, sidebar, and panels in sync as you switch files and adjust your workspace."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "优化画布、侧栏与设置面板之间的状态同步，让文件切换和布局调整时的体验更连贯。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "改善畫布、側邊欄與設定面板之間的狀態同步，讓切換檔案與調整版面配置時的體驗更一致。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحافظ التجربة الأصلية المُحسّنة على تزامن اللوحة والشريط الجانبي واللوحات أثناء تبديل الملفات وضبط مساحة العمل."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leinwand, Seitenleiste und Panels bleiben beim Wechseln von Dateien und Anpassen des Arbeitsbereichs aufeinander abgestimmt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una experiencia nativa renovada mantiene sincronizados el lienzo, la barra lateral y los paneles al cambiar de archivo y ajustar el espacio de trabajo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une expérience native renouvelée garde le canevas, la barre latérale et les panneaux synchronisés lorsque vous changez de fichier et ajustez votre espace de travail."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नया नेटिव अनुभव फ़ाइलें बदलते और कार्यक्षेत्र समायोजित करते समय कैनवास, साइडबार और पैनल को सिंक में रखता है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un’esperienza nativa rinnovata mantiene sincronizzati la tela, la barra laterale e i pannelli quando cambi file e regoli lo spazio di lavoro."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファイルの切り替えやワークスペースの調整時に、キャンバス、サイドバー、パネルの状態を同期する仕組みを見直しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "파일을 전환하거나 작업 공간을 조정할 때 캔버스, 사이드바와 패널의 상태가 일관되게 유지되도록 개선했습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een vernieuwde native ervaring houdt het canvas, de zijbalk en de panelen op elkaar afgestemd wanneer je van bestand wisselt en je werkruimte aanpast."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odświeżone natywne środowisko utrzymuje płótno, pasek boczny i panele w synchronizacji podczas przełączania plików i dostosowywania obszaru roboczego."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uma experiência nativa renovada mantém a tela, a barra lateral e os painéis sincronizados ao alternar entre arquivos e ajustar o espaço de trabalho."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновлённый нативный интерфейс поддерживает согласованное состояние холста, боковой панели и других панелей при переключении файлов и настройке рабочего пространства."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ประสบการณ์เนทีฟที่ปรับปรุงใหม่ช่วยให้แคนวาส แถบด้านข้าง และแผงต่าง ๆ ซิงค์กันขณะสลับไฟล์และปรับพื้นที่ทำงาน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yenilenen yerel deneyim, dosyalar arasında geçiş yaparken ve çalışma alanınızı düzenlerken tuvali, kenar çubuğunu ve panelleri uyum içinde tutar."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trải nghiệm gốc được cải tiến giúp khung vẽ, thanh bên và các bảng luôn đồng bộ khi bạn chuyển tệp và điều chỉnh không gian làm việc."
+          }
+        }
+      }
+    },
+    "whatsNewSystemRequirementsTitle": {
+      "comment": "What's New 3.0 title for the increased minimum supported operating system versions.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updated System Requirements"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新的系统要求"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新的系統需求"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "متطلبات النظام المحدّثة"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktualisierte Systemanforderungen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requisitos del sistema actualizados"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configuration système requise"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अपडेट की गई सिस्टम आवश्यकताएँ"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requisiti di sistema aggiornati"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "システム要件の変更"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "업데이트된 시스템 요구 사항"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bijgewerkte systeemvereisten"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaktualizowane wymagania systemowe"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requisitos de sistema atualizados"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновлённые системные требования"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ข้อกำหนดของระบบที่อัปเดต"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güncellenen Sistem Gereksinimleri"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yêu cầu hệ thống mới"
+          }
+        }
+      }
+    },
+    "whatsNewSystemRequirementsDescription": {
+      "comment": "What's New 3.0 minimum system requirement. The argument is a system version, such as macOS 14 or iOS 17 / iPadOS 17.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0 requires %@ or later."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0 需要 %@ 或更新版本。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0 需要 %@ 或更新版本。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتطلب ExcalidrawZ 3.0 نظام %@ أو أحدث."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0 erfordert %@ oder neuer."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0 requiere %@ o posterior."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0 nécessite %@ ou une version ultérieure."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0 के लिए %@ या बाद का संस्करण आवश्यक है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0 richiede %@ o versioni successive."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0には%@以降が必要です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0은 %@ 이상이 필요합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0 vereist %@ of nieuwer."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0 wymaga systemu %@ lub nowszego."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O ExcalidrawZ 3.0 requer %@ ou posterior."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для ExcalidrawZ 3.0 требуется %@ или новее."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0 ต้องใช้ %@ หรือใหม่กว่า"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0, %@ veya üzerini gerektirir."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 3.0 yêu cầu %@ trở lên."
+          }
+        }
+      }
+    },
     "whatsNewHEIFImagePasteTitle": {
       "comment": "What's New 2.5.1 title for pasting HEIF and HEIC images on all platforms.",
       "extractionState": "manual",
