@@ -358,6 +358,9 @@ extension PromptInputView {
         .clipShape(Circle())
         .contentShape(Circle())
         .disabled(!primaryActionIsStop && !hasInputText)
+        .accessibilityLabel(
+            Text(localizable: primaryActionIsStop ? .aiChatButtonStop : .aiChatButtonSend)
+        )
     }
 
     @ViewBuilder
@@ -387,6 +390,9 @@ extension PromptInputView {
         .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
         .animation(.smooth(duration: 0.18), value: activeFileAccessAllowsAI)
         .disabled(!hasActiveFileForAIAccessControl || !canToggleAIFileAccess)
+        .help(fileAccessHelpText)
+        .accessibilityLabel(Text(localizable: .aiChatButtonAIVisibility))
+        .accessibilityValue(Text(fileAccessHelpText))
         .modifier(FeatureDiscoveryTipModifier(
             kind: .aiFileVisibility,
             isEnabled: hasActiveFileForAIAccessControl && canToggleAIFileAccess

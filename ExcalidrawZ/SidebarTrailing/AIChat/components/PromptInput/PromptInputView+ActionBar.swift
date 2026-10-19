@@ -80,6 +80,8 @@ extension PromptInputView {
         .tint(activeFileAccessAllowsAI ? .accentColor : .secondary.opacity(0.75))
         .disabled(!hasActiveFileForAIAccessControl || !canToggleAIFileAccess)
         .help(fileAccessHelpText)
+        .accessibilityLabel(Text(localizable: .aiChatButtonAIVisibility))
+        .accessibilityValue(Text(fileAccessHelpText))
         .modifier(FeatureDiscoveryTipModifier(
             kind: .aiFileVisibility,
             isEnabled: hasActiveFileForAIAccessControl && canToggleAIFileAccess
@@ -334,6 +336,9 @@ extension PromptInputView {
             }
         }
         .modernButtonStyle(style: .glass, size: primaryActionButtonSize, shape: .circle)
+        .accessibilityLabel(
+            Text(localizable: primaryActionIsStop ? .aiChatButtonStop : .aiChatButtonSend)
+        )
         // Stop is always enabled while generating. Send needs text.
         .disabled(!primaryActionIsStop && !hasInputText)
     }

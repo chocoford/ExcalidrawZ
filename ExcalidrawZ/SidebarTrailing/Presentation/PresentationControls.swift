@@ -29,7 +29,11 @@ struct PresentationControls: View {
                 divider
 
                 Button(action: showPrevious) {
-                    Image(systemSymbol: .chevronLeft)
+                    Label(
+                        String(localizable: .presentationPreviousSlide),
+                        systemSymbol: .chevronLeft
+                    )
+                    .labelStyle(.iconOnly)
                 }
                 .disabled(selectedIndex == 0)
                 .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
@@ -40,7 +44,11 @@ struct PresentationControls: View {
                     .frame(minWidth: 72)
 
                 Button(action: showNext) {
-                    Image(systemSymbol: .chevronRight)
+                    Label(
+                        String(localizable: .presentationNextSlide),
+                        systemSymbol: .chevronRight
+                    )
+                    .labelStyle(.iconOnly)
                 }
                 .disabled(selectedIndex == slideCount - 1)
                 .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
@@ -48,7 +56,11 @@ struct PresentationControls: View {
                 divider
 
                 Button(action: dismiss) {
-                    Image(systemSymbol: .xmark)
+                    Label(
+                        String(localizable: .generalButtonClose),
+                        systemSymbol: .xmark
+                    )
+                    .labelStyle(.iconOnly)
                 }
                 .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
             }

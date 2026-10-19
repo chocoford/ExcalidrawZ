@@ -6781,6 +6781,28 @@
         }
       }
     },
+    "presentationPreviousSlide": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous slide"
+          }
+        }
+      }
+    },
+    "presentationNextSlide": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next slide"
+          }
+        }
+      }
+    },
     "presentationRefresh": {
       "extractionState": "manual",
       "localizations": {
@@ -11297,6 +11319,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "移除附件"
+          }
+        }
+      }
+    },
+    "aiChatButtonSend": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send message"
+          }
+        }
+      }
+    },
+    "aiChatButtonStop": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop generating"
           }
         }
       }
