@@ -29,17 +29,20 @@ struct PresentationWelcomeView: View {
                         size: .extraLarge,
                         shape: .modern
                     )
+                    .accessibilityIdentifier("presentationWelcomePrimaryAction")
 
                     Text(localizable: .presentationWelcomeButtonCaption)
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("presentationWelcomePlanCaption")
                 }
             }
             .frame(maxWidth: 420, alignment: .leading)
             .padding(20)
             .frame(maxWidth: .infinity)
         }
+        .accessibilityIdentifier("presentationWelcomeScrollView")
     }
 
     private var hero: some View {
