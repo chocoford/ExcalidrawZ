@@ -26,6 +26,13 @@ extension AISettingsView {
                 .disabled(isHighestAIPlan)
             }
 
+            if inferenceBilling.usesBYOK {
+                Text(.localizable(.aiBYOKDataFlowHelp))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             dailyUsageChart
         }
         .frame(maxWidth: .infinity, alignment: .leading)

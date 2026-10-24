@@ -41,13 +41,15 @@ extension LLMClient {
         authProvider: .xcode(bundleID: "com.chocoford.excalidraw-Debug"),
         uploadProvider: .none,
         uploadPolicy: .automatic,
-        baseURL: URL(string: "http://192.168.31.133:8080")!
+        baseURL: URL(string: "http://192.168.31.133:8080")!,
+        byokModelCredentialsProvider: { try await AIInferenceBilling.credentialsForRequest(for: $0) }
     )
 #else
     static let shared = LLMClient(
         authProvider: .xcode(bundleID: "com.chocoford.excalidraw-Debug"),
         uploadProvider: .none,
         uploadPolicy: .automatic,
+        byokModelCredentialsProvider: { try await AIInferenceBilling.credentialsForRequest(for: $0) }
     )
 #endif
 #else
@@ -58,7 +60,8 @@ extension LLMClient {
             subscriptionGroupID: "21660497"
         ),
         uploadProvider: .none,
-        uploadPolicy: .automatic
+        uploadPolicy: .automatic,
+        byokModelCredentialsProvider: { try await AIInferenceBilling.credentialsForRequest(for: $0) }
     )
 #endif
 }

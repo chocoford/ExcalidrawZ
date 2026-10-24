@@ -302,7 +302,7 @@ final class AIChatState: ObservableObject {
         transientError = TransientError(
             conversationID: conversationID,
             userMessageID: userMessageID,
-            message: error.localizedDescription,
+            message: (AIInferenceErrorMessage.localizedError(for: error) ?? error).localizedDescription,
             retryPrompt: retryPrompt,
             retryFiles: retryFiles,
             retryModelProfileID: retryModelProfileID

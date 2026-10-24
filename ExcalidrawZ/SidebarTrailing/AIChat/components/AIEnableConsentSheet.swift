@@ -7,10 +7,12 @@ import SwiftUI
 import ChocofordUI
 import SFSafeSymbols
 
+@MainActor
 struct AIEnableConsentSheet: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.dismiss) private var dismiss
 
+    var mode: AIInferenceBillingMode = .platform
     var onEnable: () -> Void
 
     @State private var hasAcceptedTerms = false
@@ -120,13 +122,22 @@ struct AIEnableConsentSheet: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
-            AIIdentityIcon(size: identityIconSize)
-                .padding(.bottom, 2)
+            if mode == .byok {
+                Image(systemSymbol: .key)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: identityIconSize, height: identityIconSize)
+                    .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 12))
+                    .padding(.bottom, 2)
+            } else {
+                AIIdentityIcon(size: identityIconSize)
+                    .padding(.bottom, 2)
+            }
 
-            Text(localizable: .aiChatEnableConfirmationTitle)
+            Text(.localizable(mode == .byok ? .aiBYOKEnableTitle : .aiPlatformEnableTitle))
                 .font(.title2.weight(.semibold))
 
-            Text(localizable: .aiChatEnableConsentSubtitle)
+            Text(.localizable(mode == .byok ? .aiBYOKEnableSubtitle : .aiChatEnableConsentSubtitle))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -135,35 +146,55 @@ struct AIEnableConsentSheet: View {
 
     private var consentList: some View {
         VStack(alignment: .leading, spacing: rowSpacing) {
-            consentRow(
-                icon: .cloud,
-                title: String(localizable: .aiChatEnableConsentCloudTitle),
-                message: String(localizable: .aiChatEnableConsentCloudMessage)
-            )
-
-            consentRow(
-                icon: .docTextMagnifyingglass,
-                title: String(localizable: .aiChatEnableConsentDataTitle),
-                message: String(localizable: .aiChatEnableConsentDataMessage)
-            )
-
-            consentRow(
-                icon: .lock,
-                title: String(localizable: .aiChatEnableConsentSensitiveTitle),
-                message: String(localizable: .aiChatEnableConsentSensitiveMessage)
-            )
-
-            consentRow(
-                icon: .gearshape,
-                title: String(localizable: .aiChatEnableConsentProviderTitle),
-                message: String(localizable: .aiChatEnableConsentProviderMessage)
-            )
+            if mode == .byok {
+                consentRow(
+                    icon: .key,
+                    title: String(localizable: .aiBYOKConsentKeyTitle),
+                    message: String(localizable: .aiBYOKConsentKeyMessage)
+                )
+                consentRow(
+                    icon: .cloud,
+                    title: String(localizable: .aiBYOKConsentDataTitle),
+                    message: String(localizable: .aiBYOKConsentDataMessage)
+                )
+                consentRow(
+                    icon: .creditcard,
+                    title: String(localizable: .aiBYOKConsentBillingTitle),
+                    message: String(localizable: .aiBYOKConsentBillingMessage)
+                )
+                consentRow(
+                    icon: .lock,
+                    title: String(localizable: .aiBYOKConsentProviderTitle),
+                    message: String(localizable: .aiBYOKConsentProviderMessage)
+                )
+            } else {
+                consentRow(
+                    icon: .cloud,
+                    title: String(localizable: .aiChatEnableConsentCloudTitle),
+                    message: String(localizable: .aiChatEnableConsentCloudMessage)
+                )
+                consentRow(
+                    icon: .docTextMagnifyingglass,
+                    title: String(localizable: .aiChatEnableConsentDataTitle),
+                    message: String(localizable: .aiChatEnableConsentDataMessage)
+                )
+                consentRow(
+                    icon: .lock,
+                    title: String(localizable: .aiChatEnableConsentSensitiveTitle),
+                    message: String(localizable: .aiChatEnableConsentSensitiveMessage)
+                )
+                consentRow(
+                    icon: .gearshape,
+                    title: String(localizable: .aiChatEnableConsentProviderTitle),
+                    message: String(localizable: .aiChatEnableConsentProviderMessage)
+                )
+            }
         }
     }
 
     private var agreementToggle: some View {
         Toggle(isOn: $hasAcceptedTerms) {
-            Text(localizable: .aiChatEnableConsentAgreement)
+            Text(.localizable(mode == .byok ? .aiBYOKConsentAgreement : .aiPlatformConsentAgreement))
                 .font(.callout.weight(.medium))
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -186,10 +217,9 @@ struct AIEnableConsentSheet: View {
 
     private var enableButton: some View {
         Button {
-            dismiss()
-            onEnable()
+            enableService()
         } label: {
-            Text(localizable: .aiChatEnableConfirmationButtonEnable)
+            Text(.localizable(mode == .byok ? .aiBYOKEnableButton : .aiPlatformEnableButton))
                 .frame(maxWidth: isCompactIOS ? .infinity : nil)
         }
         .keyboardShortcut(.defaultAction)
@@ -218,15 +248,20 @@ struct AIEnableConsentSheet: View {
             .modernButtonStyle(style: .glass, size: .large, shape: .capsule)
 
             Button {
-                dismiss()
-                onEnable()
+                enableService()
             } label: {
-                Text(localizable: .aiChatEnableConfirmationButtonEnable)
+                Text(.localizable(mode == .byok ? .aiBYOKEnableButton : .aiPlatformEnableButton))
             }
             .keyboardShortcut(.defaultAction)
             .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
             .disabled(!hasAcceptedTerms)
         }
+    }
+
+    private func enableService() {
+        guard hasAcceptedTerms else { return }
+        dismiss()
+        onEnable()
     }
 
     private func consentRow(

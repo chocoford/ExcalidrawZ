@@ -5,9 +5,8 @@
 //  Maps `LLMError` cases to user-facing UX. The backend distinguishes a few
 //  intent-bearing failures (insufficient credits, unauthorized, rate-limited,
 //  forbidden) that deserve dedicated copy — and eventually dedicated entry
-//  points (paywall sheet, sign-in sheet). Everything else falls through to a
-//  generic toast so we never leak server-provided phrasing like "Tencent COS
-//  STS not configured" to end users.
+//  points (paywall sheet, sign-in sheet). Known BYOK failures are localized
+//  separately so provider credits are not confused with app credits.
 //
 
 import SwiftUI
@@ -25,13 +24,16 @@ extension AlertToastAction {
     /// - `.forbidden(reason:)` does pass `reason` through when present, since
     ///   403 covers several distinct policy gates that a short reason
     ///   meaningfully clarifies.
-    /// - Other cases (`.server`, `.decoding`, `.network`) and any non-`LLMError`
-    ///   throwable defer to `LocalizedError.errorDescription`, which we kept
-    ///   generic in `LLMError` ("Server error (NNN).") to avoid leaking
-    ///   internal text.
+    /// - Known BYOK errors use app-localized copy before platform error handling.
+    /// - Other errors defer to their `LocalizedError.errorDescription`.
     @MainActor
     func presentAIChatError(_ error: Error) {
         if error is CancellationError { return }
+
+        if let error = AIInferenceErrorMessage.localizedError(for: error) {
+            self(error)
+            return
+        }
 
         guard let llmError = error as? LLMError else {
             self(error)
@@ -54,9 +56,7 @@ extension AlertToastAction {
         case .rateLimited:
                 self(AIChatToastMessage(String(localizable: .aiChatErrorRateLimited)))
         case .server, .decoding, .network:
-            // Defers to `LLMError.errorDescription` (generic by design — the
-            // server's reason string is not exposed). The underlying error is
-            // still logged via SwiftyAlert's internal logger.
+            // The SDK supplies the fallback description for unrecognized errors.
             self(llmError)
         }
     }

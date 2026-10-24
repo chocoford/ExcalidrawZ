@@ -22,6 +22,29 @@ struct ExcalidrawModelProfileOption: Identifiable, Equatable {
     var title: String { tier.name }
 }
 
+/// Request capabilities are independent of platform tiers when using a user-supplied model.
+struct AIChatModelSelection {
+    let model: SupportedModel
+    let profileID: String?
+    let supportsImageInput: Bool
+    let maxContextTokens: Int?
+
+    init(platform option: ExcalidrawModelProfileOption) {
+        model = option.model
+        profileID = option.profileID
+        supportsImageInput = option.supportsImageInput
+        maxContextTokens = option.maxContextTokens
+    }
+
+    init(byok model: SupportedModel) {
+        self.model = model
+        profileID = nil
+        // The upstream validates capabilities; unknown IDs must not silently lose attachments.
+        supportsImageInput = true
+        maxContextTokens = nil
+    }
+}
+
 extension ExcalidrawModelTier {
     init?(profileID: String) {
         self.init(rawValue: profileID)

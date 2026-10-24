@@ -17,6 +17,7 @@ struct MathInputSheetView: View {
     @EnvironmentObject private var canvasPreferencesState: CanvasPreferencesState
     @EnvironmentObject var llmState: LLMStateObject
     @ObservedObject var aiChatPreferences = AIChatPreferences.shared
+    @ObservedObject var inferenceBilling = AIInferenceBillingState.shared
 
     let logger = Logger(label: "MathInputSheetView")
 

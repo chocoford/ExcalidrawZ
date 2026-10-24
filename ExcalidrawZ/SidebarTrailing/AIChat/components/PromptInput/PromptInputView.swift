@@ -228,11 +228,14 @@ struct PromptInputView<Background: View, Header: View>: View {
     /// `AIChatPreferences` the moment `startSend` mints a conversation id.
     /// Once the conversation exists, the picker writes straight to prefs.
     @State var pendingTierSelection: ExcalidrawModelTier?
+    @State var isPresentingBYOKModelPicker = false
 
     /// Global default + per-conversation tier overrides, persisted across
     /// launches. Drives the active model profile and reflected back from picker
     /// taps / Settings changes.
     @ObservedObject var prefs = AIChatPreferences.shared
+    @ObservedObject var inferenceBilling = AIInferenceBillingState.shared
+    @ObservedObject var byokModelCatalog = AIInferenceModelCatalog.shared
 
     /// In-flight send task. While non-nil, the assistant is generating a reply.
     /// Cancelling this task propagates Swift cooperative cancellation through
@@ -306,7 +309,21 @@ struct PromptInputView<Background: View, Header: View>: View {
 
     @MainActor
     var activeModelContextWindowTokens: Int? {
-        activeModelProfileOption?.maxContextTokens
+        activeModelSelection?.maxContextTokens
+    }
+
+    @MainActor
+    var activeModelSelection: AIChatModelSelection? {
+        modelSelectionForSend(files: [])
+    }
+
+    @MainActor
+    func modelSelectionForSend(files: [ChatMessageContent.File]) -> AIChatModelSelection? {
+        if inferenceBilling.usesBYOK {
+            guard let model = try? inferenceBilling.modelForChat(conversationID: conversationID) else { return nil }
+            return AIChatModelSelection(byok: model)
+        }
+        return modelProfileOptionForSend(files: files).map(AIChatModelSelection.init(platform:))
     }
 
     @MainActor
@@ -387,6 +404,7 @@ struct PromptInputView<Background: View, Header: View>: View {
     @MainActor
     @discardableResult
     func upgradeModelForImageInputIfNeeded() -> Bool {
+        if inferenceBilling.usesBYOK { return true }
         guard canInsertImages else { return false }
 
         let selectedTier = selectedTierBeforeFallback
@@ -418,6 +436,7 @@ struct PromptInputView<Background: View, Header: View>: View {
 
     @MainActor
     var canInsertImages: Bool {
+        if inferenceBilling.usesBYOK { return true }
         guard let agentConfig else { return true }
         return AIChatRenderDebug.measure("prompt.canInsertImages") {
             agentConfig.excalidrawModelOptions.contains {
@@ -483,11 +502,27 @@ struct PromptInputView<Background: View, Header: View>: View {
                     isInputFocused = true
                 }
             }
-            await loadAgentConfigIfNeeded()
+            if !inferenceBilling.usesBYOK {
+                await loadAgentConfigIfNeeded()
+            }
         }
         .watch(value: prefs.isAIEnabled) { isEnabled in
             guard !isEnabled else { return }
             cancelCurrentGeneration()
+        }
+        .watch(value: inferenceBilling.mode) {
+            if !inferenceBilling.usesBYOK {
+                Task { await loadAgentConfigIfNeeded() }
+            }
+        }
+        .sheet(isPresented: $isPresentingBYOKModelPicker) {
+            AIInferenceModelPicker(
+                billing: inferenceBilling,
+                catalog: byokModelCatalog,
+                selectedID: activeModelSelection?.model.rawValue ?? ""
+            ) { id in
+                try pickBYOKModel(id)
+            }
         }
 #if os(iOS)
         .watch(value: isInputFocused) { _, isFocused in

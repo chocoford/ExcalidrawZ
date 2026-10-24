@@ -49,9 +49,18 @@ extension PromptInputView {
         pastedImages: [PendingPastedImage]
     ) -> Bool {
         guard AIChatAvailability.canUseAI else { return false }
+        do {
+            _ = try inferenceBilling.resolveSelection()
+            if inferenceBilling.usesBYOK {
+                _ = try inferenceBilling.modelForChat(conversationID: conversationID)
+            }
+        } catch {
+            alertToast.presentAIChatError(error)
+            return false
+        }
         let files = PastedImageHelpers.buildFiles(from: pastedImages)
         guard !trimmedText.isEmpty || !files.isEmpty else { return false }
-        if let modelOption = modelProfileOptionForSend(files: files),
+        if let modelOption = modelSelectionForSend(files: files),
            files.containsImageInput,
            !modelOption.supportsImageInput {
             alertToast(AIChatInputCapabilityError.noModelCanReadImages)
@@ -63,7 +72,8 @@ extension PromptInputView {
         // when the value is loaded — `creditsInfo == nil` means "not fetched
         // yet" and we let the request go through (server will reject and the
         // catch-side dispatcher still routes to the paywall).
-        if let balance = llmState.creditsInfo?.balance, balance <= 0 {
+        if !inferenceBilling.usesBYOK,
+           let balance = llmState.creditsInfo?.balance, balance <= 0 {
             Store.shared.togglePaywall(reason: .aiInsufficientCredits)
             return false
         }
@@ -110,6 +120,7 @@ extension PromptInputView {
         files: [ChatMessageContent.File],
         editSession: AIChatState.EditSession
     ) {
+        let billingRevision = inferenceBilling.modelCatalogRevision
         currentTask = Task {
             do {
                 llmState.cancelGeneration(conversationID: editSession.conversationID)
@@ -118,9 +129,10 @@ extension PromptInputView {
                     fromMessageID: editSession.userMessageID,
                     inclusive: true
                 )
-                await MainActor.run {
+                try await MainActor.run {
+                    try inferenceBilling.validateSelection(expectedRevision: billingRevision)
                     aiChatState.finishEditing()
-                    startSend(prompt: prompt, files: files)
+                    startSend(prompt: prompt, files: files, expectedBillingRevision: billingRevision)
                 }
             } catch {
                 await MainActor.run {
@@ -142,7 +154,7 @@ extension PromptInputView {
     private func enqueue(text: String, files: [ChatMessageContent.File]) {
         withAnimation(.easeInOut(duration: 0.2)) {
             pendingQueue.append(
-                PendingQueueMessage(text: text, files: files)
+                PendingQueueMessage(text: text, files: files, billingRevision: inferenceBilling.modelCatalogRevision)
             )
         }
     }
@@ -168,8 +180,9 @@ extension PromptInputView {
     /// Kicks off the actual network/stream pipeline for `prompt`. Stores the
     /// Task in `currentTask` so the stop button can cancel it; on completion
     /// (success or failure) it clears the slot and drains the queue.
-    func startSend(prompt: String, files: [ChatMessageContent.File] = []) {
+    func startSend(prompt: String, files: [ChatMessageContent.File] = [], expectedBillingRevision: Int? = nil) {
         guard AIChatAvailability.canUseAI else { return }
+        let billingRevision = expectedBillingRevision ?? inferenceBilling.modelCatalogRevision
         let preferredInteractionMode = prefs.interactionMode(for: fileState.currentActiveFile)
         let newConversationID = UUID().uuidString
         let conversationIDForSession: String = self.conversationID ?? newConversationID
@@ -201,9 +214,15 @@ extension PromptInputView {
                 }
                 // Make sure agent config is loaded so the selected tier resolves
                 // through the server-defined model profile.
-                await loadAgentConfigIfNeeded()
+                if !inferenceBilling.usesBYOK {
+                    await loadAgentConfigIfNeeded()
+                }
                 guard AIChatAvailability.canUseAI else { throw CancellationError() }
-                guard let modelOption = await MainActor.run(body: { modelProfileOptionForSend(files: files) }) else {
+                try inferenceBilling.validateSelection(expectedRevision: billingRevision)
+                guard let modelOption = await MainActor.run(body: { modelSelectionForSend(files: files) }) else {
+                    if AIInferenceBillingState.shared.usesBYOK {
+                        throw AIInferenceBillingError.incompatibleModel
+                    }
                     throw AIChatModelProfileUnavailableError()
                 }
                 let model = modelOption.model
@@ -258,6 +277,7 @@ extension PromptInputView {
                         sessionOpened = true
                     }
 
+                    try inferenceBilling.validateSelection(expectedRevision: billingRevision)
                     if isNewConversation {
                         self.conversationID = newConversationID
                         // Promote the staged tier (if any) to a per-conversation
@@ -265,28 +285,34 @@ extension PromptInputView {
                         // user's pre-send tier choice would be lost on reopen
                         // — `pendingTierSelection` is @State, conversation
                         // overrides survive the view's lifetime.
-                        if let pendingTier = await MainActor.run(body: { pendingTierSelection }) {
+                        if inferenceBilling.usesBYOK {
+                            try inferenceBilling.setModel(model.rawValue, for: newConversationID)
+                        }
+                        if !inferenceBilling.usesBYOK,
+                           let pendingTier = await MainActor.run(body: { pendingTierSelection }) {
                             await MainActor.run {
                                 prefs.setTier(pendingTier, for: newConversationID)
                                 pendingTierSelection = nil
                             }
                         }
-                        try await llmState.createConversation(
-                            id: newConversationID,
-                            type: .regular,
-                            model: model,
-                            // Tool roster + agentID centralized in
-                            // `ExcalidrawAgentConfig` so the persistence
-                            // restore path uses the exact same wiring.
-                            agentConfig: ExcalidrawAgentConfig.defaultConfig(
-                                mode: invocationPlan.interactionMode,
-                                supportsImageInput: modelOption.supportsImageInput,
-                                includesCurrentFileContext: invocationPlan.includesCurrentFileContext
-                            ),
-                            messages: [.content(userMessage)],
-                            metadata: metadata,
-                            context: context
-                        )
+                        try await inferenceBilling.withSelectedBilling(expectedRevision: billingRevision) {
+                            try await llmState.createConversation(
+                                id: newConversationID,
+                                type: .regular,
+                                model: model,
+                                // Tool roster + agentID centralized in
+                                // `ExcalidrawAgentConfig` so the persistence
+                                // restore path uses the exact same wiring.
+                                agentConfig: ExcalidrawAgentConfig.defaultConfig(
+                                    mode: invocationPlan.interactionMode,
+                                    supportsImageInput: modelOption.supportsImageInput,
+                                    includesCurrentFileContext: invocationPlan.includesCurrentFileContext
+                                ),
+                                messages: [.content(userMessage)],
+                                metadata: metadata,
+                                context: context
+                            )
+                        }
 
                         // Bind the new conversation to the active file's
                         // unified scope so library files, URL-backed files,
@@ -307,13 +333,15 @@ extension PromptInputView {
                             }
                         }
                     } else {
-                        try await llmState.sendMessage(
-                            to: self.conversationID!,
-                            model: model,
-                            message: .content(userMessage),
-                            metadata: metadata,
-                            context: context
-                        )
+                        try await inferenceBilling.withSelectedBilling(expectedRevision: billingRevision) {
+                            try await llmState.sendMessage(
+                                to: self.conversationID!,
+                                model: model,
+                                message: .content(userMessage),
+                                metadata: metadata,
+                                context: context
+                            )
+                        }
                     }
 
                     // Stream completed without throwing. The `.aiPost`
@@ -544,9 +572,8 @@ extension PromptInputView {
     /// drilling). On completion, drains the pending queue so any
     /// auto-compact-queued message fires next.
     ///
-    /// `summaryModel: .gpt4oMini` is the cheap "Low" tier; the
-    /// summary just compresses history, no need to spend Sonnet
-    /// credits on it. LLMKit always rolls in the full pre-compaction
+    /// Platform summaries use gpt4oMini. BYOK uses the current chat model.
+    /// LLMKit rolls in the full pre-compaction
     /// timeline (no keep-recent knob), so after this returns the
     /// chat shows just the summary card and any subsequent messages.
     func compactCurrentContext() {
@@ -554,13 +581,20 @@ extension PromptInputView {
               let id = conversationID,
               !isCompactingContext else { return }
         aiChatState.markCompacting(conversationID: id)
+        let billingRevision = inferenceBilling.modelCatalogRevision
         compactTask = Task {
             do {
                 guard AIChatAvailability.canUseAI else { throw CancellationError() }
-                try await llmState.compactConversation(
-                    id,
-                    summaryModel: .gpt4oMini
-                )
+                try await inferenceBilling.withSelectedBilling(expectedRevision: billingRevision) {
+                    let model = try inferenceBilling.modelForAuxiliaryRequest(
+                        fallback: .gpt4oMini,
+                        conversationModel: activeModelSelection?.model
+                    )
+                    try await llmState.compactConversation(
+                        id,
+                        summaryModel: model
+                    )
+                }
             } catch is CancellationError {
             } catch {
                 await MainActor.run {
@@ -594,6 +628,6 @@ extension PromptInputView {
         let next: PendingQueueMessage = withAnimation(.easeInOut(duration: 0.2)) {
             pendingQueue.removeFirst()
         }
-        startSend(prompt: next.text, files: next.files)
+        startSend(prompt: next.text, files: next.files, expectedBillingRevision: next.billingRevision)
     }
 }

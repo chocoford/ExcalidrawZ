@@ -261,6 +261,7 @@ extension MathInputSheetView {
     }
 
     var hasInsufficientLatexAICredits: Bool {
+        guard !inferenceBilling.usesBYOK else { return false }
         guard let balance = llmState.creditsInfo?.balance else {
             return false
         }
@@ -268,6 +269,9 @@ extension MathInputSheetView {
     }
 
     var latexAICreditsText: String {
+        if inferenceBilling.usesBYOK {
+            return String(localizable: .aiBYOKModelBillingNote)
+        }
         guard let balance = llmState.creditsInfo?.balance else {
             return String(localizable: .toolbarLatexMathCreditsUnavailable)
         }

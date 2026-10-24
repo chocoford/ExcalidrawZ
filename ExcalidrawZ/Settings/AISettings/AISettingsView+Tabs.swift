@@ -206,6 +206,9 @@ extension AISettingsView {
     @ViewBuilder
     var settingsSections: some View {
         defaultModelSettingsSection
+        if inferenceBilling.usesBYOK {
+            byokSettingsSection
+        }
         mcpSettingsSection
         aiAccountSettingsSection
     }
@@ -213,10 +216,15 @@ extension AISettingsView {
     @ViewBuilder
     var defaultModelSettingsSection: some View {
         Section {
-            defaultModelPicker
+            aiServiceModePicker
+            if !inferenceBilling.usesBYOK {
+                defaultModelPicker
+            }
         } header: {
             settingsHeader
                 .textCase(nil)
+        } footer: {
+            aiServiceSettingsFooter
         }
     }
 
@@ -237,6 +245,11 @@ extension AISettingsView {
         } header: {
             informationHeader
                 .textCase(nil)
+        } footer: {
+            if !prefs.isAIEnabled {
+                Text(localizable: .settingsAIEnableFeatureHelp)
+                aiServiceSettingsFooter
+            }
         }
     }
 }

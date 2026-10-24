@@ -16,11 +16,6 @@ extension AISettingsView {
     /// model rotation does not rewrite the user's preferred capability tier.
     @ViewBuilder
     var defaultModelPicker: some View {
-        Toggle(isOn: aiEnabledBinding) {
-            Text(localizable: .settingsAIEnableFeatureTitle)
-        }
-        .help(.localizable(.settingsAIEnableFeatureHelp))
-
         let visibleOptions = availableModelOptions.filter { canShowModelInPicker($0) }
         let selectableOptions = visibleOptions.filter { canSelectModel($0) }
         let visibleTiers = ExcalidrawModelTier.pickerOrder.filter { tier in

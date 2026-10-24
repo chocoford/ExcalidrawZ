@@ -33,11 +33,13 @@ struct PendingQueueMessage: Identifiable, Equatable {
     let id: UUID
     let text: String
     let files: [LLMCoreFile]
+    let billingRevision: Int
 
-    init(id: UUID = UUID(), text: String, files: [LLMCoreFile] = []) {
+    init(id: UUID = UUID(), text: String, files: [LLMCoreFile] = [], billingRevision: Int) {
         self.id = id
         self.text = text
         self.files = files
+        self.billingRevision = billingRevision
     }
 }
 

@@ -21,6 +21,7 @@ struct AIChatIslandView: View {
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject private var llmState: LLMStateObject
     @EnvironmentObject var aiChatState: AIChatState
+    @ObservedObject private var inferenceBilling = AIInferenceBillingState.shared
 
     /// Editor (parent) size, fed in from `ExcalidrawEditor` via a background
     /// `GeometryReader`. Used to clamp the drag offset back inside the editor
@@ -95,6 +96,7 @@ struct AIChatIslandView: View {
     }
 
     private var shouldShowLowCreditsBanner: Bool {
+        guard !inferenceBilling.usesBYOK else { return false }
         guard let balance = llmState.creditsInfo?.balance else { return false }
         return balance < lowCreditsBannerThreshold
     }

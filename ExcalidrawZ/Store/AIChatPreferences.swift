@@ -126,6 +126,13 @@ final class AIChatPreferences: ObservableObject {
                 Self.tier(forLegacyStoredModelRawValue: $0)
             }
         }
+
+        // A previously enabled BYOK session must obtain its own permission before
+        // activation or account/model refresh can resume on this device.
+        if isAIEnabled, !AIServiceConsentState.shared.hasAcceptedSelectedMode {
+            isAIEnabled = false
+            defaults.set(false, forKey: Self.isAIEnabledDefaultsKey)
+        }
     }
 
     /// Returns the tier picked for `conversationID`, or nil if the
@@ -182,6 +189,7 @@ final class AIChatPreferences: ObservableObject {
     /// that deletes / clears a conversation so the dict doesn't grow
     /// indefinitely with dead keys.
     func forgetConversation(_ conversationID: String) {
+        AIInferenceBillingState.shared.forgetConversation(conversationID)
         if conversationTierOverrides[conversationID] != nil {
             conversationTierOverrides.removeValue(forKey: conversationID)
             saveTierOverrides()

@@ -75,9 +75,14 @@ extension PromptInputView {
                     .frame(width: actionBarIconFrameLength, height: actionBarIconFrameLength)
             }
         }
-        .promptActionBarHoverEffect()
+#if os(macOS)
+        .buttonStyle(PromptActionBarIconButtonStyle())
+        .foregroundStyle(activeFileAccessAllowsAI ? Color.accentColor : Color.secondary)
+#else
         .foregroundStyle(activeFileAccessAllowsAI ? .primary : .secondary)
         .tint(activeFileAccessAllowsAI ? .accentColor : .secondary.opacity(0.75))
+#endif
+        .promptActionBarHoverEffect()
         .disabled(!hasActiveFileForAIAccessControl || !canToggleAIFileAccess)
         .help(fileAccessHelpText)
         .modifier(FeatureDiscoveryTipModifier(
@@ -157,7 +162,9 @@ extension PromptInputView {
                 .font(.caption)
                 .frame(width: actionBarIconFrameLength, height: actionBarIconFrameLength)
         }
-        .promptActionBarHoverEffect()
+        .menuStyle(.button)
+        .buttonStyle(PromptActionBarIconButtonStyle())
+        .foregroundStyle(.secondary)
 
 #endif
     }
@@ -181,28 +188,45 @@ extension PromptInputView {
     var modelPicker: some View {
         let _ = AIChatRenderDebug.hit("PromptInputView.modelPicker")
 
-        // Agent config hasn't loaded → show a quiet placeholder. Loading is fast
-        // (one HTTP round-trip on first appearance) so a permanent skeleton would
-        // be visual noise; we just render the active model name disabled.
-        Menu {
-            modelTierPickerButtons()
-        } label: {
-            HStack(spacing: 4) {
-                Text(modelPickerTitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        SwiftUI.Group {
+            if inferenceBilling.usesBYOK {
+                Button {
+                    isPresentingBYOKModelPicker = true
+                } label: {
+                    modelPickerLabel
+                }
+                .buttonStyle(.plain)
+            } else {
+                Menu {
+                    modelTierPickerButtons()
+                } label: {
+                    modelPickerLabel
+                }
             }
-            .frame(height: actionBarIconFrameLength)
-            .contentShape(Rectangle())
         }
         .menuIndicator(.hidden)
         .promptActionBarHoverEffect()
-        .disabled(modelPickerTiers.isEmpty)
+        .help(modelPickerTitle)
+        .disabled(inferenceBilling.usesBYOK ? inferenceBilling.isBusy : modelPickerTiers.isEmpty)
+    }
+
+    private var modelPickerLabel: some View {
+        Text(modelPickerTitle)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .frame(height: actionBarIconFrameLength)
+            .contentShape(Rectangle())
     }
 
     @MainActor
     var modelPickerTitle: String {
-        activeModelProfileOption?.title ?? "..."
+        if inferenceBilling.usesBYOK {
+            guard let id = activeModelSelection?.model.rawValue else { return String(localizable: .aiBYOKSelectModel) }
+            return byokModelCatalog.displayName(for: id, billing: inferenceBilling)
+        }
+        return activeModelProfileOption?.title ?? "..."
     }
 
     @MainActor
@@ -238,6 +262,12 @@ extension PromptInputView {
             }
             .disabled(!canSelectTier(tier))
         }
+    }
+
+    @MainActor
+    func pickBYOKModel(_ id: String) throws {
+        let model = try inferenceBilling.modelForChat(overridingModelID: id)
+        try inferenceBilling.setModel(model.rawValue, for: conversationID)
     }
 
     /// Route a tier pick to the right place: existing conversations get a
@@ -338,6 +368,36 @@ extension PromptInputView {
         .disabled(!primaryActionIsStop && !hasInputText)
     }
 }
+
+#if os(macOS)
+/// Menu and Button use the same surface instead of their different native bezels.
+private struct PromptActionBarIconButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .modifier(PromptActionBarIconSurface(isPressed: configuration.isPressed))
+    }
+}
+
+private struct PromptActionBarIconSurface: ViewModifier {
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var isHovered = false
+    let isPressed: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .frame(width: 36, height: 28)
+            .background {
+                Capsule()
+                    .fill(Color.primary.opacity(
+                        isEnabled && (isHovered || isPressed) ? (isPressed ? 0.12 : 0.06) : 0
+                    ))
+            }
+            .contentShape(Capsule())
+            .opacity(isEnabled ? 1 : 0.4)
+            .onHover { isHovered = $0 }
+    }
+}
+#endif
 
 private extension View {
     @ViewBuilder

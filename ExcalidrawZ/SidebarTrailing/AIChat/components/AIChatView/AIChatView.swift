@@ -213,19 +213,16 @@ struct AIChatView: View {
                 buttonTitle: String(localizable: .aiChatUnavailableNonAppStoreButtonTitle),
                 buttonCaption: String(localizable: .aiChatUnavailableNonAppStoreMessage),
                 buttonURL: AppStoreVersion.appURL
-            ) {}
+            )
         } else if shouldBlockAIForPreference {
             AIChatWelcomeView(
-                buttonTitle: String(localizable: .aiChatDisabledButtonEnable),
                 buttonCaption: String(localizable: .aiChatDisabledMessage),
-                requiresEnableConfirmation: true
-            ) {
-                enableAIFromWelcome()
-            }
+                onEnableAI: enableAIFromWelcome
+            )
         } else if shouldShowWelcome {
-            AIChatWelcomeView {
+            AIChatWelcomeView(onGetStarted: {
                 dismissWelcome()
-            }
+            })
         }
     }
 
@@ -236,14 +233,23 @@ struct AIChatView: View {
         }
     }
 
-    private func enableAIFromWelcome() {
-        prefs.isAIEnabled = true
+    private func enableAIFromWelcome(_ mode: AIInferenceBillingMode) {
+        guard AIServiceConsentState.shared.hasAccepted(mode) else { return }
+        do {
+            try AIInferenceBillingState.shared.setMode(mode)
+        } catch {
+            alertToast(AIInferenceErrorMessage.localizedError(for: error) ?? error)
+            return
+        }
+        withAnimation(.easeInOut(duration: 0.25)) {
+            prefs.isAIEnabled = true
+            hasDismissedWelcome = true
+            isShowingWelcomeManually = false
+        }
         Task {
             await LLMServiceActivationCoordinator.shared.restoreIfAIEnabled(reason: .aiChatEnable)
             await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiChatAppear, force: true)
         }
-        dismissWelcome()
-
         if isCompactIOS,
            fileState.currentActiveFile != nil,
            !fileState.currentActiveFileIsInTrash {

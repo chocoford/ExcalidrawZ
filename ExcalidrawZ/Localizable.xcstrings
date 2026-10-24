@@ -1,6 +1,676 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "aiBYOKRequiredKey": {
+      "comment": "Compact BYOK settings footer or field placeholder; edits are saved automatically.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Required"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "必填"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "必填"
+          }
+        }
+      }
+    },
+    "aiBYOKSettingsFooter": {
+      "comment": "Compact BYOK settings footer or field placeholder; edits are saved automatically.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your key is saved in Keychain and sent with AI requests through ExcalidrawZ to your provider. Your provider bills model usage."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "密钥保存在钥匙串中，AI 请求通过 ExcalidrawZ 将其发送至服务商。模型用量由服务商计费。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "金鑰儲存在鑰匙圈中，AI 請求透過 ExcalidrawZ 將其傳送至服務商。模型用量由服務商計費。"
+          }
+        }
+      }
+    },
+    "aiBYOKCustomConnection": {
+      "comment": "BYOK connection setup. Configuration contains no API key.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自定义"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自訂"
+          }
+        }
+      }
+    },
+    "aiBYOKBaseURL": {
+      "comment": "BYOK connection setup. Configuration contains no API key.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL"
+          }
+        }
+      }
+    },
+    "aiBYOKCustomEndpointHelp": {
+      "comment": "BYOK connection setup. Configuration contains no API key.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use a public HTTPS API root with Bearer-key authentication and the Chat Completions format. Drawing agents also require the server to approve custom hosts."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请使用支持 Bearer 密钥认证和 Chat Completions 格式的公网 HTTPS API 根地址。画布 Agent 还需要服务器批准自定义域名。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請使用支援 Bearer 金鑰驗證與 Chat Completions 格式的公開 HTTPS API 根網址。畫布 Agent 亦需要伺服器核准自訂網域。"
+          }
+        }
+      }
+    },
+    "aiBYOKInvalidConfiguration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check this connection’s URL and model IDs."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请检查此连接的 URL 和模型 ID。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請檢查此連線的 URL 和模型 ID。"
+          }
+        }
+      }
+    },
+    "aiBYOKIncompatibleModel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a valid model ID: printable ASCII without spaces, up to 512 bytes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请输入有效的模型 ID：不含空格的可打印 ASCII 字符，最多 512 字节。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請輸入有效的模型 ID：不含空格的可列印 ASCII 字元，最多 512 位元組。"
+          }
+        }
+      }
+    },
+    "aiBYOKInvalidEndpoint": {
+      "comment": "BYOK connection setup. Configuration contains no API key.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use a public HTTPS API root without credentials, query parameters or fragments."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请使用公网 HTTPS API 根地址，不要包含凭据、查询参数或片段。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請使用公開 HTTPS API 根網址，勿包含憑證、查詢參數或片段。"
+          }
+        }
+      }
+    },
+    "aiBYOKUntrustedAgentHost": {
+      "comment": "BYOK connection setup. Configuration contains no API key.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This custom host needs server approval before it can be used with the drawing agent. Contact ExcalidrawZ support."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此自定义域名需要服务器批准后才能用于画布 Agent，请联系 ExcalidrawZ 支持。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此自訂網域需經伺服器核准後才能用於畫布 Agent，請聯絡 ExcalidrawZ 支援。"
+          }
+        }
+      }
+    },
+    "aiServiceTitle": {
+      "comment": "Unified AI service selector: None disables AI, ExcalidrawZ AI uses app credits, BYOK uses a configured external model connection.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Service"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 服务"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 服務"
+          }
+        }
+      }
+    },
+    "aiServiceNone": {
+      "comment": "Unified AI service selector: None disables AI, ExcalidrawZ AI uses app credits, BYOK uses a configured external model connection.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關閉"
+          }
+        }
+      }
+    },
+    "aiServiceExcalidrawZ": {
+      "comment": "Unified AI service selector: None disables AI, ExcalidrawZ AI uses app credits, BYOK uses a configured external model connection.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI"
+          }
+        }
+      }
+    },
+    "aiServiceBYOK": {
+      "comment": "Unified AI service selector: None disables AI, ExcalidrawZ AI uses app credits, BYOK uses a configured external model connection.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BYOK"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BYOK"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BYOK"
+          }
+        }
+      }
+    },
+    "aiBYOKBillingSelectionRequired": {
+      "comment": "An unsupported saved billing mode must not silently use platform credits. Explicitly save a supported billing choice.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an AI service before sending AI requests."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先选择 AI 服务，再发送 AI 请求。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請先選擇 AI 服務，再傳送 AI 請求。"
+          }
+        }
+      }
+    },
+    "aiBYOKKeyPlaceholder": {
+      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API Key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 密钥"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 金鑰"
+          }
+        }
+      }
+    },
+    "aiBYOKDataFlowHelp": {
+      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your key and AI content pass through the ExcalidrawZ server to your AI provider. Your provider bills model usage. Web search and other app services may still use ExcalidrawZ credits."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "密钥和 AI 内容会经由 ExcalidrawZ 服务器传送至你的 AI 服务商。模型用量由服务商计费，网页搜索等 App 服务仍可能消耗 ExcalidrawZ 积分。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "金鑰與 AI 內容會經由 ExcalidrawZ 伺服器傳送至你的 AI 服務商。模型用量由服務商計費，網頁搜尋等 App 服務仍可能消耗 ExcalidrawZ 點數。"
+          }
+        }
+      }
+    },
+    "aiBYOKSelectionChanged": {
+      "comment": "Shown when the AI connection changes while a request is being prepared.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your AI connection changed while preparing this request. Please retry."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "准备请求时 AI 连接发生了变化，请重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "準備請求時 AI 連線發生了變更，請重試。"
+          }
+        }
+      }
+    },
+    "aiBYOKSettingsBusy": {
+      "comment": "OpenRouter BYOK app settings and request error message. BYOK still routes through ExcalidrawZ servers.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Billing settings can be changed after the current AI request finishes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前 AI 请求完成后，即可修改计费设置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前的 AI 請求完成後，即可修改計費設定。"
+          }
+        }
+      }
+    },
+    "aiBYOKModelBillingNote": {
+      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Billed to your AI provider account"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由你的 AI 服务商账户计费"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由你的 AI 服務商帳戶計費"
+          }
+        }
+      }
+    },
+    "aiBYOKMissingKey": {
+      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add an API key for this connection in Settings → AI."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在设置 → AI 中为当前连接添加 API 密钥。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請在設定 → AI 中為目前連線新增 API 金鑰。"
+          }
+        }
+      }
+    },
+    "aiBYOKInvalidKey": {
+      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a valid API key."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请输入有效的 API 密钥。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請輸入有效的 API 金鑰。"
+          }
+        }
+      }
+    },
+    "aiBYOKKeychainError": {
+      "comment": "OpenRouter BYOK app settings and request error message. BYOK still routes through ExcalidrawZ servers.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not access the saved AI key in Keychain. Please try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法访问钥匙串中保存的 AI 密钥，请重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法存取鑰匙圈中儲存的 AI 金鑰，請再試一次。"
+          }
+        }
+      }
+    },
+    "aiBYOKSecureConnectionRequired": {
+      "comment": "OpenRouter BYOK app settings and request error message. BYOK still routes through ExcalidrawZ servers.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BYOK requires a secure HTTPS connection to the AI service."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用自己的密钥需要通过安全的 HTTPS 连接访问 AI 服务。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用自己的金鑰需要透過安全的 HTTPS 連線存取 AI 服務。"
+          }
+        }
+      }
+    },
+    "aiBYOKServiceUnavailable": {
+      "comment": "OpenRouter BYOK app settings and request error message. BYOK still routes through ExcalidrawZ servers.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BYOK is temporarily unavailable. Please try again later."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自带密钥服务暂不可用，请稍后重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自帶金鑰服務暫時無法使用，請稍後再試。"
+          }
+        }
+      }
+    },
+    "aiBYOKProviderAuthenticationFailed": {
+      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The AI service rejected your key. Check the connection and key in Settings → AI."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 服务拒绝了此密钥。请在设置 → AI 中检查连接与密钥。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 服務拒絕了此金鑰。請在設定 → AI 中檢查連線與金鑰。"
+          }
+        }
+      }
+    },
+    "aiBYOKProviderInsufficientCredits": {
+      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your AI provider account has insufficient credits. Check your provider’s billing to continue."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的 AI 服务商账户余额不足，请检查服务商的计费设置后继续。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的 AI 服務商帳戶餘額不足，請檢查服務商的計費設定後繼續。"
+          }
+        }
+      }
+    },
+    "aiBYOKProviderRateLimited": {
+      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The AI service is rate limiting requests. Please try again shortly."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 服务请求过于频繁，请稍后重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 服務請求過於頻繁，請稍後再試。"
+          }
+        }
+      }
+    },
+    "aiBYOKProviderFailed": {
+      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The AI service request could not be completed. Check your connection, key and account, then try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法完成 AI 服务请求。请检查连接、密钥与账户后重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法完成 AI 服務請求。請檢查連線、金鑰與帳戶後再試一次。"
+          }
+        }
+      }
+    },
     "whatsNewHEIFImagePasteTitle": {
       "comment": "What's New 2.5.1 title for pasting HEIF and HEIC images on all platforms.",
       "extractionState": "manual",
@@ -153150,6 +153820,951 @@
           "stringUnit": {
             "state": "translated",
             "value": "Colapsar Controles do Visualizador"
+          }
+        }
+      }
+    },
+    "aiBYOKModelID": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model ID"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型 ID"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型 ID"
+          }
+        }
+      }
+    },
+    "aiBYOKCustomModel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other Model…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他模型…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他模型⋯"
+          }
+        }
+      }
+    },
+    "aiBYOKMissingModel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a model in chat before using AI."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 AI 前，请先在聊天中选择模型。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 AI 前，請先在聊天中選擇模型。"
+          }
+        }
+      }
+    },
+    "aiBYOKSelectModel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Model…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择模型…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇模型⋯"
+          }
+        }
+      }
+    },
+    "aiBYOKSearchModels": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search models"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索模型"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋模型"
+          }
+        }
+      }
+    },
+    "aiBYOKLoadingModels": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading models…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在加载模型…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在載入模型⋯"
+          }
+        }
+      }
+    },
+    "aiBYOKRefreshModels": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh Models"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新模型列表"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理模型列表"
+          }
+        }
+      }
+    },
+    "aiBYOKUseModel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use Model"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用模型"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用模型"
+          }
+        }
+      }
+    },
+    "aiBYOKNoModels": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching models. Refresh the list or enter another model ID below."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有匹配的模型。请刷新列表，或在下方填写其他模型 ID。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有相符的模型。請重新整理列表，或在下方填寫其他模型 ID。"
+          }
+        }
+      }
+    },
+    "aiBYOKModelListFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not load models. Try refreshing, or enter a model ID manually."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法加载模型列表。请尝试刷新，或手动填写模型 ID。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法載入模型列表。請嘗試重新整理，或手動填寫模型 ID。"
+          }
+        }
+      }
+    },
+    "aiBYOKModelListDisabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model listing is disabled for this connection. You can still enter a model ID manually."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此连接已关闭模型列表查询，仍可手动填写模型 ID。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此連線已關閉模型列表查詢，仍可手動填寫模型 ID。"
+          }
+        }
+      }
+    },
+    "aiBYOKManualConnectionHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic model listing is unavailable for this connection. Save your settings, then enter a model ID in chat and send a message to verify the connection."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此连接无法自动获取模型列表。保存配置后，请在聊天中填写模型 ID，并发送消息以验证连接。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此連線無法自動取得模型列表。儲存設定後，請在聊天中填寫模型 ID，並傳送訊息以驗證連線。"
+          }
+        }
+      }
+    },
+    "aiBYOKModelDiscovery": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model List"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型列表"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型列表"
+          }
+        }
+      }
+    },
+    "aiBYOKModelDiscoveryEnabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetch Model List"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "获取模型列表"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取得模型列表"
+          }
+        }
+      }
+    },
+    "aiBYOKModelDiscoveryPath": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relative Path"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "相对路径"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "相對路徑"
+          }
+        }
+      }
+    },
+    "aiBYOKSelectConnection": {
+      "comment": "BYOK saved connections and chat model selection. Credentials remain in Keychain.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add or choose an AI connection."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加或选择一个 AI 连接。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入或選擇一個 AI 連線。"
+          }
+        }
+      }
+    },
+    "aiBYOKAddConnection": {
+      "comment": "BYOK saved connections and chat model selection. Credentials remain in Keychain.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加连接"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入連線"
+          }
+        }
+      }
+    },
+    "aiBYOKEditConnection": {
+      "comment": "BYOK saved connections and chat model selection. Credentials remain in Keychain.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑连接"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編輯連線"
+          }
+        }
+      }
+    },
+    "aiBYOKRemoveConnection": {
+      "comment": "BYOK saved connections and chat model selection. Credentials remain in Keychain.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除连接"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除連線"
+          }
+        }
+      }
+    },
+    "aiBYOKConnectionName": {
+      "comment": "BYOK saved connections and chat model selection. Credentials remain in Keychain.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名稱"
+          }
+        }
+      }
+    },
+    "aiBYOKConnectionsHelp": {
+      "comment": "BYOK saved connections and chat model selection. Credentials remain in Keychain.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the connection used for AI requests. Select models in chat."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择 AI 请求使用的连接，在聊天中选择模型。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇 AI 請求使用的連線，在聊天中選擇模型。"
+          }
+        }
+      }
+    },
+    "aiBYOKProvider": {
+      "comment": "Provider picker inside the Add Connection sheet.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provider"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务商"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服務商"
+          }
+        }
+      }
+    },
+    "aiBYOKModelPickerTitle": {
+      "comment": "BYOK model picker header, search action or empty result state.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Model"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择模型"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇模型"
+          }
+        }
+      }
+    },
+    "aiBYOKClearSearch": {
+      "comment": "BYOK model picker header, search action or empty result state.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear Search"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除搜索"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除搜尋"
+          }
+        }
+      }
+    },
+    "aiBYOKNoSearchResults": {
+      "comment": "BYOK model picker header, search action or empty result state.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching models"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有匹配的模型"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有相符的模型"
+          }
+        }
+      }
+    },
+    "aiPlatformEnableTitle": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable ExcalidrawZ AI?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用 ExcalidrawZ AI？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用 ExcalidrawZ AI？"
+          }
+        }
+      }
+    },
+    "aiPlatformEnableButton": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable ExcalidrawZ AI"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用 ExcalidrawZ AI"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用 ExcalidrawZ AI"
+          }
+        }
+      }
+    },
+    "aiPlatformConsentAgreement": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I allow the AI data described above to be processed by ExcalidrawZ and its AI providers, and agree to the Privacy Policy and Terms of Use."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我允许 ExcalidrawZ 及其 AI 服务商处理上述 AI 数据，并同意隐私政策和使用条款。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我允許 ExcalidrawZ 及其 AI 服務商處理上述 AI 資料，並同意隱私政策和使用條款。"
+          }
+        }
+      }
+    },
+    "aiBYOKEnableTitle": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable BYOK?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用 BYOK？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用 BYOK？"
+          }
+        }
+      }
+    },
+    "aiBYOKEnableButton": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable BYOK"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用 BYOK"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用 BYOK"
+          }
+        }
+      }
+    },
+    "aiBYOKEnableSubtitle": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use your own AI provider and API key. Review how your key and AI content are shared before enabling this mode. You can turn it off in Settings."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用你自己的 AI 服务商和 API Key。启用前，请了解密钥和 AI 内容的传输方式。你可以随时在设置中关闭此模式。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用你自己的 AI 服務商和 API Key。啟用前，請瞭解金鑰和 AI 內容的傳輸方式。你可以隨時在設定中關閉此模式。"
+          }
+        }
+      }
+    },
+    "aiBYOKConsentKeyTitle": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your key passes through ExcalidrawZ"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "密钥会经过 ExcalidrawZ"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "金鑰會經過 ExcalidrawZ"
+          }
+        }
+      }
+    },
+    "aiBYOKConsentKeyMessage": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your key is stored in this device’s Keychain. It is sent through ExcalidrawZ servers to your configured provider or endpoint, including when verifying a connection or loading models."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "密钥保存在本机钥匙串中。请求时，密钥会经由 ExcalidrawZ 服务器发送到你配置的服务商或端点；验证连接和获取模型列表时也会发送。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "金鑰儲存在本機鑰匙圈中。請求時，金鑰會經由 ExcalidrawZ 伺服器傳送至你設定的服務商或端點；驗證連線和取得模型列表時也會傳送。"
+          }
+        }
+      }
+    },
+    "aiBYOKConsentDataTitle": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI content is processed in the cloud"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 内容会在云端处理"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 內容會在雲端處理"
+          }
+        }
+      }
+    },
+    "aiBYOKConsentDataMessage": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prompts, relevant canvas content, attachments and tool results pass through ExcalidrawZ to your provider. Routers or custom gateways may forward them to other model providers. BYOK does not keep AI processing on this device."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提示词、相关画布内容、附件和工具结果会经由 ExcalidrawZ 发送至你的服务商。路由服务或自定义网关可能继续转发至其他模型服务商。BYOK 并非本地 AI 处理。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提示詞、相關畫布內容、附件和工具結果會經由 ExcalidrawZ 傳送至你的服務商。路由服務或自訂閘道可能繼續轉發至其他模型服務商。BYOK 並非本機 AI 處理。"
+          }
+        }
+      }
+    },
+    "aiBYOKConsentBillingTitle": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your provider bills model usage"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型费用由服务商收取"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型費用由服務商收取"
+          }
+        }
+      }
+    },
+    "aiBYOKConsentBillingMessage": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model usage is charged to your provider account. Web search and other ExcalidrawZ services may still require app credits."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型用量由你的服务商账户计费。网页搜索等 ExcalidrawZ 服务仍可能消耗 App 积分。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型用量由你的服務商帳戶計費。網頁搜尋等 ExcalidrawZ 服務仍可能消耗 App 點數。"
+          }
+        }
+      }
+    },
+    "aiBYOKConsentProviderTitle": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a provider you trust"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择你信任的服务商"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇你信任的服務商"
+          }
+        }
+      }
+    },
+    "aiBYOKConsentProviderMessage": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your provider’s data policies apply to the content it receives. Only use endpoints you trust, and avoid sending sensitive content you do not want processed by cloud AI services."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务商会按照其数据政策处理收到的内容。请仅使用你信任的端点，避免发送不希望由云端 AI 服务处理的敏感内容。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服務商會依照其資料政策處理收到的內容。請僅使用你信任的端點，避免傳送不希望由雲端 AI 服務處理的敏感內容。"
+          }
+        }
+      }
+    },
+    "aiBYOKConsentAgreement": {
+      "comment": "Separate first-use consent for ExcalidrawZ AI and BYOK. BYOK is server-forwarded, not local AI.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I allow my API key and AI request content to be sent through ExcalidrawZ to the provider or endpoint I configure, and agree to the Privacy Policy and Terms of Use."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我允许 ExcalidrawZ 将我的 API Key 和 AI 请求内容转发至我配置的服务商或端点，并同意隐私政策和使用条款。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我允許 ExcalidrawZ 將我的 API Key 和 AI 請求內容轉發至我設定的服務商或端點，並同意隱私政策和使用條款。"
           }
         }
       }

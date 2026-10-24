@@ -16,6 +16,8 @@ struct AISettingsView: View {
     @EnvironmentObject var llmState: LLMStateObject
     @EnvironmentObject var store: Store
     @ObservedObject var prefs = AIChatPreferences.shared
+    @ObservedObject var inferenceBilling = AIInferenceBillingState.shared
+    @ObservedObject var aiServiceConsent = AIServiceConsentState.shared
     @ObservedObject var router = SettingsRouter.shared
     @ObservedObject var mcpServerController = ExcalidrawZMCPServerController.shared
     
@@ -40,9 +42,12 @@ struct AISettingsView: View {
     @State var mcpBasicReadMeDraft: String = ""
     @State var selectedMCPConnectionGuideTab: MCPConnectionGuideTab = .claude
     @State var mcpServiceModePickerID = UUID()
-    @State var isPresentingAIEnableConsent: Bool = false
+    @State var pendingAIServiceMode: AIServiceMode?
     @State var preferredSettingsSection: SettingsSection = .general
-    
+    @State var byokStatusMessage: String?
+    @State var byokStatusIsError = false
+    @State var byokConnectionSheet: AIInferenceConnectionSheet?
+
     /// Model profile list for the Default Model picker, sourced from the
     /// agent's server-defined `modelProfiles`.
     @State var availableModelOptions: [ExcalidrawModelProfileOption] = []
@@ -119,9 +124,11 @@ struct AISettingsView: View {
             }
         }
 #endif
-        .sheet(isPresented: $isPresentingAIEnableConsent) {
-            AIEnableConsentSheet {
-                prefs.isAIEnabled = true
+        .sheet(item: $pendingAIServiceMode) { mode in
+            AIEnableConsentSheet(mode: mode.billingMode ?? .platform) {
+                guard let billingMode = mode.billingMode else { return }
+                aiServiceConsent.accept(billingMode)
+                applyAIServiceMode(mode)
             }
         }
         .sheet(isPresented: $isPresentingMCPConnectionGuide) {
@@ -174,19 +181,4 @@ struct AISettingsView: View {
         await loadAIAccountInfoIfNeeded()
     }
     
-    @MainActor
-    var aiEnabledBinding: Binding<Bool> {
-        Binding(
-            get: { prefs.isAIEnabled },
-            set: { isEnabled in
-                if isEnabled {
-                    if !prefs.isAIEnabled {
-                        isPresentingAIEnableConsent = true
-                    }
-                } else {
-                    prefs.isAIEnabled = false
-                }
-            }
-        )
-    }
 }

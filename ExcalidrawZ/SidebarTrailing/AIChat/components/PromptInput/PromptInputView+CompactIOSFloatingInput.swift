@@ -30,6 +30,7 @@ extension PromptInputView {
 
 
     private var compactIOSFloatingShowsLowCreditsCapsule: Bool {
+        guard !inferenceBilling.usesBYOK else { return false }
         guard let balance = llmState.creditsInfo?.balance else { return false }
         return balance < LowCreditsBannerView.defaultThreshold
     }
@@ -395,28 +396,43 @@ extension PromptInputView {
 
     @ViewBuilder
     var compactIOSFloatingModelPicker: some View {
-        Menu {
-            modelTierPickerButtons()
-        } label: {
-            Text(compactIOSFloatingModelPickerTitle)
-                .font(.system(size: 11, weight: .semibold))
-                .monospaced()
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .frame(
-                    width: compactIOSFloatingInlineControlLabelLength,
-                    height: compactIOSFloatingInlineControlLabelLength
-                )
+        SwiftUI.Group {
+            if inferenceBilling.usesBYOK {
+                Button {
+                    isPresentingBYOKModelPicker = true
+                } label: {
+                    compactIOSFloatingModelPickerLabel
+                }
+            } else {
+                Menu {
+                    modelTierPickerButtons()
+                } label: {
+                    compactIOSFloatingModelPickerLabel
+                }
+            }
         }
         .fixedSize()
         .menuIndicator(.hidden)
         .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
-        .disabled(modelPickerTiers.isEmpty)
+        .disabled(inferenceBilling.usesBYOK ? inferenceBilling.isBusy : modelPickerTiers.isEmpty)
+        .accessibilityLabel(modelPickerTitle)
+        .help(modelPickerTitle)
+    }
+
+    private var compactIOSFloatingModelPickerLabel: some View {
+        Text(compactIOSFloatingModelPickerTitle)
+            .font(.system(size: 11, weight: .semibold))
+            .monospaced()
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .frame(width: compactIOSFloatingInlineControlLabelLength,
+                   height: compactIOSFloatingInlineControlLabelLength)
     }
 
     @MainActor
     var compactIOSFloatingModelPickerTitle: String {
-        activeModelProfileOption?.tier.compactIOSFloatingShortLabel ?? "..."
+        if inferenceBilling.usesBYOK { return "AI" }
+        return activeModelProfileOption?.tier.compactIOSFloatingShortLabel ?? "..."
     }
 
     @ViewBuilder

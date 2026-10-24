@@ -70,7 +70,7 @@
       "location" : "https://github.com/chocoford/LLMCore.git",
       "state" : {
         "branch" : "main",
-        "revision" : "426fdb87d5382d7d4e3fba96f5644c4c0afbfbb7"
+        "revision" : "7c56748d689600e1824b5abd26be700db705bbc9"
       }
     },
     {
@@ -79,7 +79,7 @@
       "location" : "https://github.com/chocoford/LLMKit.git",
       "state" : {
         "branch" : "dev",
-        "revision" : "99d424bbe6fcf372db36f0545205b3d2d70be159"
+        "revision" : "9ef1fd1030d874e3a24db3b435580f74eb341c83"
       }
     },
     {
@@ -106,7 +106,7 @@
       "location" : "https://github.com/MacPaw/OpenAI.git",
       "state" : {
         "branch" : "main",
-        "revision" : "c155b5245243f4984791bbe2db80be509b00854a"
+        "revision" : "8fe7034492817abd942ddac5e4dd64636393666a"
       }
     },
     {
@@ -195,8 +195,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-openapi-runtime",
       "state" : {
-        "revision" : "62595194f7d5951ef32129b15c0790ef24886867",
-        "version" : "1.12.2"
+        "revision" : "6927ad435adf4d00fe55fc61b9a07a04673c79c8",
+        "version" : "1.13.3"
       }
     },
     {

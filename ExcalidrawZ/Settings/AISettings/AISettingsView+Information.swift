@@ -34,14 +34,7 @@ extension AISettingsView {
     @ViewBuilder
     var aiInformationRows: some View {
         if !prefs.isAIEnabled {
-            Toggle(isOn: aiEnabledBinding) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(localizable: .settingsAIEnableFeatureTitle)
-                    Text(localizable: .settingsAIEnableFeatureHelp)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            aiServiceModePicker
         }
 
         aiInformationRow(
@@ -66,6 +59,12 @@ extension AISettingsView {
             icon: .gearshape,
             title: String(localizable: .settingsAIInformationProvidersTitle),
             message: String(localizable: .settingsAIInformationProvidersMessage)
+        )
+
+        aiInformationRow(
+            icon: .key,
+            title: String(localizable: .aiServiceBYOK),
+            message: String(localizable: .aiBYOKDataFlowHelp)
         )
 
         aiInformationRow(
