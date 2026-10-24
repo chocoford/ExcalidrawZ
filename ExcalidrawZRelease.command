@@ -392,7 +392,7 @@ screenshots_menu() {
 }
 
 prepare_sparkle_release() {
-  local verify_asset="$1"
+  local publish_release="$1"
   local -a args
 
   read_release_version || return 1
@@ -401,10 +401,8 @@ prepare_sparkle_release() {
     mac prepare_sparkle_release
     "version:$RELEASE_VERSION"
     "release_tag:$RELEASE_TAG"
+    "publish:$publish_release"
   )
-  if [[ "$verify_asset" == "true" ]]; then
-    args+=("verify_asset:true")
-  fi
 
   run_fastlane \
     "Prepare Sparkle release" \
@@ -413,7 +411,7 @@ prepare_sparkle_release() {
 
 generate_sparkle_release_notes() {
   read_release_version || return 1
-  run_fastlane "Generate Sparkle release notes only" \
+  run_fastlane "Update and publish Sparkle release notes" \
     mac generate_sparkle_release_notes "version:$RELEASE_VERSION"
 }
 
@@ -421,14 +419,14 @@ sparkle_menu() {
   local choice
 
   choice="$(select_option "Sparkle" \
-    "prepare|Prepare publish files|生成 Sparkle 发布文件，并同步更新 Landing Page 的公开版本与 DMG 链接。" \
-    "verify|Prepare and verify GitHub asset|生成发布文件、更新 Landing Page，并确认对应 GitHub Release DMG 已可下载。" \
-    "notes|Generate release notes only|只从 macOS metadata 生成 HTML，并更新已有 appcast item。" \
+    "publish|Prepare and publish release|生成 appcast、版本说明和官网版本信息，确认 GitHub DMG 可下载后自动 commit、push WebPage。" \
+    "prepare|Prepare files locally|提前生成发布文件和官网版本信息，暂不 commit、push。" \
+    "notes|Update and publish release notes|从 macOS metadata 更新已有 appcast 的版本说明，然后自动 commit、push。" \
     "back|Back")"
 
   case "$choice" in
+    publish) prepare_sparkle_release true ;;
     prepare) prepare_sparkle_release false ;;
-    verify) prepare_sparkle_release true ;;
     notes) generate_sparkle_release_notes ;;
     back) return 0 ;;
     *) echo "无效选择"; return 1 ;;

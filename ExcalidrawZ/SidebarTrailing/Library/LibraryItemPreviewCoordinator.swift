@@ -29,6 +29,12 @@ enum LibraryItemPreviewSource {
     }
 }
 
+struct LibraryItemPreviewUpdate {
+    let sourceID: String
+    let colorScheme: ColorScheme
+    let image: PlatformImage
+}
+
 final class LibraryItemPreviewCache: NSCache<NSString, PlatformImage> {
     static let shared = LibraryItemPreviewCache()
 
@@ -196,9 +202,14 @@ final class LibraryItemPreviewCoordinator {
 
             let previewImage = makeThumbnail(from: image) ?? image
             cache.setObject(previewImage, forKey: job.cacheKey as NSString)
+            // NSCache may immediately discard the entry; deliver the image itself.
             NotificationCenter.default.post(
                 name: .libraryItemPreviewDidUpdate,
-                object: job.source.id
+                object: LibraryItemPreviewUpdate(
+                    sourceID: job.source.id,
+                    colorScheme: job.colorScheme,
+                    image: previewImage
+                )
             )
             return .completed
         } catch ExcalidrawPreviewExportError.notReady(let summary) {
