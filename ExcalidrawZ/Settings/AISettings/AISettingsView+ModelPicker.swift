@@ -16,7 +16,7 @@ extension AISettingsView {
             }
         )) {
             if !options.contains(where: { $0.profileID == current }) {
-                Text(modelCatalogPlaceholder(for: current))
+                Text(modelCatalogPlaceholder)
                     .tag(current).disabled(true)
             }
             ForEach(options) { option in
@@ -27,14 +27,14 @@ extension AISettingsView {
         .disabled(!prefs.isAIEnabled || schemeCatalog.isLoading || options.isEmpty)
     }
 
-    private func modelCatalogPlaceholder(for current: String) -> String {
+    private var modelCatalogPlaceholder: String {
         if prefs.isAIEnabled, schemeCatalog.isLoading || (schemeCatalog.scheme == nil && schemeCatalog.errorMessage == nil) {
             return String(localizable: .aISchemeLoadingProfiles)
         }
         if schemeCatalog.scheme != nil, schemeCatalog.options.isEmpty {
             return String(localizable: .aISchemeNoProfiles)
         }
-        return current.isEmpty ? String(localizable: .aISchemeChooseProfile) : current
+        return String(localizable: .aISchemeChooseProfile)
     }
 
     @ViewBuilder

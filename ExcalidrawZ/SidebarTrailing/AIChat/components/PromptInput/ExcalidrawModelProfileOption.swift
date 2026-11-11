@@ -55,7 +55,7 @@ struct AIChatModelSelection {
 
 extension LLMSchemeDescriptor {
     var excalidrawModelOptions: [ExcalidrawModelProfileOption] {
-        profiles.filter(\.isVisible).sorted {
+        profiles.filter { $0.isVisible && $0.access?.allowed != false }.sorted {
             $0.rank == $1.rank ? $0.id < $1.id : $0.rank < $1.rank
         }.map { ExcalidrawModelProfileOption(profile: $0) }
     }

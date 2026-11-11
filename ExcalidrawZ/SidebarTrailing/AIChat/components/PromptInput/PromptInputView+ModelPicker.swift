@@ -51,7 +51,8 @@ extension PromptInputView {
         }
         if route == .legacy, modelPickerUsesBYOK { return activeModelSelection?.model.rawValue ?? String(localizable: .aiBYOKSelectModel) }
         if let profileID = route.profileID {
-            return schemeCatalog.scheme?.profiles.first { $0.id == profileID }?.name ?? profileID
+            return schemeCatalog.options.first { $0.profileID == profileID }?.title
+                ?? String(localizable: .aISchemeChooseProfile)
         }
         if let conversationID, let selection = routing.legacySelections[conversationID] {
             return selection.model.displayName
@@ -85,19 +86,17 @@ extension PromptInputView {
         } else {
             platformProfileButtons()
         }
-        if !modelPickerUsesDirectSheet {
-            if let error = schemeCatalog.errorMessage { Text(error) }
-            Button {
-                Task { await schemeCatalog.refresh(force: true, forServerConversation: conversation?.schemeConnection != nil) }
-            } label: {
-                Label(.localizable(.aISchemeRefreshProfiles), systemImage: "arrow.clockwise")
-            }
+        if !modelPickerUsesDirectSheet, let error = schemeCatalog.errorMessage {
+            Text(error)
         }
     }
 
     @MainActor
     @ViewBuilder
     private func platformProfileButtons() -> some View {
+        if availableModelOptions.isEmpty, schemeCatalog.errorMessage == nil {
+            Text(.localizable(schemeCatalog.isLoading ? .aISchemeLoadingProfiles : .aISchemeNoProfiles))
+        }
         ForEach(availableModelOptions) { option in
             Button {
                 let selectedConversationID = conversationID

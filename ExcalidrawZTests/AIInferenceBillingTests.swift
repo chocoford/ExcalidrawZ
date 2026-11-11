@@ -33,20 +33,52 @@ final class AIInferenceBillingTests: XCTestCase {
         XCTAssertThrowsError(try AIChatRouteStorage.decode(JSONEncoder().encode(invalid)))
     }
 
-    func testDashboardProfilesHaveNoFixedTierLimitAndKeepAccessSnapshots() {
+    func testDashboardProfilesHaveNoFixedTierLimitOrClientPlanMapping() {
         let scheme = LLMSchemeDescriptor(
             id: "excalidraw-canvas", name: "Canvas", summary: "", kind: .conversation,
             defaultProfileID: "fifth-profile", profiles: [
                 .init(id: "fifth-profile", name: "Custom Fifth", rank: 50),
-                .init(id: "extra-high", name: "Powerful", rank: 10, access: .denied(.subscriptionRequired)),
+                .init(id: "extra-high", name: "Powerful", rank: 10, access: .init(allowed: true)),
                 .init(id: "hidden", name: "Hidden", rank: 0, isVisible: false)
             ]
         )
         let options = scheme.excalidrawModelOptions
         XCTAssertEqual(options.map(\.profileID), ["extra-high", "fifth-profile"])
         XCTAssertEqual(options.map(\.title), ["Powerful", "Custom Fifth"])
-        XCTAssertFalse(options[0].isAllowed)
+        XCTAssertTrue(options[0].isAllowed)
         XCTAssertTrue(options[1].isAllowed)
+    }
+
+    func testDashboardDeniedProfilesAreAbsentFromModelMenus() {
+        var scheme = LLMSchemeDescriptor(
+            id: "excalidraw-canvas", name: "Canvas", summary: "", kind: .conversation,
+            defaultProfileID: "medium", profiles: [
+                .init(id: "low", name: "Low", rank: 10, access: .denied(.subscriptionRequired)),
+                .init(id: "medium", name: "Medium", rank: 20, access: .denied(.subscriptionRequired)),
+                .init(id: "high", name: "High", rank: 30, access: .denied(.subscriptionRequired)),
+                .init(id: "extra-high", name: "Extra High", rank: 40, access: .denied(.explicitDeny))
+            ]
+        )
+        XCTAssertTrue(scheme.excalidrawModelOptions.isEmpty)
+
+        for index in 0..<3 { scheme.profiles[index].access = .init(allowed: true) }
+        XCTAssertEqual(scheme.excalidrawModelOptions.map(\.profileID), ["low", "medium", "high"])
+        XCTAssertEqual(scheme.profiles.count, 4, "Keep metadata for existing conversation routes")
+    }
+
+    func testDashboardPermissionChangesDoNotSilentlyReplaceSavedProfile() {
+        var scheme = LLMSchemeDescriptor(
+            id: "excalidraw-canvas", name: "Canvas", summary: "", kind: .conversation,
+            defaultProfileID: "extra-high", profiles: [
+                .init(id: "medium", name: "Medium", rank: 20, access: .init(allowed: true)),
+                .init(id: "extra-high", name: "Extra High", rank: 40, access: .init(allowed: true))
+            ]
+        )
+        XCTAssertEqual(scheme.excalidrawModelOptions.map(\.profileID), ["medium", "extra-high"])
+
+        scheme.profiles[1].access = .denied(.explicitDeny)
+        XCTAssertEqual(scheme.excalidrawModelOptions.map(\.profileID), ["medium"])
+        XCTAssertEqual(scheme.defaultProfileID, "extra-high")
     }
 
     @MainActor
