@@ -89,71 +89,84 @@ extension AISettingsView {
     }
 
     @ViewBuilder
-    var byokSettingsSection: some View {
-        Section {
-            ForEach(inferenceBilling.profiles) { profile in
-                HStack(spacing: 12) {
-                    Button {
-                        updateInferenceBilling { try inferenceBilling.selectConnection(profile.id) }
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: inferenceBilling.selectedProfileID == profile.id ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(inferenceBilling.selectedProfileID == profile.id ? Color.accentColor : Color.secondary)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(profile.displayName)
-                                Text(profile.configuration?.baseURL.host ?? profile.provider.title)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer(minLength: 0)
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(inferenceBilling.selectedProfileID == profile.id ? [.isSelected] : [])
+    var byokConnectionsRow: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            byokConnectionsHeaderRow
 
-                    Button {
-                        byokConnectionSheet = .edit(profile.id)
-                    } label: {
-                        Label(.localizable(.aiBYOKEditConnection), systemImage: "info.circle")
-                            .labelStyle(.iconOnly)
-                    }
-                    .buttonStyle(.borderless)
-                }
-                .disabled(inferenceBilling.isBusy)
+            ForEach(inferenceBilling.profiles) { profile in
+                byokConnectionRow(profile)
             }
             if inferenceBilling.profiles.isEmpty {
                 Text(.localizable(.aiBYOKSelectConnection))
                     .foregroundStyle(.secondary)
             }
-        } header: {
-            HStack {
-                Text(.localizable(.aiServiceBYOK))
-                Spacer(minLength: 8)
-                Button {
-                    byokConnectionSheet = .add
-                } label: {
-                    Label(.localizable(.aiBYOKAddConnection), systemImage: "plus")
-                        .labelStyle(.iconOnly)
-                }
-                .buttonStyle(.borderless)
-                .disabled(inferenceBilling.isBusy)
-            }
-            .textCase(nil)
-        } footer: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(.localizable(.aiBYOKConnectionsHelp))
-                if inferenceBilling.configurationLoadFailed {
-                    Text(.localizable(.aiBYOKInvalidConfiguration)).foregroundStyle(.red)
-                }
-                if let byokStatusMessage {
-                    Text(byokStatusMessage)
-                        .foregroundStyle(byokStatusIsError ? Color.red : Color.secondary)
-                }
-            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var byokConnectionsHeaderRow: some View {
+        HStack {
+            Text(.localizable(.aiBYOKConnectionsTitle))
+            Spacer(minLength: 8)
+            Button {
+                byokConnectionSheet = .add
+            } label: {
+                Label(.localizable(.aiBYOKAddConnection), systemImage: "plus")
+                    .labelStyle(.iconOnly)
+            }
+            .buttonStyle(.borderless)
+            .disabled(inferenceBilling.isBusy)
+        }
+        .frame(maxWidth: .infinity)
         .sheet(item: $byokConnectionSheet) { sheet in
             AIInferenceConnectionEditor(billing: inferenceBilling, profileID: sheet.profileID)
+        }
+    }
+
+    private func byokConnectionRow(_ profile: AIInferenceConnectionProfile) -> some View {
+        let isSelected = inferenceBilling.selectedProfileID == profile.id
+
+        return HStack(spacing: 12) {
+            Button {
+                updateInferenceBilling { try inferenceBilling.selectConnection(profile.id) }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(profile.displayName)
+                        Text(profile.configuration?.baseURL.host ?? profile.provider.title)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+
+            Button {
+                byokConnectionSheet = .edit(profile.id)
+            } label: {
+                Label(.localizable(.aiBYOKEditConnection), systemImage: "info.circle")
+                    .labelStyle(.iconOnly)
+            }
+            .buttonStyle(.borderless)
+        }
+        .disabled(inferenceBilling.isBusy)
+    }
+
+    var byokConnectionsFooter: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(.localizable(.aiBYOKConnectionsHelp))
+            if inferenceBilling.configurationLoadFailed {
+                Text(.localizable(.aiBYOKInvalidConfiguration)).foregroundStyle(.red)
+            }
+            if let byokStatusMessage {
+                Text(byokStatusMessage)
+                    .foregroundStyle(byokStatusIsError ? Color.red : Color.secondary)
+            }
         }
     }
 

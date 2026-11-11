@@ -160,6 +160,7 @@ struct ExcalidrawZApp: App {
             WebFetchTool(),
             CalculatorTool(),
             DateTimeTool(),
+            ReadBasicDrawingGuideTool(),
             FileAccessStatusTool(),
             GetCurrentFileTool(),
             ReadFileTool(),
@@ -187,12 +188,18 @@ struct ExcalidrawZApp: App {
             await toolRegistry.register(tools)
         }
 
-        self._llmState = StateObject(wrappedValue: LLMStateObject(
+        let llmState = LLMStateObject(
             llmClient: .shared,
             toolRegistry: toolRegistry,
             persistenceProvider: llmPersistenceProvider,
-            streamPublishStrategy: .throttled(0.33)
-        ))
+            streamPublishStrategy: .throttled(0.33),
+            schemeCredentialsProvider: { connectionID, model in
+                try await AIInferenceBillingState.shared.credentials(connectionID: connectionID, model: model)
+            }
+        )
+        self._llmState = StateObject(wrappedValue: llmState)
+        AIChatInferenceSessions.shared.configure(serverState: llmState)
+        AIChatSchemeCatalog.shared.observeAuthentication(in: llmState)
 
         if AIChatPreferences.shared.isAIEnabled {
             Task {
@@ -246,6 +253,8 @@ struct ExcalidrawZApp: App {
     @StateObject private var updateChecker = UpdateChecker()
 #endif
     @StateObject private var llmState: LLMStateObject
+    @ObservedObject private var inferenceBilling = AIInferenceBillingState.shared
+    private var defaultAISession: AIChatInferenceSessions.Session { AIChatInferenceSessions.shared.session(for: nil) }
     @StateObject private var aiChatState = AIChatState()
     @StateObject private var lockedContentState = LockedContentStateStore()
 
@@ -270,7 +279,7 @@ struct ExcalidrawZApp: App {
                 .environmentObject(aiChatState)
                 .environmentObject(lockedContentState)
                 .environment(\.filePreviewLockStateStore, lockedContentState)
-                .llmProvider(state: llmState, client: .shared)
+                .llmProvider(state: defaultAISession.state, client: defaultAISession.client)
                 .lockedContentAutoRelock(lockedContentState: lockedContentState)
                 .onAppear {
 #if os(macOS)
@@ -428,7 +437,7 @@ struct ExcalidrawZApp: App {
                 .environmentObject(store)
                 .environmentObject(lockedContentState)
                 .environment(\.filePreviewLockStateStore, lockedContentState)
-                .llmProvider(state: llmState, client: .shared)
+                .llmProvider(state: defaultAISession.state, client: defaultAISession.client)
 #if !APP_STORE
                 .environmentObject(updateChecker)
 #endif

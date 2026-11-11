@@ -68,6 +68,8 @@ struct AIEnableConsentSheet: View {
         }
     }
 
+    private var isDirect: Bool { mode == .byok && AIInferenceBillingState.shared.integrationMode == .basic }
+
     private var isCompactIOS: Bool {
 #if os(iOS)
         containerHorizontalSizeClass == .compact
@@ -137,7 +139,8 @@ struct AIEnableConsentSheet: View {
             Text(.localizable(mode == .byok ? .aiBYOKEnableTitle : .aiPlatformEnableTitle))
                 .font(.title2.weight(.semibold))
 
-            Text(.localizable(mode == .byok ? .aiBYOKEnableSubtitle : .aiChatEnableConsentSubtitle))
+            Text(isDirect ? String(localized: "AI.Direct.consentSubtitle")
+                 : String(localizable: mode == .byok ? .aiBYOKEnableSubtitle : .aiChatEnableConsentSubtitle))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -150,17 +153,17 @@ struct AIEnableConsentSheet: View {
                 consentRow(
                     icon: .key,
                     title: String(localizable: .aiBYOKConsentKeyTitle),
-                    message: String(localizable: .aiBYOKConsentKeyMessage)
+                    message: isDirect ? String(localized: "AI.Direct.consentKey") : String(localizable: .aiBYOKConsentKeyMessage)
                 )
                 consentRow(
                     icon: .cloud,
                     title: String(localizable: .aiBYOKConsentDataTitle),
-                    message: String(localizable: .aiBYOKConsentDataMessage)
+                    message: isDirect ? String(localized: "AI.Direct.consentData") : String(localizable: .aiBYOKConsentDataMessage)
                 )
                 consentRow(
                     icon: .creditcard,
                     title: String(localizable: .aiBYOKConsentBillingTitle),
-                    message: String(localizable: .aiBYOKConsentBillingMessage)
+                    message: isDirect ? String(localized: "AI.Direct.noCredits") : String(localizable: .aiBYOKConsentBillingMessage)
                 )
                 consentRow(
                     icon: .lock,

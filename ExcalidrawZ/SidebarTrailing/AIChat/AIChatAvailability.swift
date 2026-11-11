@@ -20,6 +20,13 @@ enum AIChatAvailability {
         UserDefaults.standard.object(forKey: AIChatPreferences.isAIEnabledDefaultsKey) as? Bool ?? false
     }
 
+    static var usesDirectInference: Bool {
+        let mode = UserDefaults.standard.string(forKey: AIInferenceBillingState.modeDefaultsKey)
+        guard mode == "byok" || mode == "openRouter",
+              let integration = UserDefaults.standard.string(forKey: AIInferenceBillingState.integrationModeDefaultsKey) else { return false }
+        return integration != "optimized"
+    }
+
     static var canUseAI: Bool {
         isAvailable && isUserEnabled
     }

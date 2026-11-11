@@ -238,7 +238,7 @@ extension MathInputSheetView {
             do {
                 let response: APIResponse<ChatMessageContent> = try await inferenceBilling.withSelectedBilling(expectedRevision: billingRevision) {
                     let model = try inferenceBilling.modelForAuxiliaryRequest(fallback: .qwen3_6Plus)
-                    return try await LLMClient.shared.chat(
+                    return try await inferenceBilling.selectedInferenceClient().chat(
                         model: model,
                         system: latexAIGenerationSystemPrompt,
                         text: prompt,

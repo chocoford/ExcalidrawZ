@@ -221,18 +221,14 @@ struct PromptInputView<Background: View, Header: View>: View {
     /// through `AIChatState` so the parent view does not subscribe to
     /// high-frequency draft text/image changes.
     @State var isImagePickerPresented: Bool = false
-    @State var agentConfig: DomainAgentConfigResponse?
+    @ObservedObject var schemeCatalog = AIChatSchemeCatalog.shared
+    @ObservedObject var routing = AIChatRoutingState.shared
+    @ObservedObject var inferenceSessions = AIChatInferenceSessions.shared
 
-    /// User's model-tier pick made *before* a conversation has been created
-    /// (i.e., a fresh chat). Promoted to a per-conversation override in
-    /// `AIChatPreferences` the moment `startSend` mints a conversation id.
-    /// Once the conversation exists, the picker writes straight to prefs.
-    @State var pendingTierSelection: ExcalidrawModelTier?
-    @State var isPresentingBYOKModelPicker = false
+    /// A fresh chat's explicit profile pick, persisted when its conversation is created.
+    @State var pendingProfileID: String?
+    @State var byokModelPickerTarget: AIChatBYOKPickerTarget?
 
-    /// Global default + per-conversation tier overrides, persisted across
-    /// launches. Drives the active model profile and reflected back from picker
-    /// taps / Settings changes.
     @ObservedObject var prefs = AIChatPreferences.shared
     @ObservedObject var inferenceBilling = AIInferenceBillingState.shared
     @ObservedObject var byokModelCatalog = AIInferenceModelCatalog.shared
@@ -296,134 +292,80 @@ struct PromptInputView<Background: View, Header: View>: View {
         return await LockedContentAIGuard.canAIRead(activeFile: activeFile)
     }
 
-    /// Resolved model used for the next request, in priority order:
-    ///   1. Per-conversation override stored in `AIChatPreferences`
-    ///   2. Pending pick made before a conversation exists
-    ///   3. User's global default (Settings → AI)
-    /// Picker writes directly into either (1) or (2); (3) is mutated
-    /// from Settings only.
     @MainActor
-    var activeModelProfileOption: ExcalidrawModelProfileOption? {
-        fallbackModelOptionIfNeeded(selectedTierBeforeFallback)
+    func routeForSend() throws -> AIChatConversationRoute {
+        if conversationID != nil {
+            guard let conversation else { throw AIChatRoutingError.invalidRoute }
+            return try routing.route(for: conversation)
+        }
+        return try routing.newRoute(profileID: pendingProfileID)
     }
 
     @MainActor
-    var activeModelContextWindowTokens: Int? {
-        activeModelSelection?.maxContextTokens
+    var modelPickerUsesBYOK: Bool {
+        if conversation?.directConnection != nil { return true }
+        if let binding = conversation?.schemeConnection {
+            if case .byok = binding.billing { return true }
+            return false
+        }
+        return inferenceBilling.usesBYOK
     }
+
+    @MainActor
+    var modelPickerConnectionID: String? {
+        if let conversation, conversation.directConnection != nil {
+            return AIChatInferenceSessions.shared.directRecords[conversation.id]?.connectionID
+        }
+        return conversation?.schemeConnection?.connectionID
+    }
+
+    @MainActor
+    var modelPickerIntegrationMode: AIInferenceIntegrationMode? {
+        if conversation?.directConnection != nil { return .basic }
+        if conversation?.schemeConnection?.connectionID != nil { return .optimized }
+        return nil
+    }
+
+    var modelPickerUsesDirectSheet: Bool { modelPickerUsesBYOK && conversation?.schemeConnection == nil }
+
+    var isUpdatingConversationRoute: Bool {
+        conversationID.map { routing.updatingConversationIDs.contains($0) || inferenceSessions.updatingConversationIDs.contains($0) } ?? false
+    }
+
+    @MainActor
+    var activeModelProfileOption: ExcalidrawModelProfileOption? {
+        let id = (try? routeForSend())?.profileID
+        return schemeCatalog.scheme?.profiles.first { $0.id == id }.map { ExcalidrawModelProfileOption(profile: $0) }
+    }
+
+    @MainActor
+    var activeModelContextWindowTokens: Int? { activeModelSelection?.maxContextTokens }
 
     @MainActor
     var activeModelSelection: AIChatModelSelection? {
-        modelSelectionForSend(files: [])
+        guard let route = try? routeForSend() else { return nil }
+        return try? routing.modelSelection(for: route, conversationID: conversationID)
     }
 
     @MainActor
     func modelSelectionForSend(files: [ChatMessageContent.File]) -> AIChatModelSelection? {
-        if inferenceBilling.usesBYOK {
-            guard let model = try? inferenceBilling.modelForChat(conversationID: conversationID) else { return nil }
-            return AIChatModelSelection(byok: model)
-        }
-        return modelProfileOptionForSend(files: files).map(AIChatModelSelection.init(platform:))
+        guard let selection = activeModelSelection else { return nil }
+        guard !(requiresImageInputModel || files.containsImageInput) || selection.supportsImageInput else { return nil }
+        return selection
     }
 
     @MainActor
-    var availableModelOptions: [ExcalidrawModelProfileOption] {
-        agentConfig?.excalidrawModelOptions ?? []
-    }
+    var availableModelOptions: [ExcalidrawModelProfileOption] { schemeCatalog.options }
 
     @MainActor
     func canSelectModelOption(_ option: ExcalidrawModelProfileOption) -> Bool {
-        canSelectModelOption(option, requiresImageInput: requiresImageInputModel)
+        option.isAllowed && (!requiresImageInputModel || option.supportsImageInput)
     }
 
-    @MainActor
-    func canSelectModelOption(
-        _ option: ExcalidrawModelProfileOption,
-        requiresImageInput: Bool
-    ) -> Bool {
-        canShowModelOption(option, requiresImageInput: requiresImageInput)
-            && canUsePlan(for: option)
-    }
-
-    @MainActor
-    func canShowModelOption(
-        _ option: ExcalidrawModelProfileOption,
-        requiresImageInput: Bool
-    ) -> Bool {
-        option.isVisible
-            && (!requiresImageInput || option.supportsImageInput)
-    }
-
-    @MainActor
-    func canUsePlan(for option: ExcalidrawModelProfileOption) -> Bool {
-        !option.requiresMaxAIPlan || store.canUseExtraHighAIModel
-    }
-
-    @MainActor
-    func modelOption(for tier: ExcalidrawModelTier) -> ExcalidrawModelProfileOption? {
-        availableModelOptions.first(where: { $0.profileID == tier.rawValue })
-    }
-
-    @MainActor
-    func fallbackModelOptionIfNeeded(_ tier: ExcalidrawModelTier) -> ExcalidrawModelProfileOption? {
-        fallbackModelOptionIfNeeded(tier, requiresImageInput: requiresImageInputModel)
-    }
-
-    @MainActor
-    func fallbackModelOptionIfNeeded(
-        _ tier: ExcalidrawModelTier,
-        requiresImageInput: Bool
-    ) -> ExcalidrawModelProfileOption? {
-        if let preferred = modelOption(for: tier),
-           canSelectModelOption(preferred, requiresImageInput: requiresImageInput) {
-            return preferred
-        }
-
-        return AIChatRenderDebug.measure("prompt.fallbackModel.candidates") {
-            availableModelOptions.filter {
-                canSelectModelOption($0, requiresImageInput: requiresImageInput)
-            }.first
-        }
-    }
-
-    @MainActor
-    func modelProfileOptionForSend(files: [ChatMessageContent.File]) -> ExcalidrawModelProfileOption? {
-        fallbackModelOptionIfNeeded(
-            selectedTierBeforeFallback,
-            requiresImageInput: requiresImageInputModel || files.containsImageInput
-        )
-    }
-
-    @MainActor
-    var selectedTierBeforeFallback: ExcalidrawModelTier {
-        prefs.tier(for: conversationID)
-            ?? pendingTierSelection
-            ?? prefs.defaultTier
-    }
-
+    /// Attaching an image never silently changes the selected profile or billing route.
     @MainActor
     @discardableResult
-    func upgradeModelForImageInputIfNeeded() -> Bool {
-        if inferenceBilling.usesBYOK { return true }
-        guard canInsertImages else { return false }
-
-        let selectedTier = selectedTierBeforeFallback
-        guard let selectedOption = modelOption(for: selectedTier) else { return true }
-        guard !selectedOption.supportsImageInput else { return true }
-
-        guard let upgradedOption = fallbackModelOptionIfNeeded(selectedTier, requiresImageInput: true) else {
-            return false
-        }
-        guard upgradedOption.supportsImageInput else { return false }
-        let upgradedTier = upgradedOption.tier
-
-        if let id = conversationID {
-            prefs.setTier(upgradedTier, for: id)
-        } else {
-            pendingTierSelection = upgradedTier
-        }
-        return true
-    }
+    func upgradeModelForImageInputIfNeeded() -> Bool { canInsertImages }
 
     @MainActor
     var requiresImageInputModel: Bool {
@@ -436,15 +378,7 @@ struct PromptInputView<Background: View, Header: View>: View {
 
     @MainActor
     var canInsertImages: Bool {
-        if inferenceBilling.usesBYOK { return true }
-        guard let agentConfig else { return true }
-        return AIChatRenderDebug.measure("prompt.canInsertImages") {
-            agentConfig.excalidrawModelOptions.contains {
-                $0.isVisible
-                    && canUsePlan(for: $0)
-                    && $0.supportsImageInput
-            }
-        }
+        activeModelSelection?.supportsImageInput ?? false
     }
 
     @MainActor
@@ -502,8 +436,23 @@ struct PromptInputView<Background: View, Header: View>: View {
                     isInputFocused = true
                 }
             }
-            if !inferenceBilling.usesBYOK {
-                await loadAgentConfigIfNeeded()
+        }
+        .task(id: "\(ObjectIdentifier(llmState)):\(conversationID ?? "new")") {
+            guard AIChatAvailability.canUseAI else { return }
+            do {
+                let sessions = AIChatInferenceSessions.shared
+                try await sessions.ensureMetadataLoaded()
+                guard !Task.isCancelled, sessions.session(for: conversationID).state === llmState else { return }
+                if let conversationID {
+                    await aiChatState.refreshSelectedConversationCacheIfNeeded(in: llmState, fileState: fileState)
+                    guard !Task.isCancelled, let conversation else { return }
+                    if conversation.schemeConnection == nil, conversation.directConnection == nil {
+                        try await routing.loadLegacySelection(conversationID: conversationID)
+                    }
+                }
+                await loadSchemeIfNeeded()
+            } catch {
+                if !Task.isCancelled { alertToast.presentAIChatError(error) }
             }
         }
         .watch(value: prefs.isAIEnabled) { isEnabled in
@@ -512,16 +461,18 @@ struct PromptInputView<Background: View, Header: View>: View {
         }
         .watch(value: inferenceBilling.mode) {
             if !inferenceBilling.usesBYOK {
-                Task { await loadAgentConfigIfNeeded() }
+                Task { await loadSchemeIfNeeded() }
             }
         }
-        .sheet(isPresented: $isPresentingBYOKModelPicker) {
+        .sheet(item: $byokModelPickerTarget) { target in
             AIInferenceModelPicker(
                 billing: inferenceBilling,
                 catalog: byokModelCatalog,
-                selectedID: activeModelSelection?.model.rawValue ?? ""
+                selectedID: target.selectedModelID,
+                connectionID: target.connectionID,
+                integrationMode: target.integrationMode
             ) { id in
-                try pickBYOKModel(id)
+                try await pickBYOKModel(id, target: target)
             }
         }
 #if os(iOS)

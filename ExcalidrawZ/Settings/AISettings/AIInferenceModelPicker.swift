@@ -8,19 +8,26 @@ struct AIInferenceModelPicker: View {
     @ObservedObject var billing: AIInferenceBillingState
     @ObservedObject var catalog: AIInferenceModelCatalog
     let selectedID: String
-    let onSelect: (String) throws -> Void
+    var connectionID: String? = nil
+    var integrationMode: AIInferenceIntegrationMode? = nil
+    let onSelect: (String) async throws -> Void
 
     @State private var search = ""
     @State private var manualID = ""
     @State private var isManualEntryExpanded = false
     @State private var selectionError: String?
+    @State private var isSelecting = false
 
-    private var snapshot: AIInferenceModelCatalog.Snapshot { catalog.snapshot(for: billing) }
+    private var profile: AIInferenceConnectionProfile? {
+        billing.profiles.first { $0.id == (connectionID ?? billing.selectedProfileID) }
+    }
+
+    private var snapshot: AIInferenceModelCatalog.Snapshot { catalog.snapshot(for: billing, profileID: connectionID, integrationMode: integrationMode) }
 
     private var models: [LLMBYOKModel] {
         var models = snapshot.models
         let known = Set(models.map(\.id))
-        let saved = Set(billing.savedModelIDs + [selectedID]).filter { !$0.isEmpty && !known.contains($0) }
+        let saved = Set(billing.savedModelIDs(profileID: connectionID ?? billing.selectedProfileID) + [selectedID]).filter { !$0.isEmpty && !known.contains($0) }
         models += saved.sorted().map { LLMBYOKModel(id: $0) }
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         return models.filter {
@@ -53,11 +60,12 @@ struct AIInferenceModelPicker: View {
         .frame(width: 520, height: 600)
 #endif
         .task(id: billing.modelCatalogRevision) {
-            await catalog.load(for: billing)
+            await catalog.load(for: billing, profileID: connectionID, integrationMode: integrationMode)
         }
+        .allowsHitTesting(!isSelecting)
         .onAppear {
             manualID = selectedID
-            isManualEntryExpanded = billing.configuration?.modelDiscovery == nil
+            isManualEntryExpanded = profile?.configuration?.modelDiscovery == nil
         }
     }
 
@@ -78,7 +86,7 @@ struct AIInferenceModelPicker: View {
                 VStack(spacing: 3) {
                     Text(.localizable(.aiBYOKModelPickerTitle))
                         .font(.title3.weight(.semibold))
-                    if let profile = billing.selectedProfile {
+                    if let profile {
                         Text(profile.displayName)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -101,7 +109,7 @@ struct AIInferenceModelPicker: View {
                     Spacer(minLength: 12)
 
                     Button {
-                        Task { await catalog.load(for: billing, force: true) }
+                        Task { await catalog.load(for: billing, profileID: connectionID, integrationMode: integrationMode, force: true) }
                     } label: {
                         ZStack {
                             Label(.localizable(.aiBYOKRefreshModels), systemImage: "arrow.clockwise")
@@ -113,7 +121,7 @@ struct AIInferenceModelPicker: View {
                     }
                     .modernButtonStyle(style: .glass, size: .large, shape: .circle)
                     .help(.localizable(.aiBYOKRefreshModels))
-                    .disabled(snapshot.isLoading || !billing.hasStoredKey || billing.configuration?.modelDiscovery == nil)
+                    .disabled(snapshot.isLoading || profile?.configuration?.modelDiscovery == nil)
                 }
             }
             searchField
@@ -165,8 +173,8 @@ struct AIInferenceModelPicker: View {
                 } else {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 28, weight: .light))
-                    Text(.localizable(!billing.hasStoredKey ? .aiBYOKMissingKey
-                        : billing.configuration?.modelDiscovery == nil ? .aiBYOKModelListDisabled
+                    Text(.localizable(profile == nil ? .aiBYOKSelectConnection
+                        : profile?.configuration?.modelDiscovery == nil ? .aiBYOKModelListDisabled
                         : search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                             ? .aiBYOKNoModels : .aiBYOKNoSearchResults))
                 }
@@ -219,7 +227,7 @@ struct AIInferenceModelPicker: View {
                         .onSubmit { select(manualID) }
                     Button(.localizable(.aiBYOKUseModel)) { select(manualID) }
                         .modernButtonStyle(style: .glassProminent, size: .regular, shape: .modern)
-                        .disabled(billing.isBusy || (try? billing.modelForChat(overridingModelID: manualID)) == nil)
+                        .disabled(billing.isBusy || (try? billing.modelForChat(overridingModelID: manualID, profileID: connectionID)) == nil)
                 }
             }
             if let selectionError { errorLabel(selectionError) }
@@ -236,15 +244,21 @@ struct AIInferenceModelPicker: View {
     }
 
     private func select(_ id: String) {
-        do {
-            guard !billing.isBusy else { throw AIInferenceBillingError.settingsBusy }
-            _ = try billing.modelForChat(overridingModelID: id)
-            try onSelect(id)
-            dismiss()
-        } catch {
-            selectionError = (AIInferenceErrorMessage.localizedError(for: error) ?? error).localizedDescription
+        guard !isSelecting else { return }
+        isSelecting = true
+        Task { @MainActor in
+            defer { isSelecting = false }
+            do {
+                guard !billing.isBusy else { throw AIInferenceBillingError.settingsBusy }
+                _ = try billing.modelForChat(overridingModelID: id, profileID: connectionID)
+                try await onSelect(id)
+                dismiss()
+            } catch {
+                selectionError = (AIInferenceErrorMessage.localizedError(for: error) ?? error).localizedDescription
+            }
         }
     }
+
 }
 
 private struct AIInferenceModelPickerRow: View {

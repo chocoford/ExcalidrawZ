@@ -10,6 +10,8 @@ final class AIInferenceModelCatalog: ObservableObject {
 
     struct Snapshot {
         var revision = -1
+        var profileID: String?
+        var integrationMode: AIInferenceIntegrationMode = .optimized
         var models: [LLMBYOKModel] = []
         var isLoading = false
         var errorMessage: String?
@@ -19,20 +21,23 @@ final class AIInferenceModelCatalog: ObservableObject {
     private var request: Task<Void, Never>?
     private var requestID = UUID()
     private var didLoad = false
-    private let fetch: @Sendable (LLMBYOKProvider) async throws -> [LLMBYOKModel]
+    private let fetch: @Sendable (LLMBYOKProvider, AIInferenceIntegrationMode) async throws -> [LLMBYOKModel]
 
-    init(fetch: @escaping @Sendable (LLMBYOKProvider) async throws -> [LLMBYOKModel] = {
-        try await LLMClient.shared.listBYOKModels(provider: $0)
+    init(fetch: @escaping @Sendable (LLMBYOKProvider, AIInferenceIntegrationMode) async throws -> [LLMBYOKModel] = {
+        if $1 == .basic { return try await LLMClient(directBYOK: $0).listBYOKModels() }
+        return try await LLMClient.shared.listBYOKModels(provider: $0)
     }) {
         self.fetch = fetch
     }
 
-    func snapshot(for billing: AIInferenceBillingState) -> Snapshot {
-        snapshot.revision == billing.modelCatalogRevision ? snapshot : Snapshot()
+    func snapshot(for billing: AIInferenceBillingState, profileID: String? = nil, integrationMode: AIInferenceIntegrationMode? = nil) -> Snapshot {
+        snapshot.revision == billing.modelCatalogRevision && snapshot.profileID == (profileID ?? billing.selectedProfileID)
+            && snapshot.integrationMode == (integrationMode ?? billing.integrationMode)
+            ? snapshot : Snapshot()
     }
 
-    func displayName(for id: String, billing: AIInferenceBillingState) -> String {
-        snapshot(for: billing).models.first(where: { $0.id == id })?.displayName ?? id
+    func displayName(for id: String, billing: AIInferenceBillingState, profileID: String? = nil, integrationMode: AIInferenceIntegrationMode? = nil) -> String {
+        snapshot(for: billing, profileID: profileID, integrationMode: integrationMode).models.first(where: { $0.id == id })?.displayName ?? id
     }
 
     func cancel() {
@@ -42,9 +47,12 @@ final class AIInferenceModelCatalog: ObservableObject {
         snapshot.isLoading = false
     }
 
-    func load(for billing: AIInferenceBillingState, force: Bool = false) async {
+    func load(for billing: AIInferenceBillingState, profileID: String? = nil, integrationMode: AIInferenceIntegrationMode? = nil, force: Bool = false) async {
         let revision = billing.modelCatalogRevision
-        if snapshot.revision == revision, !force {
+        let connectionID = profileID ?? billing.selectedProfileID
+        let mode = integrationMode ?? billing.integrationMode
+        let sameConnection = snapshot.profileID == connectionID && snapshot.integrationMode == mode
+        if snapshot.revision == revision, sameConnection, !force {
             if let request { await request.value; return }
             if didLoad { return }
         }
@@ -52,18 +60,19 @@ final class AIInferenceModelCatalog: ObservableObject {
         let id = UUID()
         requestID = id
         didLoad = false
-        let cachedModels = snapshot.revision == revision ? snapshot.models : []
-        snapshot = Snapshot(revision: revision)
-        guard billing.usesBYOK, billing.hasStoredKey else { return }
+        let cachedModels = snapshot.revision == revision && sameConnection ? snapshot.models : []
+        snapshot = Snapshot(revision: revision, profileID: connectionID, integrationMode: mode)
+        guard profileID != nil || (billing.usesBYOK && billing.hasStoredKey) else { return }
         snapshot.models = cachedModels
-        if let configuration = billing.configuration, configuration.modelDiscovery == nil {
+        if let configuration = billing.profiles.first(where: { $0.id == connectionID })?.configuration,
+           configuration.modelDiscovery == nil {
             didLoad = true
             return
         }
 
         let provider: LLMBYOKProvider
         do {
-            provider = try billing.modelDiscoveryProvider()
+            provider = try billing.modelDiscoveryProvider(profileID: profileID)
         } catch {
             snapshot.errorMessage = message(for: error)
             didLoad = true
@@ -83,9 +92,9 @@ final class AIInferenceModelCatalog: ObservableObject {
             do {
                 // Coalesce automatic refreshes while connection settings are being edited.
                 if !force { try await Task.sleep(nanoseconds: 300_000_000) }
-                let models = try await fetch(provider)
+                let models = try await fetch(provider, mode)
                 try Task.checkCancellation()
-                guard requestID == id, billing.modelCatalogRevision == revision, billing.usesBYOK else { return }
+                guard requestID == id, billing.modelCatalogRevision == revision, (profileID != nil || billing.usesBYOK) else { return }
                 var seen = Set<String>()
                 snapshot.models = models.filter { seen.insert($0.id).inserted }.sorted {
                     $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending
@@ -93,7 +102,7 @@ final class AIInferenceModelCatalog: ObservableObject {
                 didLoad = true
             } catch is CancellationError {
             } catch {
-                guard requestID == id, billing.modelCatalogRevision == revision, billing.usesBYOK else { return }
+                guard requestID == id, billing.modelCatalogRevision == revision, (profileID != nil || billing.usesBYOK) else { return }
                 snapshot.errorMessage = message(for: error)
                 didLoad = true
             }

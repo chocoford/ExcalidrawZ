@@ -152,7 +152,7 @@ extension AISettingsView {
         }
         .labelsHidden()
         .pickerStyle(.segmented)
-        .mcpServiceModePickerShape()
+        .aiIntegrationModePickerShape()
         .fixedSize(horizontal: true, vertical: true)
         .id(mcpServiceModePickerID)
     }
@@ -1067,9 +1067,11 @@ private extension View {
         self
 #endif
     }
+}
 
+extension View {
     @ViewBuilder
-    func mcpServiceModePickerShape() -> some View {
+    func aiIntegrationModePickerShape() -> some View {
         if #available(macOS 14.0, *) {
             self
                 .buttonBorderShape(.capsule)

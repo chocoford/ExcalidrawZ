@@ -41,23 +41,23 @@ extension AlertToastAction {
         }
 
         switch llmError {
-        case .insufficientCredits:
-            // Open the paywall directly — credits are an actionable, money-
-            // based wall, so a toast that just says "top up" would just be a
-            // dead end. `Store.shared.togglePaywall` flips the global paywall
-            // sheet, which is already mounted by `PaywallModifier` on the
-            // root content view.
-            Store.shared.togglePaywall(reason: .aiInsufficientCredits)
-        case .unauthorized:
-            // TODO: open sign-in sheet once an entry point lands.
+            case .insufficientCredits:
+                // Open the paywall directly — credits are an actionable, money-
+                // based wall, so a toast that just says "top up" would just be a
+                // dead end. `Store.shared.togglePaywall` flips the global paywall
+                // sheet, which is already mounted by `PaywallModifier` on the
+                // root content view.
+                Store.shared.togglePaywall(reason: .aiInsufficientCredits)
+            case .unauthorized:
+                // TODO: open sign-in sheet once an entry point lands.
                 self(AIChatToastMessage(String(localizable: .aiChatErrorUnauthorization)))
-        case .forbidden(let reason):
+            case .forbidden(let reason):
                 self(AIChatToastMessage(reason ?? String(localizable: .aiChatErrorForbiddenFallback)))
-        case .rateLimited:
+            case .rateLimited:
                 self(AIChatToastMessage(String(localizable: .aiChatErrorRateLimited)))
-        case .server, .decoding, .network:
-            // The SDK supplies the fallback description for unrecognized errors.
-            self(llmError)
+            case .accessDenied, .server, .decoding, .network:
+                // The SDK supplies the fallback description for unrecognized errors.
+                self(llmError)
         }
     }
 }

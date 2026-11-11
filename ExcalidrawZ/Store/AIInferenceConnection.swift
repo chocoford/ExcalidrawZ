@@ -66,6 +66,19 @@ enum AIInferenceConnection: RawRepresentable, CaseIterable, Identifiable, Codabl
             case .custom: nil
         }
     }
+
+    /// Model hints and catalog settings can differ from the SDK preset after editing.
+    /// Recognize an official preset by its saved identity and actual inference endpoint.
+    func configurationWithWebSearchSupport(_ configuration: LLMBYOKConfiguration) -> LLMBYOKConfiguration {
+        guard configuration.webSearch == nil,
+              case .preset(let preset) = self,
+              let adapter = preset.webSearchAdapter,
+              configuration.apiFormat == preset.configuration.apiFormat,
+              configuration.chatCompletionsURL == preset.configuration.chatCompletionsURL else { return configuration }
+        var result = configuration
+        result.webSearch = .init(adapter: adapter, isEnabled: false)
+        return result
+    }
 }
 
 /// A saved account or endpoint. Credentials use this identity as their Keychain account.
@@ -79,5 +92,9 @@ struct AIInferenceConnectionProfile: Codable, Equatable, Identifiable, Sendable 
     var displayName: String {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         return name.isEmpty ? provider.title : name
+    }
+
+    var webSearchConfiguration: LLMBYOKConfiguration? {
+        configuration.map(provider.configurationWithWebSearchSupport)
     }
 }

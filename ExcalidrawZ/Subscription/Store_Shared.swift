@@ -44,6 +44,7 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
         mcpFeature: String?,
         collaborationRoomsCount: String,
         includesPresentation: Bool = false,
+        includesOptimizedBYOK: Bool = false,
         aiCredits: Int? = nil
     ) -> [String] {
         var features = commonPlanFeatures
@@ -52,9 +53,13 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
                 String(localizable: .paywallPlanGeneralFeaturesPresentation)
             )
         }
-        if ExcalidrawZMCPServerController.isAvailable,
-           let mcpFeature {
-            features.append(mcpFeature)
+        let byokFeature: String? = AIChatAvailability.isAvailable
+            ? String(localizable: includesOptimizedBYOK ? .aiBYOKOptimizedFeatureTitle : .aiServiceBYOK)
+            : nil
+        if ExcalidrawZMCPServerController.isAvailable, let mcpFeature {
+            features.append([mcpFeature, byokFeature].compactMap { $0 }.joined(separator: " · "))
+        } else if let byokFeature {
+            features.append(byokFeature)
         }
         features.append(
             String(
@@ -93,7 +98,8 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
         features: Self.planFeatures(
             mcpFeature: String(localizable: .paywallPlanGeneralFeaturesOptimizedMCPServices),
             collaborationRoomsCount: String(localizable: .paywallPlanGeneralFeaturesUnlimitedValue),
-            includesPresentation: true
+            includesPresentation: true,
+            includesOptimizedBYOK: true
         ),
         fallbackDisplayPrice: "$2.99",
         fallbackDisplayPeriod: "a month",
@@ -110,6 +116,7 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
             mcpFeature: String(localizable: .paywallPlanGeneralFeaturesOptimizedMCPServices),
             collaborationRoomsCount: String(localizable: .paywallPlanGeneralFeaturesUnlimitedValue),
             includesPresentation: true,
+            includesOptimizedBYOK: true,
             aiCredits: 500
         ),
         fallbackDisplayPrice: "$9.99",
@@ -126,6 +133,7 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
             mcpFeature: String(localizable: .paywallPlanGeneralFeaturesOptimizedMCPServices),
             collaborationRoomsCount: String(localizable: .paywallPlanGeneralFeaturesUnlimitedValue),
             includesPresentation: true,
+            includesOptimizedBYOK: true,
             aiCredits: 1800
         ),
         fallbackDisplayPrice: "$29.99",
@@ -142,6 +150,7 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
             mcpFeature: String(localizable: .paywallPlanGeneralFeaturesOptimizedMCPServices),
             collaborationRoomsCount: String(localizable: .paywallPlanGeneralFeaturesUnlimitedValue),
             includesPresentation: true,
+            includesOptimizedBYOK: true,
             aiCredits: 5400
         ),
         fallbackDisplayPrice: "$99.99",
@@ -181,11 +190,6 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
 }
 
 extension Store {
-    @MainActor
-    var canUseExtraHighAIModel: Bool {
-        activeSubscriptionItem == .max || activeSubscriptionItem == .max10x
-    }
-
     var canUseOptimizedMCPServices: Bool {
         guard ExcalidrawZMCPServerController.isAvailable else { return false }
         guard let activeSubscriptionItem else { return false }
@@ -206,6 +210,7 @@ extension Store {
         /// leaving the canvas.
         case aiInsufficientCredits
         case optimizedMCPServices
+        case optimizedBYOK
         case presentation
 
         var paywallMessage: String? {
@@ -219,6 +224,8 @@ extension Store {
                     "Your AI credits have run out. Upgrade to keep chatting."
                 case .optimizedMCPServices:
                     String(localizable: .paywallReachReasonOptimizedMCPServices)
+                case .optimizedBYOK:
+                    String(localizable: .aiBYOKOptimizedRequiresStarter)
                 case .presentation:
                     String(localizable: .paywallReachReasonPresentation)
             }

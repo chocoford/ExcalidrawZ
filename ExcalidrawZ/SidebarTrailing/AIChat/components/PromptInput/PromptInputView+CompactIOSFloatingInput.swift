@@ -358,7 +358,7 @@ extension PromptInputView {
         )
         .clipShape(Circle())
         .contentShape(Circle())
-        .disabled(!primaryActionIsStop && !hasInputText)
+        .disabled(!primaryActionIsStop && (!hasInputText || isUpdatingConversationRoute))
     }
 
     @ViewBuilder
@@ -397,15 +397,15 @@ extension PromptInputView {
     @ViewBuilder
     var compactIOSFloatingModelPicker: some View {
         SwiftUI.Group {
-            if inferenceBilling.usesBYOK {
+            if modelPickerUsesDirectSheet {
                 Button {
-                    isPresentingBYOKModelPicker = true
+                    openBYOKModelPicker()
                 } label: {
                     compactIOSFloatingModelPickerLabel
                 }
             } else {
                 Menu {
-                    modelTierPickerButtons()
+                    modelProfilePickerButtons()
                 } label: {
                     compactIOSFloatingModelPickerLabel
                 }
@@ -414,7 +414,7 @@ extension PromptInputView {
         .fixedSize()
         .menuIndicator(.hidden)
         .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
-        .disabled(inferenceBilling.usesBYOK ? inferenceBilling.isBusy : modelPickerTiers.isEmpty)
+        .disabled(isGenerating || isCompactingContext || isUpdatingConversationRoute || inferenceBilling.isBusy)
         .accessibilityLabel(modelPickerTitle)
         .help(modelPickerTitle)
     }
@@ -431,8 +431,8 @@ extension PromptInputView {
 
     @MainActor
     var compactIOSFloatingModelPickerTitle: String {
-        if inferenceBilling.usesBYOK { return "AI" }
-        return activeModelProfileOption?.tier.compactIOSFloatingShortLabel ?? "..."
+        if modelPickerUsesBYOK || (conversationID != nil && conversation?.schemeConnection == nil) { return "AI" }
+        return activeModelProfileOption.map { String($0.title.prefix(2)) } ?? "..."
     }
 
     @ViewBuilder
@@ -514,7 +514,7 @@ extension PromptInputView {
             .disabled(!hasActiveFileForAIAccessControl || !canToggleAIFileAccess)
 
             Menu {
-                modelTierPickerButtons()
+                modelProfilePickerButtons()
             } label: {
                 Text(modelPickerTitle)
             }
@@ -575,18 +575,4 @@ extension PromptInputView {
 
 }
 
-private extension ExcalidrawModelTier {
-    var compactIOSFloatingShortLabel: String {
-        switch self {
-            case .low:
-                return "L"
-            case .medium:
-                return "M"
-            case .high:
-                return "H"
-            case .extraHigh:
-                return "X"
-        }
-    }
-}
 #endif

@@ -70,7 +70,7 @@
       "location" : "https://github.com/chocoford/LLMCore.git",
       "state" : {
         "branch" : "main",
-        "revision" : "7c56748d689600e1824b5abd26be700db705bbc9"
+        "revision" : "ed7d9cf014c4b51e5315d94aa48fd5da9a563dee"
       }
     },
     {
@@ -79,7 +79,7 @@
       "location" : "https://github.com/chocoford/LLMKit.git",
       "state" : {
         "branch" : "dev",
-        "revision" : "9ef1fd1030d874e3a24db3b435580f74eb341c83"
+        "revision" : "43e1dec8c40e52c855d504da01288d274f822726"
       }
     },
     {
@@ -106,7 +106,7 @@
       "location" : "https://github.com/MacPaw/OpenAI.git",
       "state" : {
         "branch" : "main",
-        "revision" : "8fe7034492817abd942ddac5e4dd64636393666a"
+        "revision" : "f5d181533a78a21ee50a12b7abc7ce8eba960100"
       }
     },
     {

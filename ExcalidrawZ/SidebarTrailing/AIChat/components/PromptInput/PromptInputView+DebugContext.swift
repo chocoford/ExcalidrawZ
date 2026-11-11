@@ -147,7 +147,7 @@ extension PromptInputView {
         let prompt = promptDraftState.text.trimmingCharacters(in: .whitespacesAndNewlines)
         let files = PastedImageHelpers.buildFiles(from: promptDraftState.images)
 
-        await loadAgentConfigIfNeeded()
+        await loadSchemeIfNeeded()
 
         guard let modelOption = modelSelectionForSend(files: files) else {
             throw AIChatModelProfileUnavailableError()

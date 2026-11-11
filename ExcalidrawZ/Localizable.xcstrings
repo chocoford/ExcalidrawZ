@@ -336,7 +336,7 @@
       }
     },
     "aiBYOKKeyPlaceholder": {
-      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "comment": "BYOK app settings and request errors; data flow depends on Basic or Optimized mode.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -360,25 +360,25 @@
       }
     },
     "aiBYOKDataFlowHelp": {
-      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "comment": "BYOK app settings and request errors; data flow depends on Basic or Optimized mode.",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your key and AI content pass through the ExcalidrawZ server to your AI provider. Your provider bills model usage. Web search and other app services may still use ExcalidrawZ credits."
+            "value": "Basic sends your key and AI content directly to your provider. Optimized sends them through ExcalidrawZ servers. Your provider bills model usage; platform services in Optimized may also use ExcalidrawZ credits."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "密钥和 AI 内容会经由 ExcalidrawZ 服务器传送至你的 AI 服务商。模型用量由服务商计费，网页搜索等 App 服务仍可能消耗 ExcalidrawZ 积分。"
+            "value": "Basic 将密钥和 AI 内容直接发送给服务商；Optimized 则经由 ExcalidrawZ 服务器转发。模型用量由服务商计费，Optimized 中的平台服务还可能消耗 ExcalidrawZ 积分。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "金鑰與 AI 內容會經由 ExcalidrawZ 伺服器傳送至你的 AI 服務商。模型用量由服務商計費，網頁搜尋等 App 服務仍可能消耗 ExcalidrawZ 點數。"
+            "value": "Basic 將金鑰與 AI 內容直接傳送給服務商；Optimized 則經由 ExcalidrawZ 伺服器轉送。模型用量由服務商計費，Optimized 中的平台服務還可能消耗 ExcalidrawZ 點數。"
           }
         }
       }
@@ -407,8 +407,440 @@
         }
       }
     },
+    "aiBYOKIntegrationTitle": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Integration Mode"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "集成方式"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "整合方式"
+          }
+        }
+      }
+    },
+    "aiBYOKConnectionsTitle": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connections"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連線"
+          }
+        }
+      }
+    },
+    "aiBYOKBasicOption": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basic"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本"
+          }
+        }
+      }
+    },
+    "aiBYOKOptimizedOption": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optimized"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "优化"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "優化"
+          }
+        }
+      }
+    },
+    "aiBYOKBasicDescription": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect directly to your AI provider with basic drawing tools. Your key and AI content do not pass through ExcalidrawZ servers."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直接连接你的 AI 服务商，配合基础绘图工具使用。密钥和 AI 内容不经过 ExcalidrawZ 服务器。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直接連接你的 AI 服務商，搭配基本繪圖工具使用。金鑰與 AI 內容不經過 ExcalidrawZ 伺服器。"
+          }
+        }
+      }
+    },
+    "aiBYOKOptimizedDescription": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use ExcalidrawZ’s enhanced canvas assistant through our servers. Available with Starter or higher."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过 ExcalidrawZ 服务器使用增强画布助手，需 Starter 或更高套餐。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透過 ExcalidrawZ 伺服器使用增強畫布助手，需 Starter 或更高方案。"
+          }
+        }
+      }
+    },
+    "aiBYOKOptimizedRequiresStarter": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optimized BYOK requires Starter or higher."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "优化 BYOK 需要 Starter 或更高套餐。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "優化 BYOK 需要 Starter 或更高方案。"
+          }
+        }
+      }
+    },
+    "aiBYOKUpgradeToStarter": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upgrade to Starter"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "升级至 Starter"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "升級至 Starter"
+          }
+        }
+      }
+    },
+    "aiBYOKBasicDrawingTitle": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basic Drawing Tools"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基础绘图工具"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本繪圖工具"
+          }
+        }
+      }
+    },
+    "aiBYOKBasicDrawingDescription": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generate diagrams and revise them using checkpoints, with the same tools as Basic MCP."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用与基本 MCP 相同的工具生成图表，并通过检查点继续修改。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用與基本 MCP 相同的工具產生圖表，並透過檢查點繼續修改。"
+          }
+        }
+      }
+    },
+    "aiBYOKOptimizedFeatureTitle": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optimized BYOK"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "优化 BYOK"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "優化 BYOK"
+          }
+        }
+      }
+    },
+    "aiBYOKOptimizedFeatureDescription": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use your own API key with the enhanced canvas assistant, including canvas editing, files and libraries."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用自己的 API 密钥搭配增强画布助手，支持画布编辑、文件和素材库工具。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用自己的 API 金鑰搭配增強畫布助手，支援畫布編輯、檔案與素材庫工具。"
+          }
+        }
+      }
+    },
+    "aiBYOKDirectConnectionTitle": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Direct Connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直连服务商"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直連服務商"
+          }
+        }
+      }
+    },
+    "aiBYOKManagedConnectionTitle": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Through ExcalidrawZ"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过 ExcalidrawZ 连接"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透過 ExcalidrawZ 連接"
+          }
+        }
+      }
+    },
+    "aiBYOKProviderBillingNote": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model usage is billed by your provider. Web search and other app services in Optimized mode may also use ExcalidrawZ credits."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型用量由服务商计费。优化模式中的网页搜索等 App 服务仍可能消耗 ExcalidrawZ 积分。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型用量由服務商計費。優化模式中的網頁搜尋等 App 服務仍可能消耗 ExcalidrawZ 點數。"
+          }
+        }
+      }
+    },
+    "aiBYOKBasicFreeDescription": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No ExcalidrawZ subscription is required. Model usage is billed by your provider."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无需订阅 ExcalidrawZ，模型用量由服务商计费。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無需訂閱 ExcalidrawZ，模型用量由服務商計費。"
+          }
+        }
+      }
+    },
+    "aiBYOKStarterPlanDescription": {
+      "comment": "BYOK Basic direct / Optimized server integration settings and plan comparison.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Included with Starter and higher plans. Model usage is billed separately by your provider."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starter 及更高套餐包含此功能，模型用量由服务商另行计费。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starter 及更高方案包含此功能，模型用量由服務商另行計費。"
+          }
+        }
+      }
+    },
+    "paywallFeatureOptimizedBYOKMessage": {
+      "comment": "Compact BYOK benefit in the paywall, comparing Basic direct and Optimized server connections.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use your API key with the enhanced canvas assistant."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用自己的 API 密钥体验增强画布助手。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用自己的 API 金鑰體驗增強畫布助手。"
+          }
+        }
+      }
+    },
     "aiBYOKSettingsBusy": {
-      "comment": "OpenRouter BYOK app settings and request error message. BYOK still routes through ExcalidrawZ servers.",
+      "comment": "BYOK settings and request errors, shared by Basic direct and Optimized server modes.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -432,7 +864,7 @@
       }
     },
     "aiBYOKModelBillingNote": {
-      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "comment": "BYOK app settings and request errors; data flow depends on Basic or Optimized mode.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -456,7 +888,7 @@
       }
     },
     "aiBYOKMissingKey": {
-      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "comment": "BYOK app settings and request errors; data flow depends on Basic or Optimized mode.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -480,7 +912,7 @@
       }
     },
     "aiBYOKInvalidKey": {
-      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "comment": "BYOK app settings and request errors; data flow depends on Basic or Optimized mode.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -504,7 +936,7 @@
       }
     },
     "aiBYOKKeychainError": {
-      "comment": "OpenRouter BYOK app settings and request error message. BYOK still routes through ExcalidrawZ servers.",
+      "comment": "BYOK settings and request errors, shared by Basic direct and Optimized server modes.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -528,7 +960,7 @@
       }
     },
     "aiBYOKSecureConnectionRequired": {
-      "comment": "OpenRouter BYOK app settings and request error message. BYOK still routes through ExcalidrawZ servers.",
+      "comment": "BYOK settings and request errors, shared by Basic direct and Optimized server modes.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -552,7 +984,7 @@
       }
     },
     "aiBYOKServiceUnavailable": {
-      "comment": "OpenRouter BYOK app settings and request error message. BYOK still routes through ExcalidrawZ servers.",
+      "comment": "BYOK settings and request errors, shared by Basic direct and Optimized server modes.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -576,7 +1008,7 @@
       }
     },
     "aiBYOKProviderAuthenticationFailed": {
-      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "comment": "BYOK app settings and request errors; data flow depends on Basic or Optimized mode.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -600,7 +1032,7 @@
       }
     },
     "aiBYOKProviderInsufficientCredits": {
-      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "comment": "BYOK app settings and request errors; data flow depends on Basic or Optimized mode.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -624,7 +1056,7 @@
       }
     },
     "aiBYOKProviderRateLimited": {
-      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "comment": "BYOK app settings and request errors; data flow depends on Basic or Optimized mode.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -648,7 +1080,7 @@
       }
     },
     "aiBYOKProviderFailed": {
-      "comment": "BYOK app settings and request errors. Credentials still pass through ExcalidrawZ servers.",
+      "comment": "BYOK app settings and request errors; data flow depends on Basic or Optimized mode.",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -667,6 +1099,234 @@
           "stringUnit": {
             "state": "translated",
             "value": "無法完成 AI 服務請求。請檢查連線、金鑰與帳戶後再試一次。"
+          }
+        }
+      }
+    },
+    "whatsNewBYOKTitle": {
+      "comment": "What's New 2.6.0 title for Bring Your Own Key AI connections.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bring Your Own AI Key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自带 AI 密钥"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自備 AI 金鑰"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استخدم مفتاح الذكاء الاصطناعي الخاص بك"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eigener API-Schlüssel für KI"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa tu propia clave de IA"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilisez votre propre clé IA"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अपनी AI API कुंजी इस्तेमाल करें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa la tua chiave AI"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自分の AI API キーを使用"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나만의 AI API 키 사용"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebruik je eigen AI-sleutel"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Użyj własnego klucza AI"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use sua própria chave de IA"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Используйте свой ключ ИИ"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ใช้คีย์ AI ของคุณเอง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kendi AI anahtarınızı kullanın"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sử dụng khóa AI của riêng bạn"
+          }
+        }
+      }
+    },
+    "whatsNewBYOKDescription": {
+      "comment": "What's New 2.6.0 summary of AI providers, saved connections and Chat model selection.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect OpenAI, Anthropic, Gemini, OpenRouter and more, or add a custom provider. Save multiple connections and choose models directly in Chat."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接入 OpenAI、Anthropic、Gemini、OpenRouter 等服务，或添加自定义服务商。保存多个连接，在 Chat 中直接选择模型。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連接 OpenAI、Anthropic、Gemini、OpenRouter 等服務，或新增自訂服務商。儲存多個連線，在 Chat 中直接選擇模型。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اتصل بخدمات OpenAI وAnthropic وGemini وOpenRouter وغيرها، أو أضف مزوّدًا مخصّصًا. احفظ اتصالات متعددة واختر النماذج مباشرة في الدردشة."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinde OpenAI, Anthropic, Gemini, OpenRouter und weitere Dienste oder füge einen eigenen Anbieter hinzu. Speichere mehrere Verbindungen und wähle Modelle direkt im Chat."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conecta OpenAI, Anthropic, Gemini, OpenRouter y otros servicios, o añade un proveedor personalizado. Guarda varias conexiones y elige modelos directamente en el chat."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez OpenAI, Anthropic, Gemini, OpenRouter et d’autres services, ou ajoutez un fournisseur personnalisé. Enregistrez plusieurs connexions et choisissez les modèles directement dans le chat."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI, Anthropic, Gemini, OpenRouter और अन्य सेवाएँ जोड़ें, या कस्टम प्रदाता जोड़ें। कई कनेक्शन सहेजें और सीधे Chat में मॉडल चुनें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collega OpenAI, Anthropic, Gemini, OpenRouter e altri servizi, oppure aggiungi un provider personalizzato. Salva più connessioni e scegli i modelli direttamente nella chat."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI、Anthropic、Gemini、OpenRouter などに接続したり、カスタムプロバイダを追加したりできます。複数の接続を保存し、チャットで直接モデルを選べます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI, Anthropic, Gemini, OpenRouter 등에 연결하거나 사용자 지정 제공업체를 추가하세요. 여러 연결을 저장하고 채팅에서 직접 모델을 선택할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbind OpenAI, Anthropic, Gemini, OpenRouter en meer, of voeg een eigen aanbieder toe. Bewaar meerdere verbindingen en kies modellen rechtstreeks in de chat."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz OpenAI, Anthropic, Gemini, OpenRouter i inne usługi lub dodaj własnego dostawcę. Zapisuj wiele połączeń i wybieraj modele bezpośrednio na czacie."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conecte OpenAI, Anthropic, Gemini, OpenRouter e outros serviços ou adicione um provedor personalizado. Salve várias conexões e escolha modelos diretamente no chat."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключите OpenAI, Anthropic, Gemini, OpenRouter и другие сервисы или добавьте своего провайдера. Сохраняйте несколько подключений и выбирайте модели прямо в чате."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เชื่อมต่อ OpenAI, Anthropic, Gemini, OpenRouter และบริการอื่น ๆ หรือเพิ่มผู้ให้บริการแบบกำหนดเอง บันทึกหลายการเชื่อมต่อและเลือกโมเดลได้โดยตรงในแชต"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI, Anthropic, Gemini, OpenRouter ve diğer hizmetlere bağlanın veya özel bir sağlayıcı ekleyin. Birden fazla bağlantı kaydedin ve modelleri doğrudan sohbette seçin."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết nối OpenAI, Anthropic, Gemini, OpenRouter và các dịch vụ khác hoặc thêm nhà cung cấp tùy chỉnh. Lưu nhiều kết nối và chọn mô hình trực tiếp trong trò chuyện."
           }
         }
       }
@@ -155244,19 +155904,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your key passes through ExcalidrawZ"
+            "value": "Your key is saved in Keychain"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "密钥会经过 ExcalidrawZ"
+            "value": "密钥保存在钥匙串中"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "金鑰會經過 ExcalidrawZ"
+            "value": "金鑰儲存在鑰匙圈中"
           }
         }
       }
@@ -155436,19 +156096,801 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "I allow my API key and AI request content to be sent through ExcalidrawZ to the provider or endpoint I configure, and agree to the Privacy Policy and Terms of Use."
+            "value": "I allow my API key and AI request content to be sent to my configured provider directly in Basic mode or through ExcalidrawZ servers in Optimized mode, and agree to the Privacy Policy and Terms of Use."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "我允许 ExcalidrawZ 将我的 API Key 和 AI 请求内容转发至我配置的服务商或端点，并同意隐私政策和使用条款。"
+            "value": "我允许将 API Key 和 AI 请求内容在 Basic 模式下直接发送给我配置的服务商，或在 Optimized 模式下经由 ExcalidrawZ 服务器转发，并同意隐私政策和使用条款。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "我允許 ExcalidrawZ 將我的 API Key 和 AI 請求內容轉發至我設定的服務商或端點，並同意隱私政策和使用條款。"
+            "value": "我允許將 API Key 與 AI 請求內容在 Basic 模式下直接傳送給我設定的服務商，或在 Optimized 模式下經由 ExcalidrawZ 伺服器轉送，並同意隱私政策和使用條款。"
+          }
+        }
+      }
+    },
+    "AI.Scheme.profileUnavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The selected AI profile “%@” is unavailable or access is denied. Choose a different profile to continue."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所选 AI 档位“%@”已不可用或无访问权限，请选择其他档位后继续。"
+          }
+        }
+      }
+    },
+    "AI.Scheme.invalidRoute": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The saved AI route is invalid. Choose a model to continue."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存的 AI 路由无效，请重新选择模型后继续。"
+          }
+        }
+      }
+    },
+    "AI.Scheme.refreshProfiles": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh Profiles"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新模型档位"
+          }
+        }
+      }
+    },
+    "AI.Scheme.consentRequired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable this conversation’s AI service in Settings and review its privacy notice before continuing."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先在设置中启用此对话使用的 AI 服务，阅读并确认隐私说明后继续。"
+          }
+        }
+      }
+    },
+    "AI.Scheme.legacyConversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legacy conversation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旧版对话"
+          }
+        }
+      }
+    },
+    "AI.Scheme.newConversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start New Conversation…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始新对话…"
+          }
+        }
+      }
+    },
+    "AI.Scheme.profilesNotLoaded": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model profiles are not available yet. Refresh the model list and try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型档位尚未加载，请刷新模型列表后重试。"
+          }
+        }
+      }
+    },
+    "AI.Direct.consentSubtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect directly to your model provider using your own API key."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用你自己的 API Key，直接连接模型服务商。"
+          }
+        }
+      }
+    },
+    "AI.Direct.consentKey": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your key is saved in Keychain and sent only to the model service configured for this connection."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的密钥保存在钥匙串中，仅发送给此连接配置的模型服务。"
+          }
+        }
+      }
+    },
+    "AI.Direct.consentData": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your messages, attachments and canvas context you allow are sent directly to your provider. Basic mode does not use ExcalidrawZ’s AI servers."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的消息、附件及允许访问的画布内容将直接发送给服务商。Basic 模式不经过 ExcalidrawZ 的 AI 服务器。"
+          }
+        }
+      }
+    },
+    "AI.Direct.noCredits": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your provider bills model usage. Basic mode requires no ExcalidrawZ AI subscription or credits."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型用量由服务商计费。Basic 模式无需 ExcalidrawZ AI 订阅或积分。"
+          }
+        }
+      }
+    },
+    "AI.Direct.drawingGuide": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drawing Guide"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绘图指南"
+          }
+        }
+      }
+    },
+    "AI.Scheme.optimizedBYOK": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BYOK · Optimized"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BYOK · 增强"
+          }
+        }
+      }
+    },
+    "AI.WebSearch.basicDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request your model provider’s search in Basic BYOK. Optimized uses ExcalidrawZ’s search tools instead."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Basic BYOK 中请求模型服务商提供搜索。Optimized 使用 ExcalidrawZ 提供的搜索工具。"
+          }
+        }
+      }
+    },
+    "AI.WebSearch.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web Search"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "联网搜索"
+          }
+        }
+      }
+    },
+    "AI.WebSearch.on": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已开启"
+          }
+        }
+      }
+    },
+    "AI.WebSearch.off": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已关闭"
+          }
+        }
+      }
+    },
+    "AI.WebSearch.modelDecides": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow the model to use OpenRouter web search when needed. It may choose not to search."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允许模型按需使用 OpenRouter 联网搜索，模型也可能选择不搜索。"
+          }
+        }
+      }
+    },
+    "AI.WebSearch.alwaysSearch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requires a compatible dedicated search model. When enabled, this connection searches on every model request. Your selected model stays the same."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要兼容的专用搜索模型。启用后每次模型请求都会搜索，开关不会替你更换模型。"
+          }
+        }
+      }
+    },
+    "AI.WebSearch.providerDefined": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request upstream search. Execution depends on the provider’s model, region and API rules."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请求上游搜索，实际执行取决于服务商的模型、地域和接口规则。"
+          }
+        }
+      }
+    },
+    "AI.WebSearch.browserModel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requires a compatible Groq Browser Search model. Search execution follows the provider’s rules."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要兼容的 Groq Browser Search 模型，搜索执行遵循服务商规则。"
+          }
+        }
+      }
+    },
+    "AI.WebSearch.billingDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This setting is saved for this connection. Your provider may charge extra for search. Off omits this request option; it cannot disable search built into a model or service."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此设置随连接保存。服务商可能额外收取搜索费用。关闭仅表示不添加此请求选项，无法关闭模型或服务本身自带的搜索能力。"
+          }
+        }
+      }
+    },
+    "AI.WebSearch.unsupported": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This connection has no supported upstream web-search format for its current API."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此连接的当前接口尚无受支持的上游搜索格式。"
+          }
+        }
+      }
+    },
+    "AI.WebSearch.serverUnsupported": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The service did not confirm support for this search option. This request may already have incurred provider charges. You can turn the option off to continue chatting."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前服务未确认支持此搜索选项，本次请求可能已产生服务商费用。你可以关闭此选项后继续聊天。"
+          }
+        }
+      }
+    },
+    "AI.WebSearch.compatibility": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web Search Format"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "联网搜索格式"
+          }
+        }
+      }
+    },
+    "AI.WebSearch.noAdapter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Configured"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未配置"
+          }
+        }
+      }
+    },
+    "AI.WebSearch.customDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose only a search format supported by your gateway. Enable search separately in Basic BYOK settings; this does not change its API or model."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅选择网关支持的搜索格式。在 Basic BYOK 设置中单独开启搜索，此设置不会改变接口或模型。"
+          }
+        }
+      }
+    },
+    "AI.Sources.count": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sources (%ld)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "来源（%ld）"
+          }
+        }
+      }
+    },
+    "AI.Sources.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sources"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "来源"
+          }
+        }
+      }
+    },
+    "AI.Usage.searches": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Searches: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索 %@ 次"
+          }
+        }
+      }
+    },
+    "AI.Usage.providerTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model Usage"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型用量"
+          }
+        }
+      }
+    },
+    "AI.Usage.providerTools": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provider tool usage"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务商工具用量"
+          }
+        }
+      }
+    },
+    "AI.Usage.providerSearches": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web searches"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "联网搜索"
+          }
+        }
+      }
+    },
+    "AI.Usage.providerToolsDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only provider-reported tool counts are shown and may be partial. No fees are estimated."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅显示服务商报告的工具次数，可能不完整，不据此估算费用。"
+          }
+        }
+      }
+    },
+    "AI.Usage.tokens": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ tokens"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ tokens"
+          }
+        }
+      }
+    },
+    "AI.Usage.partial": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partial"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "部分"
+          }
+        }
+      }
+    },
+    "AI.Usage.platformCredits": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ credits"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 积分"
+          }
+        }
+      }
+    },
+    "AI.Usage.tooltip": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ input · %@ output · %@ total"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 输入 · %@ 输出 · %@ 合计"
+          }
+        }
+      }
+    },
+    "AI.Usage.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token Usage"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token 用量"
+          }
+        }
+      }
+    },
+    "AI.Usage.input": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Input"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入"
+          }
+        }
+      }
+    },
+    "AI.Usage.output": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Output"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输出"
+          }
+        }
+      }
+    },
+    "AI.Usage.total": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "合计"
+          }
+        }
+      }
+    },
+    "AI.Usage.requests": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model calls"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型调用"
+          }
+        }
+      }
+    },
+    "AI.Usage.unreported": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usage not reported"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未报告用量"
+          }
+        }
+      }
+    },
+    "AI.Usage.incomplete": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unfinished calls"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未完整结束的调用"
+          }
+        }
+      }
+    },
+    "AI.Usage.partialDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only reported usage is shown. Some calls have missing statistics or did not finish."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅显示已报告的用量。部分调用缺少统计数据或未完整结束。"
           }
         }
       }

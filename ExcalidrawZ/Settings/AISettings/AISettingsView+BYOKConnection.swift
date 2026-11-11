@@ -32,6 +32,7 @@ struct AIInferenceConnectionEditor: View {
     @State private var keyEndpoint = ""
     @State private var discoveryEnabled = true
     @State private var discoveryPath = ""
+    @State private var searchAdapterID = ""
     @State private var statusMessage: String?
     @State private var isSaving = false
     @State private var saveTask: Task<Void, Never>?
@@ -71,6 +72,8 @@ struct AIInferenceConnectionEditor: View {
 
                 if provider == .custom { modelDiscoveryFields }
 
+                if provider == .custom || showsCustomURL { webSearchCompatibilityFields }
+
                 if !hasModelDiscovery {
                     Text(.localizable(.aiBYOKManualConnectionHelp))
                         .font(.footnote)
@@ -78,7 +81,7 @@ struct AIInferenceConnectionEditor: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Text(.localizable(.aiBYOKSettingsFooter))
+                Text(.localizable(billing.integrationMode == .basic ? .aiBYOKBasicDescription : .aiBYOKSettingsFooter))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -199,12 +202,38 @@ struct AIInferenceConnectionEditor: View {
         }
     }
 
+    private var webSearchCompatibilityFields: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            fieldRow(Text(String(localized: "AI.WebSearch.compatibility"))) {
+                Picker(String(localized: "AI.WebSearch.compatibility"), selection: $searchAdapterID) {
+                    Text(String(localized: "AI.WebSearch.noAdapter")).tag("")
+                    Text("OpenRouter").tag(LLMBYOKWebSearch.Adapter.openRouter.rawValue)
+                    Text("OpenAI").tag(LLMBYOKWebSearch.Adapter.openAI.rawValue)
+                    Text("DashScope").tag(LLMBYOKWebSearch.Adapter.dashScope.rawValue)
+                    Text("Groq").tag(LLMBYOKWebSearch.Adapter.groq.rawValue)
+                }
+                .pickerStyle(.menu)
+                .fixedSize()
+            }
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
+            Text(String(localized: "AI.WebSearch.customDescription"))
+                .font(.footnote).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
     private func fieldRow<Content: View>(
         _ title: String.Localizable,
         @ViewBuilder content: () -> Content
     ) -> some View {
+        fieldRow(Text(.localizable(title)), content: content)
+    }
+
+    private func fieldRow<Content: View>(
+        _ title: Text,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
         HStack(alignment: .center, spacing: 16) {
-            Text(.localizable(title))
+            title
                 .layoutPriority(1)
             content()
                 .labelsHidden()
@@ -263,6 +292,7 @@ struct AIInferenceConnectionEditor: View {
         keyEndpoint = effectiveURL
         discoveryEnabled = true
         discoveryPath = ""
+        searchAdapterID = ""
         statusMessage = nil
     }
 
@@ -289,6 +319,7 @@ struct AIInferenceConnectionEditor: View {
         keyEndpoint = effectiveURL
         discoveryEnabled = configuration.map { $0.modelDiscovery != nil } ?? true
         discoveryPath = configuration?.modelDiscovery?.path == "models" ? "" : configuration?.modelDiscovery?.path ?? ""
+        searchAdapterID = configuration?.webSearch?.adapter.rawValue ?? ""
         do { key = try billing.keyForEditing(profileID: profileID) }
         catch { showError(error) }
     }
@@ -303,6 +334,14 @@ struct AIInferenceConnectionEditor: View {
             let path = discoveryPath.trimmingCharacters(in: .whitespacesAndNewlines)
             configuration.modelDiscovery = discoveryEnabled ? .init(path: path.isEmpty ? "models" : path) : nil
         }
+        if provider == .custom || showsCustomURL {
+            if let adapter = LLMBYOKWebSearch.Adapter(rawValue: searchAdapterID) {
+                configuration.webSearch = .init(adapter: adapter,
+                    isEnabled: profile?.configuration?.baseURL == url
+                        && configuration.webSearch?.adapter == adapter && configuration.webSearch?.isEnabled == true)
+            } else { configuration.webSearch = nil }
+        }
+        configuration = provider.configurationWithWebSearchSupport(configuration)
         try configuration.validate()
         return configuration
     }
@@ -310,6 +349,8 @@ struct AIInferenceConnectionEditor: View {
     private func saveConnection() {
         guard canSave else { return }
         do {
+            let revision = billing.modelCatalogRevision
+            let integrationMode = billing.integrationMode
             let configuration = try makeConfiguration()
             let key = try AIInferenceBillingState.validatedKey(key)
             let connectionProvider = LLMBYOKProvider(configuration: configuration, apiKeyProvider: { key })
@@ -321,9 +362,14 @@ struct AIInferenceConnectionEditor: View {
                 defer { isSaving = false; saveTask = nil }
                 do {
                     if configuration.modelDiscovery != nil {
-                        _ = try await LLMClient.shared.listBYOKModels(provider: connectionProvider)
+                        if integrationMode == .basic {
+                            _ = try await LLMClient(directBYOK: connectionProvider).listBYOKModels()
+                        } else {
+                            _ = try await LLMClient.shared.listBYOKModels(provider: connectionProvider)
+                        }
                     }
                     try Task.checkCancellation()
+                    try billing.validateSelection(expectedRevision: revision)
                     if let profileID {
                         try billing.updateConnection(profileID, name: name, configuration: configuration, apiKey: key)
                     } else {

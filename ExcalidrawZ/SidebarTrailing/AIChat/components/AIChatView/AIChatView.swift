@@ -21,6 +21,8 @@ struct AIChatView: View {
     @Environment(\.alertToast) var alertToast
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
     @ObservedObject var prefs = AIChatPreferences.shared
+    @ObservedObject private var inferenceBilling = AIInferenceBillingState.shared
+    @ObservedObject private var inferenceSessions = AIChatInferenceSessions.shared
 
     /// Conversation id lives on `FileState` (chats are scoped to the current
     /// file). We bridge it to a `Binding` for `PromptInputView`'s API and so
@@ -84,6 +86,15 @@ struct AIChatView: View {
 
     var conversation: Conversation? {
         llmState.conversations.value?.first { $0.id == fileState.aiChatConversationID }
+    }
+
+    var usesBYOKForUsage: Bool {
+        if conversation?.directConnection != nil { return true }
+        if let binding = conversation?.schemeConnection {
+            if case .byok = binding.billing { return true }
+            return false
+        }
+        return inferenceBilling.usesBYOK
     }
 
     var streamingState: LLMStreamingStateObject? {
@@ -166,6 +177,9 @@ struct AIChatView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .environment(\.aiChatUsesBYOK, usesBYOKForUsage)
+        .environment(\.aiChatUsageConversation, conversation)
+        .disabled(fileState.aiChatConversationID.map { inferenceSessions.updatingConversationIDs.contains($0) } ?? false)
         .toolbar(content: toolbar)
         .confirmationDialog(
             String(localizable: .aiChatClearChatConfimationDialogTitle),
@@ -195,7 +209,7 @@ struct AIChatView: View {
             guard isAIAvailable, prefs.isAIEnabled else { return }
             await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiChatAppear)
         }
-        .task(id: fileState.aiChatConversationID) {
+        .task(id: "\(ObjectIdentifier(llmState)):\(fileState.aiChatConversationID ?? "new")") {
             guard isAIAvailable, prefs.isAIEnabled else { return }
             try? await Task.sleep(nanoseconds: AIChatState.selectedConversationRefreshDelay)
             guard !Task.isCancelled else { return }

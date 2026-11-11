@@ -14,6 +14,9 @@ enum AIInferenceErrorMessage {
         if let error = error as? AIInferenceBillingError {
             return Message(text: error.localizedDescription)
         }
+        if error is LLMBYOKWebSearchError {
+            return Message(text: String(localized: "AI.WebSearch.unsupported"))
+        }
         if let error = error as? LLMBYOKConfigurationValidationError {
             switch error {
                 case .invalidEndpoint:
@@ -60,6 +63,9 @@ enum AIInferenceErrorMessage {
             return Message(text: String(localizable: .aiBYOKUntrustedAgentHost))
         }
         guard case .server(let status, let message) = error else { return nil }
+        if status == 501, message == "This LLMServer version did not acknowledge upstream web search. The request may already have incurred upstream charges. No fallback was attempted." {
+            return Message(text: String(localized: "AI.WebSearch.serverUnsupported"))
+        }
         if status == 404, AIInferenceBillingState.shared.usesBYOK {
             return Message(text: String(localizable: .aiBYOKServiceUnavailable))
         }

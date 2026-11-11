@@ -2,15 +2,8 @@
 //  PromptInputView+ActionBar.swift
 //  ExcalidrawZ
 //
-//  Bottom controls of the prompt input: attachment menu (paperclip),
-//  context-usage ring, model picker, and the primary send/stop button.
-//  Extracted from `PromptInputView` so the main file stays focused on
-//  composition + state and isn't dominated by control glue.
-//
-//  Everything here is an `extension` of `PromptInputView` and uses its
-//  private state directly (`isImagePickerPresented`, `agentConfig`,
-//  `pendingTierSelection`, etc.) — no parameters threaded through, just
-//  the same scope split across files.
+//  Input controls, shared hit areas and send/stop presentation.
+//  Model menus and route changes live in PromptInputView+ModelPicker.swift.
 //
 
 import SwiftUI
@@ -20,8 +13,14 @@ import LLMCore
 import SFSafeSymbols
 
 extension PromptInputView {
-    private var actionBarIconFrameLength: CGFloat { 18 }
-    private var actionBarLeadingControlSpacing: CGFloat { 4 }
+    var actionBarIconFrameLength: CGFloat { 18 }
+    private var actionBarLeadingControlSpacing: CGFloat {
+#if os(macOS)
+        2
+#else
+        4
+#endif
+    }
     private var primaryActionButtonSize: ModernButtonStyleModifier.Size? {
 #if os(iOS)
         .regular
@@ -55,6 +54,9 @@ extension PromptInputView {
 
 #if DEBUG
             debugChatContextButton
+#if os(macOS)
+                .buttonStyle(PromptActionBarIconButtonStyle())
+#endif
 #endif
         }
     }
@@ -82,7 +84,7 @@ extension PromptInputView {
         .foregroundStyle(activeFileAccessAllowsAI ? .primary : .secondary)
         .tint(activeFileAccessAllowsAI ? .accentColor : .secondary.opacity(0.75))
 #endif
-        .promptActionBarHoverEffect()
+        .modifier(PromptActionBarHoverEffect())
         .disabled(!hasActiveFileForAIAccessControl || !canToggleAIFileAccess)
         .help(fileAccessHelpText)
         .modifier(FeatureDiscoveryTipModifier(
@@ -149,7 +151,7 @@ extension PromptInputView {
                 .font(.caption)
                 .frame(width: actionBarIconFrameLength, height: actionBarIconFrameLength)
         }
-        .promptActionBarHoverEffect()
+        .modifier(PromptActionBarHoverEffect())
 
 #else
         AIChatAttachmentMenu(
@@ -182,138 +184,6 @@ extension PromptInputView {
     @MainActor
     func showImageInputUnavailableToast() {
         alertToast(AIChatInputCapabilityError.noModelCanReadImages)
-    }
-
-    @ViewBuilder
-    var modelPicker: some View {
-        let _ = AIChatRenderDebug.hit("PromptInputView.modelPicker")
-
-        SwiftUI.Group {
-            if inferenceBilling.usesBYOK {
-                Button {
-                    isPresentingBYOKModelPicker = true
-                } label: {
-                    modelPickerLabel
-                }
-                .buttonStyle(.plain)
-            } else {
-                Menu {
-                    modelTierPickerButtons()
-                } label: {
-                    modelPickerLabel
-                }
-            }
-        }
-        .menuIndicator(.hidden)
-        .promptActionBarHoverEffect()
-        .help(modelPickerTitle)
-        .disabled(inferenceBilling.usesBYOK ? inferenceBilling.isBusy : modelPickerTiers.isEmpty)
-    }
-
-    private var modelPickerLabel: some View {
-        Text(modelPickerTitle)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .truncationMode(.middle)
-            .frame(height: actionBarIconFrameLength)
-            .contentShape(Rectangle())
-    }
-
-    @MainActor
-    var modelPickerTitle: String {
-        if inferenceBilling.usesBYOK {
-            guard let id = activeModelSelection?.model.rawValue else { return String(localizable: .aiBYOKSelectModel) }
-            return byokModelCatalog.displayName(for: id, billing: inferenceBilling)
-        }
-        return activeModelProfileOption?.title ?? "..."
-    }
-
-    @MainActor
-    var modelPickerTiers: [ExcalidrawModelTier] {
-        guard agentConfig != nil else { return [] }
-        let options = AIChatRenderDebug.measure("prompt.modelPicker.options") {
-            availableModelOptions.filter {
-                canShowModelOption($0, requiresImageInput: requiresImageInputModel)
-            }
-        }
-        return ExcalidrawModelTier.pickerOrder.filter { tier in
-            options.contains { $0.tier == tier }
-        }
-    }
-
-    @MainActor
-    var activeTierForModelPicker: ExcalidrawModelTier {
-        activeModelProfileOption?.tier ?? selectedTierBeforeFallback
-    }
-
-    @MainActor
-    @ViewBuilder
-    func modelTierPickerButtons() -> some View {
-        ForEach(modelPickerTiers) { tier in
-            Button {
-                pickTier(tier)
-            } label: {
-                if tier == activeTierForModelPicker {
-                    Label(tier.name, systemSymbol: .checkmark)
-                } else {
-                    Text(tier.name)
-                }
-            }
-            .disabled(!canSelectTier(tier))
-        }
-    }
-
-    @MainActor
-    func pickBYOKModel(_ id: String) throws {
-        let model = try inferenceBilling.modelForChat(overridingModelID: id)
-        try inferenceBilling.setModel(model.rawValue, for: conversationID)
-    }
-
-    /// Route a tier pick to the right place: existing conversations get a
-    /// stored override (so reopening that thread restores the pick); fresh
-    /// chats just stage it in `pendingTierSelection` and get committed
-    /// when `startSend` mints the conversation id.
-    @MainActor
-    func pickTier(_ tier: ExcalidrawModelTier) {
-        guard canSelectTier(tier) else { return }
-
-        if let id = conversationID {
-            prefs.setTier(tier, for: id)
-        } else {
-            pendingTierSelection = tier
-        }
-    }
-
-    @MainActor
-    func canSelectTier(_ tier: ExcalidrawModelTier) -> Bool {
-        availableModelOptions.contains { option in
-            option.tier == tier && canSelectModelOption(option)
-        }
-    }
-
-    func loadAgentConfigIfNeeded() async {
-        guard AIChatAvailability.canUseAI else { return }
-        guard agentConfig == nil else { return }
-        do {
-            let config = try await LLMClient.shared.getDomainAgentConfig(agentID: agentID)
-            await MainActor.run {
-                self.agentConfig = config
-            }
-        } catch is CancellationError {
-        } catch {
-            alertToast(
-                .init(
-                    displayMode: .hud,
-                    type: .error(.red),
-                    title: String(
-                        localizable: .aiChatErrorLoadAgentConfigFailed(
-                            error.localizedDescription
-                        )
-                    ),
-                )
-            )
-        }
     }
 
     // MARK: - Primary action button
@@ -365,7 +235,7 @@ extension PromptInputView {
         }
         .modernButtonStyle(style: .glass, size: primaryActionButtonSize, shape: .circle)
         // Stop is always enabled while generating. Send needs text.
-        .disabled(!primaryActionIsStop && !hasInputText)
+        .disabled(!primaryActionIsStop && (!hasInputText || isUpdatingConversationRoute))
     }
 }
 
@@ -385,7 +255,7 @@ private struct PromptActionBarIconSurface: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .frame(width: 36, height: 28)
+            .frame(width: 28, height: 28)
             .background {
                 Capsule()
                     .fill(Color.primary.opacity(
@@ -399,16 +269,17 @@ private struct PromptActionBarIconSurface: ViewModifier {
 }
 #endif
 
-private extension View {
+/// Shared hit area for model selection and the adjacent input controls.
+struct PromptActionBarHoverEffect: ViewModifier {
     @ViewBuilder
-    func promptActionBarHoverEffect() -> some View {
+    func body(content: Content) -> some View {
 #if os(iOS)
-        self
+        content
             .frame(minWidth: 32, minHeight: 32)
             .contentShape(Rectangle())
             .hoverEffect()
 #else
-        self
+        content
 #endif
     }
 }

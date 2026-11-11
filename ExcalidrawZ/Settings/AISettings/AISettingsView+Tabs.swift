@@ -187,13 +187,19 @@ extension AISettingsView {
         switch selectedTab {
             case .usage:
                 Section {
-                    activityBody
+                    if AIChatAvailability.usesDirectInference {
+                        Text(String(localized: "AI.Direct.noCredits"))
+                    } else {
+                        activityBody
+                    }
                 } header: {
                     VStack(spacing: 10) {
                         usageHeader
                             .textCase(nil)
 
-                        activityHeader
+                        if !AIChatAvailability.usesDirectInference {
+                            activityHeader
+                        }
                     }
                 }
             case .settings:
@@ -206,9 +212,6 @@ extension AISettingsView {
     @ViewBuilder
     var settingsSections: some View {
         defaultModelSettingsSection
-        if inferenceBilling.usesBYOK {
-            byokSettingsSection
-        }
         mcpSettingsSection
         aiAccountSettingsSection
     }
@@ -217,7 +220,11 @@ extension AISettingsView {
     var defaultModelSettingsSection: some View {
         Section {
             aiServiceModePicker
-            if !inferenceBilling.usesBYOK {
+            if inferenceBilling.usesBYOK {
+                byokIntegrationModeRow
+                byokConnectionsRow
+                basicWebSearchRow
+            } else {
                 defaultModelPicker
             }
         } header: {
@@ -225,6 +232,9 @@ extension AISettingsView {
                 .textCase(nil)
         } footer: {
             aiServiceSettingsFooter
+            if inferenceBilling.usesBYOK {
+                byokConnectionsFooter
+            }
         }
     }
 

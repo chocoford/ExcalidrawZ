@@ -10,6 +10,13 @@ enum AIInferenceBillingMode: String, CaseIterable, Identifiable, Sendable {
     var id: Self { self }
 }
 
+enum AIInferenceIntegrationMode: String, CaseIterable, Identifiable, Sendable {
+    case basic
+    case optimized
+
+    var id: Self { self }
+}
+
 enum AIInferenceBillingError: LocalizedError {
     case missingConnection
     case missingKey
@@ -48,43 +55,13 @@ enum AIInferenceBillingError: LocalizedError {
     }
 }
 
-/// A snapshot inherited by SDK Agent rounds, title generation and automatic compaction.
-/// Never encode this value or attach it to conversation/transaction metadata.
-enum AIInferenceBillingSelection: Sendable {
-    case platform
-    case byok(LLMBYOKCredentials)
-
-    var credentials: LLMBYOKCredentials? {
-        switch self {
-            case .platform: nil
-            case .byok(let credentials): credentials
-        }
-    }
-}
-
-enum AIInferenceBilling {
-    @TaskLocal static var selection: AIInferenceBillingSelection?
-
-    static func credentialsForRequest(for model: SupportedModel) async throws -> LLMBYOKCredentials? {
-        let selected: AIInferenceBillingSelection
-        if let selection {
-            selected = selection
-        } else {
-            selected = try await AIInferenceBillingState.shared.resolveSelection()
-        }
-        if let configuration = selected.credentials?.configuration {
-            _ = try configuration.modelMapping.resolve(model.rawValue)
-        }
-        return selected.credentials
-    }
-}
-
 @MainActor
 final class AIInferenceBillingState: ObservableObject {
     static let shared = AIInferenceBillingState()
-    static let modeDefaultsKey = "AIChat.inferenceBillingMode"
+    nonisolated static let modeDefaultsKey = "AIChat.inferenceBillingMode"
     static let profilesDefaultsKey = "AIChat.byokConnectionProfiles"
     static let modelOverridesDefaultsKey = "AIChat.byokConversationModels"
+    nonisolated static let integrationModeDefaultsKey = "AIChat.byokIntegrationMode"
     // Read only when migrating the original single-connection settings.
     static let connectionDefaultsKey = "AIChat.byokConnection"
     static let configurationsDefaultsKey = "AIChat.byokConfigurations"
@@ -95,6 +72,7 @@ final class AIInferenceBillingState: ObservableObject {
     }
 
     @Published private(set) var mode: AIInferenceBillingMode
+    @Published private(set) var integrationMode: AIInferenceIntegrationMode
     @Published private(set) var profiles: [AIInferenceConnectionProfile]
     @Published private(set) var selectedProfileID: String?
     @Published private(set) var hasStoredKey = false
@@ -123,6 +101,13 @@ final class AIInferenceBillingState: ObservableObject {
         self.defaults = defaults
         self.keyStore = keyStore
         let storedMode = defaults.string(forKey: Self.modeDefaultsKey)
+        // Existing BYOK connections keep their backend route until explicitly changed.
+        if let savedIntegration = defaults.string(forKey: Self.integrationModeDefaultsKey) {
+            // Unknown routes must not opt a connection into the backend transport.
+            integrationMode = AIInferenceIntegrationMode(rawValue: savedIntegration) ?? .basic
+        } else {
+            integrationMode = .optimized
+        }
         let decodedMode: AIInferenceBillingMode? = storedMode == "openRouter"
             ? .byok : storedMode.flatMap(AIInferenceBillingMode.init(rawValue:))
         mode = decodedMode ?? .platform
@@ -155,6 +140,38 @@ final class AIInferenceBillingState: ObservableObject {
         self.mode = mode
         requiresBillingSelection = false
         modelCatalogRevision += 1
+    }
+
+    func setIntegrationMode(_ integrationMode: AIInferenceIntegrationMode) throws {
+        guard integrationMode != self.integrationMode else { return }
+        try requireIdle()
+        defaults.set(integrationMode.rawValue, forKey: Self.integrationModeDefaultsKey)
+        self.integrationMode = integrationMode
+        modelCatalogRevision += 1
+    }
+
+    /// A request option on this saved connection; never changes its key or model.
+    func setWebSearch(_ enabled: Bool, connectionID: String,
+                      prepare: @MainActor (LLMBYOKConfiguration) async throws -> Void = { _ in }) async throws {
+        try requireIdle()
+        let profile = try profile(for: connectionID)
+        guard let previous = profile.configuration, let supported = profile.webSearchConfiguration else {
+            throw AIInferenceBillingError.invalidConfiguration
+        }
+        let configuration = try supported.withWebSearch(enabled: enabled)
+        try configuration.validate()
+        guard configuration != previous else { return }
+        try await withInferenceOperation {
+            // A Direct state's client has immutable options. Restore its replacement before
+            // publishing the preference so the visible chat never loses its history.
+            try await prepare(configuration)
+            var updated = profiles
+            guard let index = updated.firstIndex(where: { $0.id == connectionID }),
+                  updated[index].configuration == previous else { throw AIInferenceBillingError.selectionChanged }
+            updated[index].configuration = configuration
+            try persistProfiles(updated, selectedID: selectedProfileID)
+            modelCatalogRevision += 1
+        }
     }
 
     @discardableResult
@@ -290,6 +307,8 @@ final class AIInferenceBillingState: ObservableObject {
         // Snapshot the most recently chosen chat model for independent child requests.
         configuration.defaultModel = profile.lastModelID
         configuration.options.auxiliaryModel = nil
+        // The saved search switch belongs to Basic Direct, not server-enhanced calls.
+        configuration.webSearch?.isEnabled = false
         return .byok(LLMBYOKCredentials(configuration: configuration, apiKey: try Self.validatedKey(storedKey)))
     }
 
@@ -315,8 +334,9 @@ final class AIInferenceBillingState: ObservableObject {
     }
 
     func modelDiscoveryProvider(profileID: String? = nil) throws -> LLMBYOKProvider {
-        guard !requiresBillingSelection, usesBYOK, !configurationLoadFailed else {
-            throw AIInferenceBillingError.invalidConfiguration
+        guard !configurationLoadFailed else { throw AIInferenceBillingError.invalidConfiguration }
+        if profileID == nil {
+            guard !requiresBillingSelection, usesBYOK else { throw AIInferenceBillingError.invalidConfiguration }
         }
         let profile = try profile(for: profileID)
         guard let configuration = profile.configuration else { throw AIInferenceBillingError.invalidConfiguration }
@@ -333,15 +353,20 @@ final class AIInferenceBillingState: ObservableObject {
         return profile.lastModelID
     }
 
-    var savedModelIDs: [String] {
-        guard let profile = selectedProfile else { return [] }
+    var savedModelIDs: [String] { savedModelIDs(profileID: selectedProfileID) }
+
+    func savedModelIDs(profileID: String?) -> [String] {
+        guard let profile = profiles.first(where: { $0.id == profileID }) else { return [] }
         return Array(Set(Array(conversationModels[profile.id, default: [:]].values)
             + [profile.lastModelID].compactMap { $0 })).sorted()
     }
 
-    func modelForChat(conversationID: String? = nil, overridingModelID: String? = nil) throws -> SupportedModel {
-        guard let id = overridingModelID ?? modelID(for: conversationID) else { throw AIInferenceBillingError.missingModel }
-        return try validatedModel(id)
+    func modelForChat(conversationID: String? = nil, overridingModelID: String? = nil,
+                      profileID: String? = nil) throws -> SupportedModel {
+        let profile = try profile(for: profileID)
+        let saved = conversationID.flatMap { conversationModels[profile.id]?[$0] }
+        guard let id = overridingModelID ?? saved ?? profile.lastModelID else { throw AIInferenceBillingError.missingModel }
+        return try modelForRoute(connectionID: profile.id, modelID: id)
     }
 
     /// Chat is the only model picker; remember its last choice per saved connection.
@@ -376,7 +401,7 @@ final class AIInferenceBillingState: ObservableObject {
     func modelForAuxiliaryRequest(fallback: SupportedModel, conversationModel: SupportedModel? = nil) throws -> SupportedModel {
         let selection = try AIInferenceBilling.selection ?? resolveSelection()
         guard let configuration = selection.credentials?.configuration else { return fallback }
-        guard let id = conversationModel?.rawValue ?? configuration.defaultModel else { throw AIInferenceBillingError.missingModel }
+        guard let id = conversationModel?.rawValue ?? AIInferenceBilling.directSnapshot?.modelID ?? configuration.defaultModel else { throw AIInferenceBillingError.missingModel }
         guard !id.isEmpty, id.utf8.count <= 512, id.utf8.allSatisfy({ (33...126).contains($0) }),
               (try? configuration.modelMapping.resolve(id)) != nil else { throw AIInferenceBillingError.incompatibleModel }
         return .other(id)
@@ -389,13 +414,66 @@ final class AIInferenceBillingState: ObservableObject {
 
     func withSelectedBilling<Result>(
         expectedRevision: Int? = nil,
-        _ operation: @MainActor () async throws -> Result
+        _ operation: @MainActor @Sendable () async throws -> Result
     ) async throws -> Result {
         if let expectedRevision { try validateSelection(expectedRevision: expectedRevision) }
+        if usesBYOK, integrationMode == .basic, AIInferenceBilling.selection == nil {
+            guard let connectionID = selectedProfileID else { throw AIInferenceBillingError.missingConnection }
+            let snapshot = try directSnapshot(connectionID: connectionID)
+            return try await withDirectBilling(snapshot, operation: operation)
+        }
         let selection = try AIInferenceBilling.selection ?? resolveSelection()
+        return try await withBillingSnapshot(selection, operation)
+    }
+
+    func withBillingSnapshot<Result>(
+        _ selection: AIInferenceBillingSelection,
+        _ operation: @MainActor @Sendable () async throws -> Result
+    ) async throws -> Result {
+        return try await withInferenceOperation {
+            try await AIInferenceBilling.$selection.withValue(selection) { try await operation() }
+        }
+    }
+
+    func withInferenceOperation<Result>(_ operation: @MainActor @Sendable () async throws -> Result) async throws -> Result {
         activeOperationCount += 1
         defer { activeOperationCount -= 1 }
-        return try await AIInferenceBilling.$selection.withValue(selection) { try await operation() }
+        return try await operation()
+    }
+
+    func resolveSelection(for binding: LLMSchemeConversationBinding) throws -> AIInferenceBillingSelection {
+        try binding.validate()
+        switch binding.billing {
+        case .platform: return .platform
+        case .byok(let model):
+            guard let connectionID = binding.connectionID else { throw AIInferenceBillingError.missingConnection }
+            return .byok(try credentials(connectionID: connectionID, model: model))
+        }
+    }
+
+    /// Server/Scheme restoration uses the saved connection ID, never the global selection.
+    func credentials(connectionID: String, model: SupportedModel) throws -> LLMBYOKCredentials {
+        _ = try modelForRoute(connectionID: connectionID, modelID: model.rawValue)
+        guard var configuration = try profile(for: connectionID).configuration else {
+            throw AIInferenceBillingError.invalidConfiguration
+        }
+        guard let key = try keyStore.readKey(for: connectionID) else { throw AIInferenceBillingError.missingKey }
+        configuration.defaultModel = model.rawValue
+        configuration.webSearch?.isEnabled = false
+        return .init(configuration: configuration, apiKey: try Self.validatedKey(key))
+    }
+
+    func modelForRoute(connectionID: String, modelID: String) throws -> SupportedModel {
+        guard let configuration = try profile(for: connectionID).configuration else {
+            throw AIInferenceBillingError.invalidConfiguration
+        }
+        try configuration.validate()
+        guard !modelID.isEmpty, modelID.utf8.count <= 512,
+              modelID.utf8.allSatisfy({ (33...126).contains($0) }) else {
+            throw AIInferenceBillingError.incompatibleModel
+        }
+        _ = try configuration.modelMapping.resolve(modelID)
+        return .other(modelID)
     }
 
     private func profile(for id: String? = nil) throws -> AIInferenceConnectionProfile {

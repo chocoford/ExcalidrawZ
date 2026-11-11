@@ -15,25 +15,35 @@ extension AISettingsView {
     var usageHeader: some View {
         VStack(alignment: .leading, spacing: 22) {
             settingsTabHeader {
-                usageSummary
-            } accessory: {
-                Button {
-                    presentPaywall(reason: .aiInsufficientCredits)
-                } label: {
-                    Label(.localizable(.generalButtonUpgrade), systemSymbol: .sparkles)
+                if AIChatAvailability.usesDirectInference {
+                    Label(.localizable(.aiChatUsageTitle), systemSymbol: .key)
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.primary)
+                } else {
+                    usageSummary
                 }
-                .modernButtonStyle(style: .glassProminent, size: .regular, shape: .modern)
-                .disabled(isHighestAIPlan)
+            } accessory: {
+                if !AIChatAvailability.usesDirectInference {
+                    Button {
+                        presentPaywall(reason: .aiInsufficientCredits)
+                    } label: {
+                        Label(.localizable(.generalButtonUpgrade), systemSymbol: .sparkles)
+                    }
+                    .modernButtonStyle(style: .glassProminent, size: .regular, shape: .modern)
+                    .disabled(isHighestAIPlan)
+                }
             }
 
-            if inferenceBilling.usesBYOK {
+            if inferenceBilling.usesBYOK, !AIChatAvailability.usesDirectInference {
                 Text(.localizable(.aiBYOKDataFlowHelp))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            dailyUsageChart
+            if !AIChatAvailability.usesDirectInference {
+                dailyUsageChart
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

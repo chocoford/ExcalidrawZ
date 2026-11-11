@@ -47,11 +47,12 @@ struct AISettingsView: View {
     @State var byokStatusMessage: String?
     @State var byokStatusIsError = false
     @State var byokConnectionSheet: AIInferenceConnectionSheet?
+    @State var byokIntegrationHelpMode: AIInferenceIntegrationMode?
+    @State var byokIntegrationPickerID = UUID()
 
-    /// Model profile list for the Default Model picker, sourced from the
-    /// agent's server-defined `modelProfiles`.
-    @State var availableModelOptions: [ExcalidrawModelProfileOption] = []
-    
+    @ObservedObject var schemeCatalog = AIChatSchemeCatalog.shared
+    @ObservedObject var routing = AIChatRoutingState.shared
+
     let pageSize: Int = 20
     let aggregatePageSize: Int = 100
     let agentID = "excalidraw-canvas"
@@ -149,6 +150,12 @@ struct AISettingsView: View {
                 await loadAISettingsDataIfEnabled()
             }
         }
+        .watch(value: inferenceBilling.mode) {
+            Task { await loadAISettingsDataIfEnabled() }
+        }
+        .watch(value: inferenceBilling.integrationMode) {
+            Task { await loadAISettingsDataIfEnabled() }
+        }
         .task {
             consumePendingAISettingsRoute()
         }
@@ -172,7 +179,7 @@ struct AISettingsView: View {
     
     @MainActor
     private func loadAISettingsDataIfEnabled() async {
-        guard AIChatAvailability.canUseAI else { return }
+        guard AIChatAvailability.canUseAI, !AIChatAvailability.usesDirectInference else { return }
         await LLMServiceActivationCoordinator.shared.restoreIfAIEnabled(reason: .aiSettingsAppear)
         await loadInitialTransactions()
         await loadAllTransactionsIfNeeded()

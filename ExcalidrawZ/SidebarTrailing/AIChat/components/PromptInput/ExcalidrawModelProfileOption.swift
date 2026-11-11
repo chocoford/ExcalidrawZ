@@ -9,17 +9,17 @@ import Foundation
 import LLMCore
 
 struct ExcalidrawModelProfileOption: Identifiable, Equatable {
-    let profileID: String
-    let tier: ExcalidrawModelTier
-    let model: SupportedModel
-    let rank: Int
-    let isVisible: Bool
-    let requiresMaxAIPlan: Bool
-    let supportsImageInput: Bool
-    let maxContextTokens: Int?
+    let profile: LLMSchemeProfile
 
-    var id: String { profileID }
-    var title: String { tier.name }
+    var id: String { profile.id }
+    var profileID: String { profile.id }
+    var title: String { profile.name }
+    var isVisible: Bool { profile.isVisible }
+    var isAllowed: Bool { profile.access?.allowed ?? true }
+    var supportsImageInput: Bool { profile.capabilities.supportsImageInput ?? false }
+    var maxContextTokens: Int? { profile.capabilities.maxContextTokens }
+    // A local AgentExecutor hint; never selects the server's model.
+    var model: SupportedModel { .other(profile.modelID ?? "scheme-profile") }
 }
 
 /// Request capabilities are independent of platform tiers when using a user-supplied model.
@@ -36,6 +36,14 @@ struct AIChatModelSelection {
         maxContextTokens = option.maxContextTokens
     }
 
+    init(legacy model: SupportedModel, profileID: String? = nil,
+         supportsImageInput: Bool? = nil, maxContextTokens: Int? = nil) {
+        self.model = model
+        self.profileID = profileID
+        self.supportsImageInput = supportsImageInput ?? model.supportsImageInput
+        self.maxContextTokens = maxContextTokens ?? model.maxContextTokens
+    }
+
     init(byok model: SupportedModel) {
         self.model = model
         profileID = nil
@@ -45,36 +53,10 @@ struct AIChatModelSelection {
     }
 }
 
-extension ExcalidrawModelTier {
-    init?(profileID: String) {
-        self.init(rawValue: profileID)
-    }
-}
-
-extension ModelProfileRequirements {
-    var requiresExcalidrawMaxAIPlan: Bool {
-        plan == "max"
-    }
-}
-
-extension DomainModelProfile {
-    var excalidrawModelProfileOption: ExcalidrawModelProfileOption? {
-        guard let tier = ExcalidrawModelTier(profileID: id) else { return nil }
-        return ExcalidrawModelProfileOption(
-            profileID: id,
-            tier: tier,
-            model: model,
-            rank: rank,
-            isVisible: isVisible,
-            requiresMaxAIPlan: requirements.requiresExcalidrawMaxAIPlan,
-            supportsImageInput: capabilities.supportsImageInput ?? model.supportsExcalidrawImageInput,
-            maxContextTokens: capabilities.maxContextTokens ?? model.maxContextTokens
-        )
-    }
-}
-
-extension DomainAgentConfigResponse {
+extension LLMSchemeDescriptor {
     var excalidrawModelOptions: [ExcalidrawModelProfileOption] {
-        modelProfiles?.compactMap(\.excalidrawModelProfileOption) ?? []
+        profiles.filter(\.isVisible).sorted {
+            $0.rank == $1.rank ? $0.id < $1.id : $0.rank < $1.rank
+        }.map { ExcalidrawModelProfileOption(profile: $0) }
     }
 }

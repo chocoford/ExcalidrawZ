@@ -5,6 +5,131 @@ import LLMCore
 @testable import ExcalidrawZ
 
 final class AIInferenceBillingTests: XCTestCase {
+    func testSDKSchemeBindingRoundTripsWithoutCredentialsAndRejectsCorruptData() throws {
+        let bindings: [LLMSchemeConversationBinding] = [
+            .init(selection: .init(schemeID: "excalidraw-canvas", profileID: "extra-high"), billing: .platform),
+            .init(selection: .init(schemeID: "excalidraw-canvas", profileID: "fifth-profile"), billing: .platform),
+            .init(selection: .init(schemeID: "excalidraw-canvas"), billing: .byok(model: .other("provider/new-model")), connectionID: "work"),
+            .init(selection: .init(schemeID: "excalidraw-canvas"), billing: .byok(model: .gpt4o), connectionID: "work")
+        ]
+        for binding in bindings {
+            let data = try XCTUnwrap(AIChatRouteStorage.encode(binding))
+            XCTAssertEqual(try AIChatRouteStorage.decode(data), binding)
+            XCTAssertFalse(String(decoding: data, as: UTF8.self).contains("apiKey"))
+            XCTAssertEqual(try AIChatConversationRoute(binding: binding).binding, binding)
+        }
+        XCTAssertNil(try AIChatRouteStorage.decode(nil))
+        XCTAssertNil(try AIChatRouteStorage.encode(nil))
+        XCTAssertEqual(try AIChatConversationRoute(binding: nil), .legacy)
+        XCTAssertThrowsError(try AIChatRouteStorage.decode(Data("bad-json".utf8)))
+        XCTAssertEqual(bindings[0].selection.profileID, "extra-high")
+        XCTAssertNil(bindings[2].selection.profileID)
+        let knownOther = LLMSchemeConversationBinding(selection: .init(schemeID: "excalidraw-canvas"),
+            billing: .byok(model: .other(SupportedModel.gpt4o.rawValue)), connectionID: "work")
+        let restored = try AIChatRouteStorage.decode(AIChatRouteStorage.encode(knownOther))
+        XCTAssertEqual(try AIChatConversationRoute(binding: restored), try AIChatConversationRoute(binding: knownOther))
+        let invalid = LLMSchemeConversationBinding(selection: .init(schemeID: "canvas"), billing: .platform)
+        XCTAssertThrowsError(try AIChatRouteStorage.encode(invalid))
+        XCTAssertThrowsError(try AIChatRouteStorage.decode(JSONEncoder().encode(invalid)))
+    }
+
+    func testDashboardProfilesHaveNoFixedTierLimitAndKeepAccessSnapshots() {
+        let scheme = LLMSchemeDescriptor(
+            id: "excalidraw-canvas", name: "Canvas", summary: "", kind: .conversation,
+            defaultProfileID: "fifth-profile", profiles: [
+                .init(id: "fifth-profile", name: "Custom Fifth", rank: 50),
+                .init(id: "extra-high", name: "Powerful", rank: 10, access: .denied(.subscriptionRequired)),
+                .init(id: "hidden", name: "Hidden", rank: 0, isVisible: false)
+            ]
+        )
+        let options = scheme.excalidrawModelOptions
+        XCTAssertEqual(options.map(\.profileID), ["extra-high", "fifth-profile"])
+        XCTAssertEqual(options.map(\.title), ["Powerful", "Custom Fifth"])
+        XCTAssertFalse(options[0].isAllowed)
+        XCTAssertTrue(options[1].isAllowed)
+    }
+
+    @MainActor
+    func testSavedBYOKRouteUsesItsOwnConnectionAfterGlobalSettingsChange() async throws {
+        let (_, keys, state) = fixture()
+        try state.setMode(.byok)
+        let first = try state.addConnection(.openAI, apiKey: "first-key")
+        let route = LLMSchemeConversationBinding(selection: .init(schemeID: "excalidraw-canvas"),
+            billing: .byok(model: .other("own-model")), connectionID: first.id)
+        _ = try state.addConnection(.openRouter, apiKey: "second-key")
+        try state.setMode(.platform)
+        let snapshot = try state.resolveSelection(for: route)
+        XCTAssertEqual(snapshot.credentials?.configuration.baseURL, LLMBYOKConfiguration.openAI.baseURL)
+        XCTAssertEqual(snapshot.credentials?.configuration.defaultModel, "own-model")
+        let reads = keys.readCount
+        XCTAssertNil(try state.resolveSelection(for: .init(selection: .init(schemeID: "canvas", profileID: "fifth"), billing: .platform)).credentials)
+        XCTAssertEqual(keys.readCount, reads, "Platform routing must not read any provider key")
+        try await state.withBillingSnapshot(snapshot) {
+            XCTAssertEqual(try state.modelForAuxiliaryRequest(fallback: .gpt4oMini).rawValue, "own-model")
+        }
+        keys.keys[first.id] = nil
+        XCTAssertThrowsError(try state.resolveSelection(for: route), "Missing saved key cannot select another connection")
+        XCTAssertThrowsError(try state.resolveSelection(for: .init(selection: .init(schemeID: "canvas"),
+            billing: .byok(model: .other("own-model")))))
+    }
+
+    @MainActor
+    func testBoundModelDiscoveryUsesSavedConnectionAfterGlobalSelectionChanges() async throws {
+        let (_, _, state) = fixture()
+        try state.setMode(.byok)
+        let first = try state.addConnection(.openAI, apiKey: "first-synthetic-key")
+        _ = try state.addConnection(.openRouter, apiKey: "other-synthetic-key")
+        try state.setMode(.platform)
+        let fetcher = ModelCatalogFetchStub()
+        let catalog = AIInferenceModelCatalog { provider, _ in try await fetcher.fetch(provider) }
+        await catalog.load(for: state, profileID: first.id, force: true)
+        XCTAssertEqual(catalog.snapshot(for: state, profileID: first.id).models.map(\.id), ["first-model", "second-model"])
+        XCTAssertTrue(catalog.snapshot(for: state).models.isEmpty)
+        let count = await fetcher.count
+        XCTAssertEqual(count, 1)
+        try state.removeConnection(first.id)
+        XCTAssertThrowsError(try state.credentials(connectionID: first.id, model: .other("own-model")))
+    }
+
+    @MainActor
+    func testBasicIntegrationUsesDirectDiscoveryAndBlocksBackendCredentials() async throws {
+        let (defaults, _, state) = fixture()
+        try state.saveKey("synthetic-key")
+        try state.setMode(.byok)
+        let profileID = try XCTUnwrap(state.selectedProfileID)
+        try state.setIntegrationMode(.basic)
+        XCTAssertNotNil(try state.resolveSelection().credentials)
+        XCTAssertNotNil(try state.modelDiscoveryProvider())
+        let restored = AIInferenceBillingState(defaults: defaults, keyStore: MemoryKeyStore())
+        XCTAssertEqual(restored.integrationMode, .basic)
+        XCTAssertEqual(restored.selectedProfileID, profileID)
+
+        let snapshot = try state.directSnapshot(connectionID: profileID, modelID: "own-model")
+        XCTAssertFalse(String(reflecting: snapshot).contains("synthetic-key"))
+        try await state.withDirectBilling(snapshot) {
+            XCTAssertEqual(try snapshot.key(for: profileID, configuration: snapshot.configuration), "synthetic-key")
+            XCTAssertThrowsError(try state.setIntegrationMode(.optimized))
+            do {
+                _ = try await AIInferenceBilling.credentialsForRequest(for: .other("own-model"))
+                XCTFail("Direct must not supply a provider key to backend inference")
+            } catch LLMDirectError.unsupportedCapability {}
+        }
+        let fetcher = ModelCatalogFetchStub()
+        let catalog = AIInferenceModelCatalog { provider, mode in
+            XCTAssertEqual(mode, .basic)
+            return try await fetcher.fetch(provider)
+        }
+        await catalog.load(for: state, force: true)
+        XCTAssertFalse(catalog.snapshot(for: state).models.isEmpty)
+        let fetchCount = await fetcher.count
+        XCTAssertEqual(fetchCount, 1)
+        defaults.set("unknown-route", forKey: AIInferenceBillingState.integrationModeDefaultsKey)
+        let unknown = AIInferenceBillingState(defaults: defaults, keyStore: MemoryKeyStore())
+        XCTAssertEqual(unknown.integrationMode, .basic)
+        try state.setMode(.platform)
+        XCTAssertNil(try state.resolveSelection().credentials)
+    }
+
     func testProviderListIncludesEverySDKPresetInPreferredOrder() throws {
         let connections = AIInferenceConnection.allCases
         XCTAssertEqual(Array(connections.prefix(4)), [.openAI, .anthropic, .gemini, .openRouter])
@@ -67,7 +192,7 @@ final class AIInferenceBillingTests: XCTestCase {
         )
         try state.addConnection(.custom, configuration: configuration, apiKey: "synthetic-custom-key")
         let fetcher = ModelCatalogFetchStub()
-        let catalog = AIInferenceModelCatalog { try await fetcher.fetch($0) }
+        let catalog = AIInferenceModelCatalog { provider, _ in try await fetcher.fetch(provider) }
         await catalog.load(for: state, force: true)
         let fetchCount = await fetcher.count
         XCTAssertEqual(fetchCount, 0)
@@ -483,7 +608,7 @@ final class AIInferenceBillingTests: XCTestCase {
         try state.saveKey("synthetic-key")
         XCTAssertNil(state.configuration?.defaultModel)
         let fetcher = ModelCatalogFetchStub()
-        let catalog = AIInferenceModelCatalog { try await fetcher.fetch($0) }
+        let catalog = AIInferenceModelCatalog { provider, _ in try await fetcher.fetch(provider) }
         await catalog.load(for: state, force: true)
         XCTAssertEqual(catalog.snapshot(for: state).models.map(\.id), ["first-model", "second-model"])
         XCTAssertEqual(catalog.displayName(for: "first-model", billing: state), "Alpha")
@@ -502,7 +627,7 @@ final class AIInferenceBillingTests: XCTestCase {
         try state.setMode(.byok)
         try state.saveKey("first-synthetic-key")
         let fetcher = ModelCatalogFetchStub()
-        let catalog = AIInferenceModelCatalog { try await fetcher.fetch($0) }
+        let catalog = AIInferenceModelCatalog { provider, _ in try await fetcher.fetch(provider) }
         await catalog.load(for: state, force: true)
         XCTAssertFalse(catalog.snapshot(for: state).models.isEmpty)
         try state.saveKey("second-synthetic-key")
@@ -518,7 +643,7 @@ final class AIInferenceBillingTests: XCTestCase {
         try state.setMode(.byok)
         try state.saveKey("router-synthetic-key")
         let fetcher = ModelCatalogFetchStub(suspended: true)
-        let catalog = AIInferenceModelCatalog { try await fetcher.fetch($0) }
+        let catalog = AIInferenceModelCatalog { provider, _ in try await fetcher.fetch(provider) }
         let first = Task { await catalog.load(for: state, force: true) }
         await fetcher.waitForRequests(1)
         try state.addConnection(.openAI)
@@ -541,7 +666,7 @@ final class AIInferenceBillingTests: XCTestCase {
         configuration.modelDiscovery = nil
         try state.saveConfiguration(configuration)
         let fetcher = ModelCatalogFetchStub()
-        let catalog = AIInferenceModelCatalog { try await fetcher.fetch($0) }
+        let catalog = AIInferenceModelCatalog { provider, _ in try await fetcher.fetch(provider) }
         await catalog.load(for: state, force: true)
         XCTAssertNil(catalog.snapshot(for: state).errorMessage)
         XCTAssertEqual(try state.modelForChat(overridingModelID: "manual-model").rawValue, "manual-model")

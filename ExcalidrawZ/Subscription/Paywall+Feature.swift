@@ -46,21 +46,25 @@ extension Paywall {
             id: "complete-canvas-workspace",
             symbol: .pencilTipCropCircle,
             title: String(localizable: .paywallFeatureDrawTitle),
-            subtitle: String(localizable: .paywallFeatureDrawMessage)
+            subtitle: String(localizable: .paywallFeatureDrawMessage),
+            badge: AIChatAvailability.isAvailable && !ExcalidrawZMCPServerController.isAvailable
+                ? String(localizable: .aiServiceBYOK) : nil
         )
 
         static let basicMCPServices = Feature(
             id: "basic-mcp-services",
             symbol: .serverRack,
             title: String(localizable: .paywallFeatureMCPTitle),
-            subtitle: String(localizable: .paywallFeatureMCPMessage)
+            subtitle: String(localizable: .paywallFeatureMCPMessage),
+            badge: AIChatAvailability.isAvailable ? String(localizable: .aiServiceBYOK) : nil
         )
 
         static let optimizedMCPServices = Feature(
             id: "optimized-mcp-services",
             symbol: .sparkles,
             title: String(localizable: .paywallFeatureOptimizedMCPTitle),
-            subtitle: String(localizable: .paywallFeatureOptimizedMCPMessage)
+            subtitle: String(localizable: .paywallFeatureOptimizedMCPMessage),
+            badge: AIChatAvailability.isAvailable ? String(localizable: .aiBYOKOptimizedFeatureTitle) : nil
         )
 
         static let unlimitedCollaborationTools = Feature(
@@ -75,6 +79,13 @@ extension Paywall {
             symbol: .rectangleStack,
             title: String(localizable: .paywallFeaturePresentationTitle),
             subtitle: String(localizable: .paywallFeaturePresentationMessage)
+        )
+
+        static let optimizedBYOK = Feature(
+            id: "optimized-byok",
+            symbol: .key,
+            title: String(localizable: .aiBYOKOptimizedFeatureTitle),
+            subtitle: String(localizable: .paywallFeatureOptimizedBYOKMessage)
         )
 
         static let proAICredits = Feature(

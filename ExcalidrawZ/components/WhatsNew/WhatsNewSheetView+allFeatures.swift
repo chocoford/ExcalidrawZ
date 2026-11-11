@@ -9,7 +9,7 @@
 //  2. Move the previous featuresContent() rows into allFeaturesList() as a
 //     dedicated WhatsNewVersionSection.
 //  3. Keep version sections flat; do not extract per-version helper views.
-//  4. Do not archive rows marked as a current-release recap.
+//  4. When a recap spans releases, archive its rows under their original versions.
 //
 
 import SwiftUI
@@ -18,37 +18,14 @@ import SFSafeSymbols
 extension WhatsNewView {
     @ViewBuilder
     func featuresContent() -> some View {
-        // 2.5.1. Archive this and the 2.5.0 recap separately in a future release.
         WhatsNewFeatureRow(
-            title: .localizable(.whatsNewHEIFImagePasteTitle),
-            description: .localizable(.whatsNewHEIFImagePasteDescription),
+            title: .localizable(.whatsNewBYOKTitle),
+            description: .localizable(.whatsNewBYOKDescription),
         ) {
-            Image(systemName: "photo.badge.plus")
+            Image(systemName: "key")
                 .resizable()
                 .symbolRenderingMode(.hierarchical)
         }
-
-        // Current-release recap: keep the 2.5.0 features visible alongside 2.5.1.
-#if os(macOS)
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewViewerTitle),
-            description: .localizable(.whatsNewViewerDescription),
-        ) {
-            Image(systemName: "macwindow.on.rectangle")
-                .resizable()
-                .symbolRenderingMode(.hierarchical)
-        }
-#endif
-
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewSelectedImageExportTitle),
-            description: .localizable(.whatsNewSelectedImageExportDescription),
-        ) {
-            Image(systemName: "square.dashed")
-                .resizable()
-                .symbolRenderingMode(.hierarchical)
-        }
-
     }
 
     @ViewBuilder
@@ -60,6 +37,37 @@ extension WhatsNewView {
                         version: Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
                     ) {
                         featuresContent()
+                    }
+                    WhatsNewVersionSection(version: "v2.5.1") {
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewHEIFImagePasteTitle),
+                            description: .localizable(.whatsNewHEIFImagePasteDescription),
+                        ) {
+                            Image(systemName: "photo.badge.plus")
+                                .resizable()
+                                .symbolRenderingMode(.hierarchical)
+                        }
+                    }
+                    WhatsNewVersionSection(version: "v2.5.0") {
+#if os(macOS)
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewViewerTitle),
+                            description: .localizable(.whatsNewViewerDescription),
+                        ) {
+                            Image(systemName: "macwindow.on.rectangle")
+                                .resizable()
+                                .symbolRenderingMode(.hierarchical)
+                        }
+#endif
+
+                        WhatsNewFeatureRow(
+                            title: .localizable(.whatsNewSelectedImageExportTitle),
+                            description: .localizable(.whatsNewSelectedImageExportDescription),
+                        ) {
+                            Image(systemName: "square.dashed")
+                                .resizable()
+                                .symbolRenderingMode(.hierarchical)
+                        }
                     }
                     WhatsNewVersionSection(version: "v2.4.1") {
                         WhatsNewFeatureRow(

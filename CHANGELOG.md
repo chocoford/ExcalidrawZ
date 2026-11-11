@@ -1,3 +1,13 @@
+## 2.6.0
+
+#### Features
+
+- Added Bring Your Own Key (BYOK) for AI Chat and AI formulas, with presets for OpenAI, Anthropic, Gemini, OpenRouter, DeepSeek and more, plus custom providers compatible with Chat Completions.
+- Added multiple saved AI connections with separate API keys and model choices. Choose a connection in AI Settings, then browse its model list or enter a model ID directly in Chat.
+- Added Basic BYOK with a direct provider connection and shared Basic MCP drawing tools, without an ExcalidrawZ AI subscription or credits. Optimized BYOK uses the enhanced assistant through ExcalidrawZ servers with Starter or higher. Model usage is billed by the provider; platform services in Optimized may also use ExcalidrawZ credits.
+- Added opt-in provider-hosted web search in Basic BYOK, with provider-reported sources and token usage in Chat. Availability depends on the connection and model.
+- Added separate enable confirmations for ExcalidrawZ AI and BYOK, explaining data sharing and billing. API keys are stored in the device's Keychain.
+
 ## 2.5.1
 
 #### Features
