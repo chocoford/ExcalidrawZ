@@ -668,6 +668,11 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
 
         guard isCurrentLoadRequest(request) else { return nil }
 
+        // Newly imported media may be durable in native storage before it reaches
+        // the WebView cache. Rehydrate it before replacing the live scene.
+        try await core.refreshMediaItemsIfNeeded(referencedBy: data)
+        guard !Task.isCancelled, isCurrentLoadRequest(request) else { return nil }
+
         return try await core.webActor.loadFile(
             id: request.fileID,
             requestID: transportRequestID,
