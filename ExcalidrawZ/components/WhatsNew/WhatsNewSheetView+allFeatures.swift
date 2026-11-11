@@ -26,6 +26,15 @@ extension WhatsNewView {
                 .resizable()
                 .symbolRenderingMode(.hierarchical)
         }
+
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewCollapsibleControlsTitle),
+            description: .localizable(.whatsNewCollapsibleControlsDescription),
+        ) {
+            Image(systemName: "chevron.up.chevron.down")
+                .resizable()
+                .symbolRenderingMode(.hierarchical)
+        }
     }
 
     @ViewBuilder
