@@ -139,7 +139,7 @@ struct AIEnableConsentSheet: View {
             Text(.localizable(mode == .byok ? .aiBYOKEnableTitle : .aiPlatformEnableTitle))
                 .font(.title2.weight(.semibold))
 
-            Text(isDirect ? String(localized: "AI.Direct.consentSubtitle")
+            Text(isDirect ? String(localizable: .aIDirectConsentSubtitle)
                  : String(localizable: mode == .byok ? .aiBYOKEnableSubtitle : .aiChatEnableConsentSubtitle))
                 .font(.callout)
                 .foregroundStyle(.secondary)
@@ -153,17 +153,17 @@ struct AIEnableConsentSheet: View {
                 consentRow(
                     icon: .key,
                     title: String(localizable: .aiBYOKConsentKeyTitle),
-                    message: isDirect ? String(localized: "AI.Direct.consentKey") : String(localizable: .aiBYOKConsentKeyMessage)
+                    message: isDirect ? String(localizable: .aIDirectConsentKey) : String(localizable: .aiBYOKConsentKeyMessage)
                 )
                 consentRow(
                     icon: .cloud,
                     title: String(localizable: .aiBYOKConsentDataTitle),
-                    message: isDirect ? String(localized: "AI.Direct.consentData") : String(localizable: .aiBYOKConsentDataMessage)
+                    message: isDirect ? String(localizable: .aIDirectConsentData) : String(localizable: .aiBYOKConsentDataMessage)
                 )
                 consentRow(
                     icon: .creditcard,
                     title: String(localizable: .aiBYOKConsentBillingTitle),
-                    message: isDirect ? String(localized: "AI.Direct.noCredits") : String(localizable: .aiBYOKConsentBillingMessage)
+                    message: isDirect ? String(localizable: .aIDirectNoCredits) : String(localizable: .aiBYOKConsentBillingMessage)
                 )
                 consentRow(
                     icon: .lock,

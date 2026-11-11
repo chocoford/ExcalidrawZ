@@ -39,14 +39,14 @@ struct AssistantUsageBadge: View {
                     HStack(spacing: 4) {
                         if let tokens = presentation.tokens {
                             Image(systemName: "number")
-                            Text(String(format: String(localized: "AI.Usage.tokens"), compact(tokens.totalTokens)))
-                            if presentation.isPartial { Text(String(localized: "AI.Usage.partial")) }
+                            Text(.localizable(.aIUsageTokens(compact(tokens.totalTokens))))
+                            if presentation.isPartial { Text(.localizable(.aIUsagePartial)) }
                         }
                         if let searches = presentation.providerToolUsage?["web_search_requests"] {
                             Image(systemName: "magnifyingglass")
-                            Text(String(format: String(localized: "AI.Usage.searches"), compact(searches)))
+                            Text(.localizable(.aIUsageSearches(compact(searches))))
                         } else if presentation.tokens == nil {
-                            Label(String(localized: "AI.Usage.providerTools"), systemImage: "wrench")
+                            Label(.localizable(.aIUsageProviderTools), systemImage: "wrench")
                                 .labelStyle(.titleAndIcon)
                         }
                     }
@@ -62,7 +62,7 @@ struct AssistantUsageBadge: View {
                     Text(credits.formatted(.number.precision(.fractionLength(2))))
                 }
                 .usageBadgeSurface()
-                .help(String(localized: "AI.Usage.platformCredits"))
+                .help(String(localizable: .aIUsagePlatformCredits))
             }
         }
     }
@@ -74,41 +74,41 @@ struct AssistantUsageBadge: View {
     private var tooltip: String {
         var lines: [String] = []
         if let tokens = presentation.tokens {
-            lines.append(String(format: String(localized: "AI.Usage.tooltip"),
-                tokens.promptTokens.formatted(), tokens.completionTokens.formatted(), tokens.totalTokens.formatted()))
-            if presentation.isPartial { lines.append(String(localized: "AI.Usage.partialDescription")) }
+            lines.append(String(localizable: .aIUsageTooltip(
+                tokens.promptTokens.formatted(), tokens.completionTokens.formatted(), tokens.totalTokens.formatted())))
+            if presentation.isPartial { lines.append(String(localizable: .aIUsagePartialDescription)) }
         }
-        if presentation.providerToolUsage?.isEmpty == false { lines.append(String(localized: "AI.Usage.providerToolsDescription")) }
+        if presentation.providerToolUsage?.isEmpty == false { lines.append(String(localizable: .aIUsageProviderToolsDescription)) }
         return lines.joined(separator: "\n")
     }
 
     private var usageDetails: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(String(localized: "AI.Usage.providerTitle")).font(.headline)
+            Text(.localizable(.aIUsageProviderTitle)).font(.headline)
             if let tokens = presentation.tokens {
-                detail(String(localized: "AI.Usage.input"), tokens.promptTokens)
-                detail(String(localized: "AI.Usage.output"), tokens.completionTokens)
-                detail(String(localized: "AI.Usage.total"), tokens.totalTokens)
+                detail(String(localizable: .aIUsageInput), tokens.promptTokens)
+                detail(String(localizable: .aIUsageOutput), tokens.completionTokens)
+                detail(String(localizable: .aIUsageTotal), tokens.totalTokens)
             }
-            detail(String(localized: "AI.Usage.requests"), presentation.summary.requestCount)
+            detail(String(localizable: .aIUsageRequests), presentation.summary.requestCount)
             if let counters = presentation.providerToolUsage, !counters.isEmpty {
-                Text(String(localized: "AI.Usage.providerTools")).font(.subheadline).padding(.top, 4)
+                Text(.localizable(.aIUsageProviderTools)).font(.subheadline).padding(.top, 4)
                 ForEach(counters.keys.sorted(), id: \.self) { key in
                     if let count = counters[key] {
-                        detail(key == "web_search_requests" ? String(localized: "AI.Usage.providerSearches") : key, count)
+                        detail(key == "web_search_requests" ? String(localizable: .aIUsageProviderSearches) : key, count)
                     }
                 }
-                Text(String(localized: "AI.Usage.providerToolsDescription"))
+                Text(.localizable(.aIUsageProviderToolsDescription))
                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
             if presentation.isPartial {
                 if presentation.summary.unreportedRequestCount > 0 {
-                    detail(String(localized: "AI.Usage.unreported"), presentation.summary.unreportedRequestCount)
+                    detail(String(localizable: .aIUsageUnreported), presentation.summary.unreportedRequestCount)
                 }
                 if presentation.summary.incompleteRequestCount > 0 {
-                    detail(String(localized: "AI.Usage.incomplete"), presentation.summary.incompleteRequestCount)
+                    detail(String(localizable: .aIUsageIncomplete), presentation.summary.incompleteRequestCount)
                 }
-                Text(String(localized: "AI.Usage.partialDescription"))
+                Text(.localizable(.aIUsagePartialDescription))
                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
         }

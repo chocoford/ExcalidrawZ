@@ -63,23 +63,14 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
                             .frame(width: 12, height: 12)
                     }
                     .buttonStyle(.borderless)
-                    .help(String(
-                        format: String(
-                            localized: "cloudStorageSignInReconnectFormat",
-                            defaultValue: "Sign in to reconnect %@"
-                        ),
-                        location.displayName
-                    ))
+                    .help(.localizable(.cloudStorageSignInReconnectFormat(location.displayName)))
                 } else if connectivity.status == .unavailable {
                     Image(systemName: "wifi.slash")
                         .imageScale(.small)
                         .foregroundStyle(.secondary)
                         .frame(width: 12, height: 12)
                         .help(
-                            String(
-                                localized: "cloudStorageStatusWaitingForConnection",
-                                defaultValue: "Waiting for connection…"
-                            )
+                            String(localizable: .cloudStorageStatusWaitingForConnection)
                         )
                 } else if isLoadingMetadata {
                     ProgressView()
@@ -166,10 +157,7 @@ private struct CloudStorageSidebarFolderContents: View {
                     statusRow {
                         Image(systemName: "wifi.slash")
                         Text(
-                            String(
-                                localized: "cloudStorageStatusOffline",
-                                defaultValue: "Offline"
-                            )
+                            String(localizable: .cloudStorageStatusOffline)
                         )
                     }
                 } else if let errorMessage = browser.errorMessage,
@@ -198,10 +186,7 @@ private struct CloudStorageSidebarFolderContents: View {
             } else if let items {
                 if items.isEmpty {
                     statusRow {
-                        Text(String(
-                            localized: "cloudStorageNoExcalidrawFiles",
-                            defaultValue: "No Excalidraw Files"
-                        ))
+                        Text(.localizable(.cloudStorageNoExcalidrawFiles))
                     }
                 } else {
                     ForEach(items) { item in

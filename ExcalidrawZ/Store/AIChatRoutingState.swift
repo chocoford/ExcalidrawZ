@@ -63,9 +63,9 @@ enum AIChatRoutingError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .profileUnavailable(let id):
-            String(format: String(localized: "AI.Scheme.profileUnavailable"), id)
-        case .invalidRoute: String(localized: "AI.Scheme.invalidRoute")
-        case .consentRequired: String(localized: "AI.Scheme.consentRequired")
+            String(localizable: .aISchemeProfileUnavailable(id))
+        case .invalidRoute: String(localizable: .aISchemeInvalidRoute)
+        case .consentRequired: String(localizable: .aISchemeConsentRequired)
         case .catalog(let message): message
         }
     }
@@ -116,7 +116,7 @@ final class AIChatRoutingState: ObservableObject {
         }
         guard let id = profileID ?? defaultProfileID ?? AIChatSchemeCatalog.shared.scheme?.defaultProfileID else {
             throw AIChatRoutingError.catalog(AIChatSchemeCatalog.shared.errorMessage
-                ?? String(localized: "AI.Scheme.profilesNotLoaded"))
+                ?? String(localizable: .aISchemeProfilesNotLoaded))
         }
         return .platformScheme(schemeID: AIChatSchemeCatalog.schemeID, profileID: id)
     }

@@ -164759,6 +164759,78 @@
         }
       }
     },
+    "AI.Scheme.chooseProfile": {
+      "comment": "Platform AI model catalog status in Settings; profiles are loaded from the server Scheme.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a model…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择模型…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇模型…"
+          }
+        }
+      }
+    },
+    "AI.Scheme.loadingProfiles": {
+      "comment": "Platform AI model catalog status in Settings; profiles are loaded from the server Scheme.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading models…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在加载模型…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在載入模型…"
+          }
+        }
+      }
+    },
+    "AI.Scheme.noProfiles": {
+      "comment": "Platform AI model catalog status in Settings; profiles are loaded from the server Scheme.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No models are currently available."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前没有可用的模型。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前沒有可用的模型。"
+          }
+        }
+      }
+    },
     "AI.Scheme.profilesNotLoaded": {
       "extractionState": "manual",
       "localizations": {

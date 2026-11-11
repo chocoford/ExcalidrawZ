@@ -56,7 +56,7 @@ extension PromptInputView {
         if let conversationID, let selection = routing.legacySelections[conversationID] {
             return selection.model.displayName
         }
-        return String(localized: "AI.Scheme.legacyConversation")
+        return String(localizable: .aISchemeLegacyConversation)
     }
 
     @MainActor
@@ -71,13 +71,13 @@ extension PromptInputView {
             } else {
                 platformProfileButtons()
                 Divider()
-                Menu(String(localized: "AI.Scheme.optimizedBYOK")) { byokConnectionMenuButtons() }
+                Menu(.localizable(.aISchemeOptimizedBYOK)) { byokConnectionMenuButtons() }
             }
         } else if modelPickerUsesBYOK {
             Button(.localizable(.aiBYOKModelPickerTitle)) { openBYOKModelPicker() }
         } else if let conversation, conversation.schemeConnection == nil, conversation.directConnection == nil {
-            Text(String(localized: "AI.Scheme.legacyConversation"))
-            Button(String(localized: "AI.Scheme.newConversation")) {
+            Text(.localizable(.aISchemeLegacyConversation))
+            Button(.localizable(.aISchemeNewConversation)) {
                 aiChatState.finishEditing()
                 conversationID = nil
                 pendingProfileID = nil
@@ -90,7 +90,7 @@ extension PromptInputView {
             Button {
                 Task { await schemeCatalog.refresh(force: true, forServerConversation: conversation?.schemeConnection != nil) }
             } label: {
-                Label(String(localized: "AI.Scheme.refreshProfiles"), systemImage: "arrow.clockwise")
+                Label(.localizable(.aISchemeRefreshProfiles), systemImage: "arrow.clockwise")
             }
         }
     }

@@ -25,10 +25,7 @@ enum NativePasteImageConverter {
     }
 
     static var failureMessage: String {
-        String(
-            localized: "nativePasteImageConversionFailed",
-            defaultValue: "The clipboard image could not be converted."
-        )
+        String(localizable: .nativePasteImageConversionFailed)
     }
 
     static func convert(_ sources: [NativePasteImageSource]) throws -> [Image] {

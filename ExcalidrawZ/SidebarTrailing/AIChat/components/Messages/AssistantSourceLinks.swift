@@ -11,7 +11,7 @@ struct AssistantSourceLinks: View {
     var body: some View {
         if !sources.isEmpty {
             Button { showsSources = true } label: {
-                Label(String(format: String(localized: "AI.Sources.count"), sources.count), systemImage: "link")
+                Label(.localizable(.aISourcesCount(sources.count)), systemImage: "link")
                     .font(.footnote)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -22,7 +22,7 @@ struct AssistantSourceLinks: View {
             .popover(isPresented: $showsSources) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
-                        Text(String(localized: "AI.Sources.title")).font(.headline)
+                        Text(.localizable(.aISourcesTitle)).font(.headline)
                         ForEach(sources) { source in
                             Link(destination: source.url) {
                                 HStack(alignment: .top, spacing: 10) {

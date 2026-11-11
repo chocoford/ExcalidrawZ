@@ -188,7 +188,7 @@ extension AISettingsView {
             case .usage:
                 Section {
                     if AIChatAvailability.usesDirectInference {
-                        Text(String(localized: "AI.Direct.noCredits"))
+                        Text(.localizable(.aIDirectNoCredits))
                     } else {
                         activityBody
                     }
@@ -234,6 +234,8 @@ extension AISettingsView {
             aiServiceSettingsFooter
             if inferenceBilling.usesBYOK {
                 byokConnectionsFooter
+            } else {
+                platformModelStatusFooter
             }
         }
     }

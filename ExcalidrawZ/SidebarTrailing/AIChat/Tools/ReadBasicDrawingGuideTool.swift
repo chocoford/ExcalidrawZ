@@ -3,7 +3,7 @@ import LLMCore
 
 struct ReadBasicDrawingGuideTool: Tool {
     var name: String { "read_me" }
-    var displayName: String { String(localized: "AI.Direct.drawingGuide") }
+    var displayName: String { String(localizable: .aIDirectDrawingGuide) }
     var description: String { "Read the local Basic MCP Excalidraw element guide before drawing." }
     var inputSchema: ToolInputSchema { .parameters(ToolParameters(properties: [:], required: [])) }
 

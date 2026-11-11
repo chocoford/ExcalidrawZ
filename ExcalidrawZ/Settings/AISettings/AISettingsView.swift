@@ -181,9 +181,9 @@ struct AISettingsView: View {
     private func loadAISettingsDataIfEnabled() async {
         guard AIChatAvailability.canUseAI, !AIChatAvailability.usesDirectInference else { return }
         await LLMServiceActivationCoordinator.shared.restoreIfAIEnabled(reason: .aiSettingsAppear)
+        await loadAvailableModelsIfNeeded()
         await loadInitialTransactions()
         await loadAllTransactionsIfNeeded()
-        await loadAvailableModelsIfNeeded()
         await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiSettingsAppear)
         await loadAIAccountInfoIfNeeded()
     }

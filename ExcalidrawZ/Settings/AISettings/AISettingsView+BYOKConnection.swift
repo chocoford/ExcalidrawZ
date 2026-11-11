@@ -204,9 +204,9 @@ struct AIInferenceConnectionEditor: View {
 
     private var webSearchCompatibilityFields: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldRow(Text(String(localized: "AI.WebSearch.compatibility"))) {
-                Picker(String(localized: "AI.WebSearch.compatibility"), selection: $searchAdapterID) {
-                    Text(String(localized: "AI.WebSearch.noAdapter")).tag("")
+            fieldRow(Text(.localizable(.aIWebSearchCompatibility))) {
+                Picker(.localizable(.aIWebSearchCompatibility), selection: $searchAdapterID) {
+                    Text(.localizable(.aIWebSearchNoAdapter)).tag("")
                     Text("OpenRouter").tag(LLMBYOKWebSearch.Adapter.openRouter.rawValue)
                     Text("OpenAI").tag(LLMBYOKWebSearch.Adapter.openAI.rawValue)
                     Text("DashScope").tag(LLMBYOKWebSearch.Adapter.dashScope.rawValue)
@@ -216,7 +216,7 @@ struct AIInferenceConnectionEditor: View {
                 .fixedSize()
             }
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
-            Text(String(localized: "AI.WebSearch.customDescription"))
+            Text(.localizable(.aIWebSearchCustomDescription))
                 .font(.footnote).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
     }

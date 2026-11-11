@@ -35,7 +35,7 @@ private struct BasicWebSearchSettingsRow: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            Text(String(localized: "AI.WebSearch.title"))
+            Text(.localizable(.aIWebSearchTitle))
             Button { showsHelp = true } label: {
                 Image(systemName: "questionmark.circle")
                     .font(.caption.weight(.semibold))
@@ -44,19 +44,19 @@ private struct BasicWebSearchSettingsRow: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(String(localized: "AI.WebSearch.title"))
+            .accessibilityLabel(.localizable(.aIWebSearchTitle))
             .popover(isPresented: $showsHelp) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(String(localized: "AI.WebSearch.title")).font(.headline)
-                    Text(String(localized: "AI.WebSearch.basicDescription"))
+                    Text(.localizable(.aIWebSearchTitle)).font(.headline)
+                    Text(.localizable(.aIWebSearchBasicDescription))
                     if let adapter = configuration?.webSearchAdapter {
                         Text(BYOKWebSearchDescription.text(for: adapter))
                     } else if configuration == nil {
                         Text(String(localizable: .aiBYOKSelectConnection))
                     } else {
-                        Text(String(localized: "AI.WebSearch.unsupported"))
+                        Text(.localizable(.aIWebSearchUnsupported))
                     }
-                    Text(String(localized: "AI.WebSearch.billingDescription"))
+                    Text(.localizable(.aIWebSearchBillingDescription))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .font(.callout)
@@ -65,7 +65,7 @@ private struct BasicWebSearchSettingsRow: View {
                 .frame(width: 300)
             }
             Spacer(minLength: 16)
-            Toggle(String(localized: "AI.WebSearch.title"), isOn: Binding(
+            Toggle(.localizable(.aIWebSearchTitle), isOn: Binding(
                 get: { configuration?.webSearch?.isEnabled ?? false }, set: onChange))
                 .labelsHidden()
                 .toggleStyle(.switch)
@@ -78,11 +78,11 @@ private struct BasicWebSearchSettingsRow: View {
 private enum BYOKWebSearchDescription {
     static func text(for adapter: LLMBYOKWebSearch.Adapter) -> String {
         switch adapter {
-        case .openRouter: String(localized: "AI.WebSearch.modelDecides")
-        case .openAI: String(localized: "AI.WebSearch.alwaysSearch")
-        case .dashScope: String(localized: "AI.WebSearch.providerDefined")
-        case .groq: String(localized: "AI.WebSearch.browserModel")
-        @unknown default: String(localized: "AI.WebSearch.providerDefined")
+        case .openRouter: String(localizable: .aIWebSearchModelDecides)
+        case .openAI: String(localizable: .aIWebSearchAlwaysSearch)
+        case .dashScope: String(localizable: .aIWebSearchProviderDefined)
+        case .groq: String(localizable: .aIWebSearchBrowserModel)
+        @unknown default: String(localizable: .aIWebSearchProviderDefined)
         }
     }
 }
