@@ -27,6 +27,16 @@ extension AISettingsView {
         .sheet(item: $byokIntegrationHelpMode) { mode in
             BYOKIntegrationHelpSheet(initialMode: mode)
         }
+        .onAppear(perform: resetUnauthorizedBYOKIntegrationMode)
+        .watch(value: store.canUseOptimizedBYOKServices) {
+            resetUnauthorizedBYOKIntegrationMode()
+        }
+        .watch(value: inferenceBilling.integrationMode) {
+            resetUnauthorizedBYOKIntegrationMode()
+        }
+        .watch(value: inferenceBilling.isBusy) {
+            resetUnauthorizedBYOKIntegrationMode()
+        }
     }
 
     private var byokIntegrationModeLabel: some View {
@@ -70,10 +80,21 @@ extension AISettingsView {
     }
 
     private func selectBYOKIntegrationMode(_ mode: AIInferenceIntegrationMode) {
+        if mode == .optimized, !store.canUseOptimizedBYOKServices {
+            updateInferenceBilling { try inferenceBilling.setIntegrationMode(.basic) }
+            byokIntegrationPickerID = UUID()
+            presentPaywall(reason: .optimizedBYOK)
+            return
+        }
         guard mode != inferenceBilling.integrationMode else { return }
-        // Selecting a transport is not admission. Scheme execution checks the App's
-        // independent BYOK rules on the server, including its configured Product IDs.
         updateInferenceBilling { try inferenceBilling.setIntegrationMode(mode) }
+    }
+
+    private func resetUnauthorizedBYOKIntegrationMode() {
+        guard inferenceBilling.integrationMode == .optimized,
+              !store.canUseOptimizedBYOKServices, !inferenceBilling.isBusy else { return }
+        updateInferenceBilling { try inferenceBilling.setIntegrationMode(.basic) }
+        byokIntegrationPickerID = UUID()
     }
 }
 

@@ -148,6 +148,10 @@ extension PromptInputView {
             // A Scheme conversation always uses Optimized discovery, regardless of defaults.
             let mode: AIInferenceIntegrationMode = conversation?.schemeConnection != nil
                 ? .optimized : modelPickerIntegrationMode ?? inferenceBilling.integrationMode
+            guard mode != .optimized || store.canUseOptimizedBYOKServices else {
+                store.togglePaywall(reason: .optimizedBYOK)
+                return
+            }
             byokModelPickerTarget = .init(conversationID: conversationID, draftKey: promptDraftKey,
                 expectedRoute: route, connectionID: id, integrationMode: mode,
                 selectedModelID: modelPickerConnectionID == id ? route?.byokModelID ?? profile.lastModelID ?? ""

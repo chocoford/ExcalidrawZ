@@ -196,6 +196,11 @@ extension Store {
         return activeSubscriptionItem >= .starter
     }
 
+    var canUseOptimizedBYOKServices: Bool {
+        guard let activeSubscriptionItem else { return false }
+        return activeSubscriptionItem >= .starter
+    }
+
     var canUsePresentation: Bool {
         guard let activeSubscriptionItem else { return false }
         return activeSubscriptionItem >= .starter
