@@ -1066,7 +1066,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 119;
+				CURRENT_PROJECT_VERSION = 120;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -1120,7 +1120,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 119;
+				CURRENT_PROJECT_VERSION = 120;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -1235,7 +1235,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 119;
+				CURRENT_PROJECT_VERSION = 120;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -1289,7 +1289,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 119;
+				CURRENT_PROJECT_VERSION = 120;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -1522,7 +1522,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 119;
+				CURRENT_PROJECT_VERSION = 120;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -1583,7 +1583,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExcalidrawZ/ExcalidrawZ.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 119;
+				CURRENT_PROJECT_VERSION = 120;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ExcalidrawZ/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;

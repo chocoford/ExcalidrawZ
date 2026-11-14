@@ -4238,6 +4238,96 @@
             "state": "translated",
             "value": "ExcalidrawZ AI 和 Optimized BYOK 需在 App Store 版本中使用。請新增對話，以在此版本使用 Basic BYOK。"
           }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI y BYOK optimizado requieren la versión de la App Store. Inicia una nueva conversación para usar el BYOK básico aquí."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI et BYOK optimisé nécessitent la version App Store. Démarrez une nouvelle conversation pour utiliser Basic BYOK ici."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI und optimiertes BYOK erfordern die App Store-Version. Beginne ein neues Gespräch, um Basic BYOK hier zu verwenden."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI と最適化された BYOK は App Store バージョンが必要です。ここで Basic BYOK を使用するには新しい会話を開始してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI 및 최적화된 BYOK는 App Store 버전이 필요합니다. 여기에서 기본 BYOK를 사용하려면 새로운 대화를 시작하세요."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI e BYOK ottimizzato richiedono la versione dell'App Store. Inizia una nuova conversazione per utilizzare Basic BYOK qui."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI и оптимизированный BYOK требуют версию из App Store. Начните новый разговор, чтобы использовать Basic BYOK здесь."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يحتاج ExcalidrawZ AI و BYOK المحسن إلى نسخة متجر التطبيقات. ابدأ محادثة جديدة لاستخدام BYOK الأساسي هنا."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI और अनुकूलित BYOK के लिए ऐप स्टोर संस्करण की आवश्यकता है। यहां बेसिक BYOK का उपयोग करने के लिए एक नई बातचीत शुरू करें।"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI ve Optimize Edilmiş BYOK, App Store sürümünü gerektirir. Burada Temel BYOK'u kullanmak için yeni bir sohbet başlatın."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI và BYOK tối ưu yêu cầu phiên bản App Store. Bắt đầu một cuộc trò chuyện mới để sử dụng BYOK Cơ bản ở đây."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI และ BYOK ที่ปรับแต่งแล้วต้องการเวอร์ชัน App Store เริ่มการสนทนาใหม่เพื่อใช้ Basic BYOK ที่นี่."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI en Geoptimaliseerd BYOK vereisen de App Store-versie. Begin een nieuw gesprek om hier Basic BYOK te gebruiken."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI i zoptymalizowane BYOK wymagają wersji z App Store. Rozpocznij nową rozmowę, aby użyć podstawowego BYOK tutaj."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI e BYOK Otimizado requerem a versão da App Store. Comece uma nova conversa para usar o BYOK Básico aqui."
+          }
         }
       }
     },
