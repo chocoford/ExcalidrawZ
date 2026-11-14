@@ -27,6 +27,7 @@ enum AIInferenceBillingError: LocalizedError {
     case invalidConfiguration
     case incompatibleModel
     case missingModel
+    case managedInferenceUnavailable
     case keychain(Int32)
 
     var errorDescription: String? {
@@ -49,6 +50,8 @@ enum AIInferenceBillingError: LocalizedError {
                 String(localizable: .aiBYOKIncompatibleModel)
             case .missingModel:
                 String(localizable: .aiBYOKMissingModel)
+            case .managedInferenceUnavailable:
+                String(localizable: .aiBYOKManagedServiceAppStoreOnly)
             case .keychain:
                 String(localizable: .aiBYOKKeychainError)
         }
@@ -93,25 +96,39 @@ final class AIInferenceBillingState: ObservableObject {
 
     private let defaults: UserDefaults
     private let keyStore: any AIInferenceKeyStoring
+    private let supportsManagedInference: Bool
 
     init(
         defaults: UserDefaults = .standard,
-        keyStore: any AIInferenceKeyStoring = AIInferenceCredentialStore()
+        keyStore: any AIInferenceKeyStoring = AIInferenceCredentialStore(),
+        supportsManagedInference: Bool = AIChatAvailability.supportsManagedInference
     ) {
         self.defaults = defaults
         self.keyStore = keyStore
+        self.supportsManagedInference = supportsManagedInference
         let storedMode = defaults.string(forKey: Self.modeDefaultsKey)
         // Existing BYOK connections keep their backend route until explicitly changed.
-        if let savedIntegration = defaults.string(forKey: Self.integrationModeDefaultsKey) {
+        let initialIntegration: AIInferenceIntegrationMode
+        if !supportsManagedInference {
+            initialIntegration = .basic
+        } else if let savedIntegration = defaults.string(forKey: Self.integrationModeDefaultsKey) {
             // Unknown routes must not opt a connection into the backend transport.
-            integrationMode = AIInferenceIntegrationMode(rawValue: savedIntegration) ?? .basic
+            initialIntegration = AIInferenceIntegrationMode(rawValue: savedIntegration) ?? .basic
         } else {
-            integrationMode = .optimized
+            let hasLegacyConnection = storedMode == "byok" || storedMode == "openRouter"
+                || defaults.object(forKey: Self.profilesDefaultsKey) != nil
+                || defaults.object(forKey: Self.configurationsDefaultsKey) != nil
+                || defaults.string(forKey: Self.connectionDefaultsKey) != nil
+            initialIntegration = hasLegacyConnection ? .optimized : .basic
         }
+        integrationMode = initialIntegration
+        defaults.set(initialIntegration.rawValue, forKey: Self.integrationModeDefaultsKey)
         let decodedMode: AIInferenceBillingMode? = storedMode == "openRouter"
             ? .byok : storedMode.flatMap(AIInferenceBillingMode.init(rawValue:))
-        mode = decodedMode ?? .platform
-        requiresBillingSelection = storedMode != nil && decodedMode == nil
+        let initialMode = decodedMode ?? .platform
+        mode = initialMode
+        requiresBillingSelection = (storedMode != nil && decodedMode == nil)
+            || (!supportsManagedInference && initialMode != .byok)
         conversationModels = defaults.dictionary(forKey: Self.modelOverridesDefaultsKey) as? [String: [String: String]] ?? [:]
         profiles = []
         configurationLoadFailed = false
@@ -134,6 +151,9 @@ final class AIInferenceBillingState: ObservableObject {
     }
 
     func setMode(_ mode: AIInferenceBillingMode) throws {
+        guard mode != .platform || supportsManagedInference else {
+            throw AIInferenceBillingError.managedInferenceUnavailable
+        }
         guard mode != self.mode || requiresBillingSelection else { return }
         try requireIdle()
         defaults.set(mode.rawValue, forKey: Self.modeDefaultsKey)
@@ -143,6 +163,9 @@ final class AIInferenceBillingState: ObservableObject {
     }
 
     func setIntegrationMode(_ integrationMode: AIInferenceIntegrationMode) throws {
+        guard integrationMode != .optimized || supportsManagedInference else {
+            throw AIInferenceBillingError.managedInferenceUnavailable
+        }
         guard integrationMode != self.integrationMode else { return }
         try requireIdle()
         defaults.set(integrationMode.rawValue, forKey: Self.integrationModeDefaultsKey)
@@ -442,6 +465,9 @@ final class AIInferenceBillingState: ObservableObject {
     }
 
     func resolveSelection(for binding: LLMSchemeConversationBinding) throws -> AIInferenceBillingSelection {
+        guard supportsManagedInference else {
+            throw AIInferenceBillingError.managedInferenceUnavailable
+        }
         try binding.validate()
         switch binding.billing {
         case .platform: return .platform

@@ -176,14 +176,12 @@ struct AIInferenceConnectionEditor: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             VStack(spacing: 0) {
-                if !isNewConnection {
-                    fieldRow(.aiBYOKModelDiscoveryEnabled) {
-                        Toggle(.localizable(.aiBYOKModelDiscoveryEnabled), isOn: $discoveryEnabled)
-                            .toggleStyle(.switch)
-                            .fixedSize()
-                    }
-                    if discoveryEnabled { rowDivider }
+                fieldRow(.aiBYOKModelDiscoveryEnabled) {
+                    Toggle(.localizable(.aiBYOKModelDiscoveryEnabled), isOn: $discoveryEnabled)
+                        .toggleStyle(.switch)
+                        .fixedSize()
                 }
+                if discoveryEnabled { rowDivider }
                 if discoveryEnabled {
                     fieldRow(.aiBYOKModelDiscoveryPath) {
                         TextField(.localizable(.aiBYOKModelDiscoveryPath), text: $discoveryPath, prompt: Text("models"))

@@ -4217,6 +4217,30 @@
         }
       }
     },
+    "aiBYOKManagedServiceAppStoreOnly": {
+      "comment": "Explains why a saved managed conversation cannot generate in the Basic-only direct-download build.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI and Optimized BYOK require the App Store version. Start a new conversation to use Basic BYOK here."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI 和 Optimized BYOK 需在 App Store 版本中使用。请新建对话，以在此版本使用 Basic BYOK。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ AI 和 Optimized BYOK 需在 App Store 版本中使用。請新增對話，以在此版本使用 Basic BYOK。"
+          }
+        }
+      }
+    },
     "aiBYOKMissingKey": {
       "comment": "BYOK app settings and request errors; data flow depends on Basic or Optimized mode.",
       "extractionState": "manual",

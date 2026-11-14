@@ -32,9 +32,11 @@ extension AISettingsView {
         )) {
             Text(.localizable(.aiServiceNone))
                 .tag(AIServiceMode.none)
-            Text(.localizable(.aiServiceExcalidrawZ))
-                .tag(AIServiceMode.excalidrawZ)
-                .disabled(inferenceBilling.isBusy && inferenceBilling.usesBYOK)
+            if AIChatAvailability.supportsManagedInference {
+                Text(.localizable(.aiServiceExcalidrawZ))
+                    .tag(AIServiceMode.excalidrawZ)
+                    .disabled(inferenceBilling.isBusy && inferenceBilling.usesBYOK)
+            }
             Text(.localizable(.aiServiceBYOK))
                 .tag(AIServiceMode.byok)
                 .disabled(inferenceBilling.isBusy && !inferenceBilling.usesBYOK)

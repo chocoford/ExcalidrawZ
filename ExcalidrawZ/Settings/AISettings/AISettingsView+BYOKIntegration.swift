@@ -31,6 +31,9 @@ extension AISettingsView {
         .watch(value: store.canUseOptimizedBYOKServices) {
             resetUnauthorizedBYOKIntegrationMode()
         }
+        .watch(value: store.hasResolvedSubscriptionEntitlements) {
+            resetUnauthorizedBYOKIntegrationMode()
+        }
         .watch(value: inferenceBilling.integrationMode) {
             resetUnauthorizedBYOKIntegrationMode()
         }
@@ -80,6 +83,10 @@ extension AISettingsView {
     }
 
     private func selectBYOKIntegrationMode(_ mode: AIInferenceIntegrationMode) {
+        if mode == .optimized, !store.hasResolvedSubscriptionEntitlements {
+            byokIntegrationPickerID = UUID()
+            return
+        }
         if mode == .optimized, !store.canUseOptimizedBYOKServices {
             updateInferenceBilling { try inferenceBilling.setIntegrationMode(.basic) }
             byokIntegrationPickerID = UUID()
@@ -92,6 +99,7 @@ extension AISettingsView {
 
     private func resetUnauthorizedBYOKIntegrationMode() {
         guard inferenceBilling.integrationMode == .optimized,
+              store.hasResolvedSubscriptionEntitlements,
               !store.canUseOptimizedBYOKServices, !inferenceBilling.isBusy else { return }
         updateInferenceBilling { try inferenceBilling.setIntegrationMode(.basic) }
         byokIntegrationPickerID = UUID()

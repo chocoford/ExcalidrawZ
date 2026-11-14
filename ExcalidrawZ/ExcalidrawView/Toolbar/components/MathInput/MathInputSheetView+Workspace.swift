@@ -244,7 +244,7 @@ extension MathInputSheetView {
     }
 
     var canUseLatexAI: Bool {
-        AIChatAvailability.isAvailable && aiChatPreferences.isAIEnabled
+        AIChatAvailability.canUseAI
     }
 
     var canGenerateLatexWithAI: Bool {

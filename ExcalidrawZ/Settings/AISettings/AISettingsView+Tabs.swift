@@ -221,10 +221,10 @@ extension AISettingsView {
         Section {
             aiServiceModePicker
             if inferenceBilling.usesBYOK {
-                byokIntegrationModeRow
+                if AIChatAvailability.supportsManagedInference { byokIntegrationModeRow }
                 byokConnectionsRow
                 basicWebSearchRow
-            } else {
+            } else if AIChatAvailability.supportsManagedInference {
                 defaultModelPicker
             }
         } header: {
@@ -234,7 +234,7 @@ extension AISettingsView {
             aiServiceSettingsFooter
             if inferenceBilling.usesBYOK {
                 byokConnectionsFooter
-            } else {
+            } else if AIChatAvailability.supportsManagedInference {
                 platformModelStatusFooter
             }
         }

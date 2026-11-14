@@ -157,7 +157,7 @@ struct AIChatView: View {
     }
 
     var shouldBlockAIForPreference: Bool {
-        !prefs.isAIEnabled
+        !AIChatAvailability.canUseAI
     }
 
     var shouldShowWelcomeContent: Bool {

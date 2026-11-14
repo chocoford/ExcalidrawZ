@@ -190,6 +190,13 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
 }
 
 extension Store {
+    var hasResolvedSubscriptionEntitlements: Bool {
+#if DEBUG && !APP_STORE
+        if debugActiveSubscriptionItem != nil { return true }
+#endif
+        return hasLoadedSubscriptionEntitlements
+    }
+
     var canUseOptimizedMCPServices: Bool {
         guard ExcalidrawZMCPServerController.isAvailable else { return false }
         guard let activeSubscriptionItem else { return false }
@@ -197,6 +204,7 @@ extension Store {
     }
 
     var canUseOptimizedBYOKServices: Bool {
+        guard AIChatAvailability.supportsManagedInference else { return false }
         guard let activeSubscriptionItem else { return false }
         return activeSubscriptionItem >= .starter
     }

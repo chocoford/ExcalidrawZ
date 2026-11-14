@@ -319,7 +319,7 @@ struct AIChatWelcomeView: View {
             } else {
                 Button {
                     if onEnableAI != nil {
-                        requestEnableAI(.platform)
+                        requestEnableAI(AIChatAvailability.supportsManagedInference ? .platform : .byok)
                     } else {
                         Task {
                             await dismissAndStart()
@@ -332,7 +332,7 @@ struct AIChatWelcomeView: View {
                 .keyboardShortcut(.defaultAction)
                 .disabled(isDismissing)
 
-                if onEnableAI != nil {
+                if onEnableAI != nil, AIChatAvailability.supportsManagedInference {
                     Button {
                         requestEnableAI(.byok)
                     } label: {
@@ -379,7 +379,8 @@ struct AIChatWelcomeView: View {
 
     private var getStartedButtonLabel: some View {
         HStack(spacing: 6) {
-            Text(onEnableAI == nil ? buttonTitle : String(localizable: .aiPlatformEnableButton))
+            Text(onEnableAI == nil ? buttonTitle : String(localizable:
+                AIChatAvailability.supportsManagedInference ? .aiPlatformEnableButton : .aiBYOKEnableButton))
                 .fontWeight(.semibold)
             Image(systemSymbol: .arrowRight)
                 .font(.callout.weight(.semibold))

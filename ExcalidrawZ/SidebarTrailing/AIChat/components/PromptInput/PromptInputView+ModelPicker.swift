@@ -63,7 +63,14 @@ extension PromptInputView {
     @MainActor
     @ViewBuilder
     func modelProfilePickerButtons() -> some View {
-        if conversation?.schemeConnection != nil {
+        if !AIChatAvailability.supportsManagedInference, let conversation, conversation.directConnection == nil {
+            Text(.localizable(.aiBYOKManagedServiceAppStoreOnly))
+            Button(.localizable(.aISchemeNewConversation)) {
+                aiChatState.finishEditing()
+                conversationID = nil
+                pendingProfileID = nil
+            }
+        } else if conversation?.schemeConnection != nil {
             if modelPickerUsesBYOK {
                 Button(.localizable(.aiBYOKModelPickerTitle)) { openBYOKModelPicker() }
                 Menu(.localizable(.aiBYOKConnectionsTitle)) { byokConnectionMenuButtons() }
@@ -148,6 +155,7 @@ extension PromptInputView {
             // A Scheme conversation always uses Optimized discovery, regardless of defaults.
             let mode: AIInferenceIntegrationMode = conversation?.schemeConnection != nil
                 ? .optimized : modelPickerIntegrationMode ?? inferenceBilling.integrationMode
+            guard mode != .optimized || store.hasResolvedSubscriptionEntitlements else { return }
             guard mode != .optimized || store.canUseOptimizedBYOKServices else {
                 store.togglePaywall(reason: .optimizedBYOK)
                 return

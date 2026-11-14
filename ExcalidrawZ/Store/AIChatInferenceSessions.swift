@@ -51,10 +51,11 @@ final class AIChatInferenceSessions: ObservableObject {
                     connectionID: record.connectionID, bound: record.binding.configuration)
                 return directSession(connectionID: record.connectionID, configuration: configuration)
             }
-            if serverConversationIDs.contains(conversationID) { return server }
+            if serverConversationIDs.contains(conversationID), AIChatAvailability.supportsManagedInference { return server }
         }
         let billing = AIInferenceBillingState.shared
-        guard billing.usesBYOK, billing.integrationMode == .basic else { return server }
+        if AIChatAvailability.supportsManagedInference,
+           !billing.usesBYOK || billing.integrationMode != .basic { return server }
         // An unconfigured Direct client fails locally; it never substitutes the server client.
         return directSession(connectionID: billing.selectedProfileID ?? "unconfigured",
                              configuration: billing.configuration ?? .openAI)

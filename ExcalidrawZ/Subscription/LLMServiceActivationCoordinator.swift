@@ -24,6 +24,7 @@ actor LLMServiceActivationCoordinator {
     private var hasRestoredForCurrentEnabledSession = false
 
     func restoreIfAIEnabled(reason: Reason) async {
+        guard AIChatAvailability.supportsManagedInference else { return }
         guard AIChatAvailability.isAvailable else {
             restoreGeneration += 1
             restoreTask?.cancel()

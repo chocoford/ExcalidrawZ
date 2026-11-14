@@ -34,7 +34,7 @@ final class AIChatSchemeCatalog: ObservableObject {
     }
 
     func refresh(force: Bool = false, forServerConversation: Bool = false) async {
-        guard AIChatAvailability.canUseAI else { return }
+        guard AIChatAvailability.supportsManagedInference, AIChatAvailability.canUseAI else { return }
         guard !AIChatAvailability.usesDirectInference || forServerConversation else { return }
         guard force || (scheme == nil && !isLoading) else { return }
         generation += 1

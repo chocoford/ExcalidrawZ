@@ -122,6 +122,7 @@ final class AIChatRoutingState: ObservableObject {
     }
 
     func modelSelection(for route: AIChatConversationRoute, conversationID: String? = nil) throws -> AIChatModelSelection {
+        try requireSupportedTransport(route)
         switch route {
         case .platformScheme(let schemeID, let profileID):
             guard schemeID == AIChatSchemeCatalog.schemeID else { throw AIChatRoutingError.invalidRoute }
@@ -175,6 +176,7 @@ final class AIChatRoutingState: ObservableObject {
         expectedBillingRevision: Int? = nil,
         operation: @MainActor @Sendable () async throws -> Result
     ) async throws -> Result {
+        try requireSupportedTransport(route)
         let billing = AIInferenceBillingState.shared
         guard AIChatInferenceSessions.shared.session(for: conversationID).state === state else {
             throw AIInferenceBillingError.selectionChanged
@@ -212,5 +214,10 @@ final class AIChatRoutingState: ObservableObject {
             try await LLMClient.shared.withScheme(binding.selection, billing: binding.billing,
                                                   connectionID: binding.connectionID, operation: operation)
         }
+    }
+
+    private func requireSupportedTransport(_ route: AIChatConversationRoute) throws {
+        guard !AIChatAvailability.supportsManagedInference else { return }
+        guard case .basicBYOK = route else { throw AIInferenceBillingError.managedInferenceUnavailable }
     }
 }
