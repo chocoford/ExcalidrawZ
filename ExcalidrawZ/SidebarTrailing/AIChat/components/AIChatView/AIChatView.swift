@@ -21,6 +21,8 @@ struct AIChatView: View {
     @Environment(\.alertToast) var alertToast
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
     @Bindable var prefs = AIChatPreferences.shared
+    @Bindable private var inferenceBilling = AIInferenceBillingState.shared
+    @Bindable private var inferenceSessions = AIChatInferenceSessions.shared
 
     /// Conversation id lives on `FileState` (chats are scoped to the current
     /// file). We bridge it to a `Binding` for `PromptInputView`'s API and so
@@ -86,6 +88,15 @@ struct AIChatView: View {
         llmState.conversations.value?.first { $0.id == fileState.aiChatConversationID }
     }
 
+    var usesBYOKForUsage: Bool {
+        if conversation?.directConnection != nil { return true }
+        if let binding = conversation?.schemeConnection {
+            if case .byok = binding.billing { return true }
+            return false
+        }
+        return inferenceBilling.usesBYOK
+    }
+
     var streamingState: LLMStreamingStateObject? {
         guard let id = fileState.aiChatConversationID else { return nil }
         return llmState.streamingStore.streamIfExists(for: id)
@@ -146,7 +157,7 @@ struct AIChatView: View {
     }
 
     var shouldBlockAIForPreference: Bool {
-        !prefs.isAIEnabled
+        !AIChatAvailability.canUseAI
     }
 
     var shouldShowWelcomeContent: Bool {
@@ -166,6 +177,9 @@ struct AIChatView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .environment(\.aiChatUsesBYOK, usesBYOKForUsage)
+        .environment(\.aiChatUsageConversation, conversation)
+        .disabled(fileState.aiChatConversationID.map { inferenceSessions.updatingConversationIDs.contains($0) } ?? false)
         .toolbar(content: toolbar)
         .confirmationDialog(
             String(localizable: .aiChatClearChatConfimationDialogTitle),
@@ -195,7 +209,7 @@ struct AIChatView: View {
             guard isAIAvailable, prefs.isAIEnabled else { return }
             await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiChatAppear)
         }
-        .task(id: fileState.aiChatConversationID) {
+        .task(id: "\(ObjectIdentifier(llmState)):\(fileState.aiChatConversationID ?? "new")") {
             guard isAIAvailable, prefs.isAIEnabled else { return }
             try? await Task.sleep(nanoseconds: AIChatState.selectedConversationRefreshDelay)
             guard !Task.isCancelled else { return }
@@ -213,19 +227,16 @@ struct AIChatView: View {
                 buttonTitle: String(localizable: .aiChatUnavailableNonAppStoreButtonTitle),
                 buttonCaption: String(localizable: .aiChatUnavailableNonAppStoreMessage),
                 buttonURL: AppStoreVersion.appURL
-            ) {}
+            )
         } else if shouldBlockAIForPreference {
             AIChatWelcomeView(
-                buttonTitle: String(localizable: .aiChatDisabledButtonEnable),
                 buttonCaption: String(localizable: .aiChatDisabledMessage),
-                requiresEnableConfirmation: true
-            ) {
-                enableAIFromWelcome()
-            }
+                onEnableAI: enableAIFromWelcome
+            )
         } else if shouldShowWelcome {
-            AIChatWelcomeView {
+            AIChatWelcomeView(onGetStarted: {
                 dismissWelcome()
-            }
+            })
         }
     }
 
@@ -236,14 +247,23 @@ struct AIChatView: View {
         }
     }
 
-    private func enableAIFromWelcome() {
-        prefs.isAIEnabled = true
+    private func enableAIFromWelcome(_ mode: AIInferenceBillingMode) {
+        guard AIServiceConsentState.shared.hasAccepted(mode) else { return }
+        do {
+            try AIInferenceBillingState.shared.setMode(mode)
+        } catch {
+            alertToast(AIInferenceErrorMessage.localizedError(for: error) ?? error)
+            return
+        }
+        withAnimation(.easeInOut(duration: 0.25)) {
+            prefs.isAIEnabled = true
+            hasDismissedWelcome = true
+            isShowingWelcomeManually = false
+        }
         Task {
             await LLMServiceActivationCoordinator.shared.restoreIfAIEnabled(reason: .aiChatEnable)
             await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiChatAppear, force: true)
         }
-        dismissWelcome()
-
         if isCompactIOS,
            fileState.currentActiveFile != nil,
            !fileState.currentActiveFileIsInTrash {

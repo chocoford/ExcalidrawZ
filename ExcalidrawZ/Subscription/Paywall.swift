@@ -304,26 +304,29 @@ struct Paywall: View {
             
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 8) {
-                    Text(feature.title)
-                        .font(.callout.weight(.semibold))
+                    if let badge = feature.badge {
+                        // Keep the original title layout when the BYOK badge will not fit.
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: 8) {
+                                Text(feature.title)
+                                    .font(.callout.weight(.semibold))
+                                featureBadge(badge)
+                            }
+                            .fixedSize(horizontal: true, vertical: true)
+
+                            Text(feature.title)
+                                .font(.callout.weight(.semibold))
+                        }
+                    } else {
+                        Text(feature.title)
+                            .font(.callout.weight(.semibold))
+                    }
 
                     if let mcpServiceMode = feature.mcpServiceMode {
                         mcpFeatureHelpButton(
                             feature: feature,
                             initialMode: mcpServiceMode
                         )
-                    }
-                    
-                    if let badge = feature.badge {
-                        Text(badge)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background {
-                                Capsule()
-                                    .fill(Color.orange.opacity(colorScheme == .dark ? 0.18 : 0.12))
-                            }
                     }
                 }
                 
@@ -333,6 +336,19 @@ struct Paywall: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+    }
+
+    private func featureBadge(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background {
+                Capsule()
+                    .fill(Color.orange.opacity(colorScheme == .dark ? 0.18 : 0.12))
+            }
     }
 
     @ViewBuilder
@@ -593,10 +609,11 @@ struct Paywall: View {
     }
     
     var starterFeatureLines: [Feature] {
+        // Mac presents BYOK on the existing MCP row; iOS keeps its dedicated benefit.
         [
             .unlimitedCollaborationTools,
             .presentation
-        ]
+        ] + (AIChatAvailability.isAvailable && !ExcalidrawZMCPServerController.isAvailable ? [.optimizedBYOK] : [])
     }
     
     var proFeatureLines: [Feature] {

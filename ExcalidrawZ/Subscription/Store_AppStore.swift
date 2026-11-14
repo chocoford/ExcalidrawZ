@@ -92,6 +92,7 @@ class Store {
     private(set) var purchasedMemberships: [Product] = []
     @ObservationIgnored private(set) var subscriptionGroupStatus: Product.SubscriptionInfo.Status?
     private(set) var activePlanExpirationDate: Date?
+    private(set) var hasLoadedSubscriptionEntitlements = false
 
 #if DEBUG && !APP_STORE
     var debugActiveSubscriptionItem: SubscriptionItem? = .pro
@@ -323,6 +324,7 @@ class Store {
         var purchasedMemberships: [Product] = []
         var planTransactionsByProductID: [String: StoreKit.Transaction] = [:]
         var entitlementExpirationDates: [Date] = []
+        var hasUnresolvedPlanProducts = false
         // var purchasedNonRenewableSubscriptions: [Product] = []
 
         // Iterate through all of the user's purchased products.
@@ -344,6 +346,9 @@ class Store {
                             planTransactionsByProductID[subscription.id] = transaction
                         } else if let membership = memberships.first(where: { $0.id == transaction.productID }) {
                             purchasedMemberships.append(membership)
+                        } else if plans.contains(where: { $0.containsProductID(transaction.productID) }) {
+                            // Transactions can arrive before the product catalog finishes loading.
+                            hasUnresolvedPlanProducts = true
                         }
                         if let expirationDate = transaction.expirationDate {
                             entitlementExpirationDates.append(expirationDate)
@@ -361,11 +366,15 @@ class Store {
         
         // Update the store information with auto-renewable subscription products.
         let sortedPurchasedPlans = sortPurchasedPlansByEntitlement(purchasedSubscriptions)
+        if hasUnresolvedPlanProducts {
+            hasLoadedSubscriptionEntitlements = false
+        }
         self.purchasedPlans = sortedPurchasedPlans
         self.purchasedMemberships = purchasedMemberships
         self.activePlanExpirationDate = sortedPurchasedPlans.first.flatMap { product in
             planTransactionsByProductID[product.id]?.expirationDate
         }
+        hasLoadedSubscriptionEntitlements = !hasUnresolvedPlanProducts
 
         subscriptionGroupStatus = await latestPlanSubscriptionStatus()
         logPlanStatus(subscriptionGroupStatus)

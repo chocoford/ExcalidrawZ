@@ -211,17 +211,20 @@ struct AssistantRoundView: View {
     @ViewBuilder
     private func assistantContent(_ c: ChatMessageContent) -> some View {
         let text = displayText(of: c)
-        if !text.isEmpty {
-            SmoothStreamingText(
-                target: text,
-                isStreaming: streamingMessageIDs.contains(c.id)
-            )
-                .padding(.bottom, 6)
+        VStack(alignment: .leading, spacing: 8) {
+            if !text.isEmpty {
+                SmoothStreamingText(
+                    target: text,
+                    isStreaming: streamingMessageIDs.contains(c.id)
+                )
                 .assistantContentStableHeight(
                     cacheKey: "assistantContent:\(c.id):c\(text.count):text:\(text.hashValue):streaming:\(streamingMessageIDs.contains(c.id) ? "1" : "0")",
                     isStreaming: streamingMessageIDs.contains(c.id)
                 )
+            }
+            AssistantSourceLinks(citations: c.citations ?? [])
         }
+        .padding(.bottom, 6)
     }
 
     @ViewBuilder
@@ -274,7 +277,7 @@ struct AssistantRoundView: View {
               streamingMessageIDs.contains(content.id),
               shouldHideStreamingAssistantContent(content)
         else {
-            return "c\(content.content?.count ?? 0)"
+            return "c\(content.content?.count ?? 0):sources:\(AISourceCitationStorage.signature(content.citations))"
         }
         return "hidden-streaming-content"
     }
@@ -448,7 +451,7 @@ struct AssistantRoundView: View {
                     let contentIsStable = !isStreaming
                         || (!hasFinalCall && hasToolCallsStarted && !text.isEmpty)
 
-                    if !text.isEmpty {
+                    if !text.isEmpty || content.citations?.isEmpty == false {
                         guard contentIsStable else { return result }
                         result.append(.assistantContent(content))
                     }
@@ -478,7 +481,7 @@ struct AssistantRoundView: View {
             }
             return c.content ?? ""
         }()
-        return !text.isEmpty || !((c.toolCalls ?? []).isEmpty)
+        return !text.isEmpty || !((c.toolCalls ?? []).isEmpty) || c.citations?.isEmpty == false
     }
 
     private func isCallDenied(_ call: ToolCall) -> Bool {
@@ -548,16 +551,7 @@ struct AssistantRoundView: View {
             }
             Spacer()
             let usage = messages.reduce(0) { $0 + ($1.usage?.consumed ?? 0) }
-            HStack(spacing: 4) {
-                Image(systemSymbol: .boltCircle)
-                Text(usage.formatted(.number.precision(.fractionLength(2))))
-            }
-            .font(.footnote)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 2)
-            .background {
-                Capsule().fill(.regularMaterial)
-            }
+            AssistantUsageBadge(credits: usage, sourceID: sourceID)
         }
         .labelStyle(.iconOnly)
         .buttonStyle(.text(size: .normal, square: true))

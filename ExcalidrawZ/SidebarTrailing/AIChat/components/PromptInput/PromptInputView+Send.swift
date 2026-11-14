@@ -49,9 +49,24 @@ extension PromptInputView {
         pastedImages: [PendingPastedImage]
     ) -> Bool {
         guard AIChatAvailability.canUseAI else { return false }
+        do {
+            if let conversationID { try inferenceSessions.requireTransportReady(conversationID) }
+            let route = try routeForSend()
+            if case .basicBYOK(let connectionID, let modelID) = route {
+                _ = try inferenceBilling.directSnapshot(connectionID: connectionID,
+                    configuration: conversation?.directConnection?.configuration, modelID: modelID)
+            } else if let binding = route.binding {
+                _ = try inferenceBilling.resolveSelection(for: binding)
+            } else {
+                _ = try inferenceBilling.resolveSelection()
+            }
+        } catch {
+            alertToast.presentAIChatError(error)
+            return false
+        }
         let files = PastedImageHelpers.buildFiles(from: pastedImages)
         guard !trimmedText.isEmpty || !files.isEmpty else { return false }
-        if let modelOption = modelProfileOptionForSend(files: files),
+        if let modelOption = modelSelectionForSend(files: files),
            files.containsImageInput,
            !modelOption.supportsImageInput {
             alertToast(AIChatInputCapabilityError.noModelCanReadImages)
@@ -63,7 +78,8 @@ extension PromptInputView {
         // when the value is loaded — `creditsInfo == nil` means "not fetched
         // yet" and we let the request go through (server will reject and the
         // catch-side dispatcher still routes to the paywall).
-        if let balance = llmState.creditsInfo?.balance, balance <= 0 {
+        if !modelPickerUsesBYOK,
+           let balance = llmState.creditsInfo?.balance, balance <= 0 {
             Store.shared.togglePaywall(reason: .aiInsufficientCredits)
             return false
         }
@@ -110,6 +126,7 @@ extension PromptInputView {
         files: [ChatMessageContent.File],
         editSession: AIChatState.EditSession
     ) {
+        let billingRevision = inferenceBilling.modelCatalogRevision
         currentTask = Task {
             do {
                 llmState.cancelGeneration(conversationID: editSession.conversationID)
@@ -118,9 +135,10 @@ extension PromptInputView {
                     fromMessageID: editSession.userMessageID,
                     inclusive: true
                 )
-                await MainActor.run {
+                try await MainActor.run {
+                    try inferenceBilling.validateSelection(expectedRevision: billingRevision)
                     aiChatState.finishEditing()
-                    startSend(prompt: prompt, files: files)
+                    startSend(prompt: prompt, files: files, expectedBillingRevision: billingRevision)
                 }
             } catch {
                 await MainActor.run {
@@ -142,7 +160,7 @@ extension PromptInputView {
     private func enqueue(text: String, files: [ChatMessageContent.File]) {
         withAnimation(.easeInOut(duration: 0.2)) {
             pendingQueue.append(
-                PendingQueueMessage(text: text, files: files)
+                PendingQueueMessage(text: text, files: files, billingRevision: inferenceBilling.modelCatalogRevision)
             )
         }
     }
@@ -168,11 +186,16 @@ extension PromptInputView {
     /// Kicks off the actual network/stream pipeline for `prompt`. Stores the
     /// Task in `currentTask` so the stop button can cancel it; on completion
     /// (success or failure) it clears the slot and drains the queue.
-    func startSend(prompt: String, files: [ChatMessageContent.File] = []) {
+    func startSend(prompt: String, files: [ChatMessageContent.File] = [], expectedBillingRevision: Int? = nil) {
         guard AIChatAvailability.canUseAI else { return }
+        let billingRevision = expectedBillingRevision ?? inferenceBilling.modelCatalogRevision
+        let existingConversationID = self.conversationID
+        let fileScopeForSession = fileState.currentActiveFile?.aiConversationFileScope
+        let requiresImageInput = requiresImageInputModel || files.containsImageInput
+        let capturedRoute = try? routeForSend()
         let preferredInteractionMode = prefs.interactionMode(for: fileState.currentActiveFile)
         let newConversationID = UUID().uuidString
-        let conversationIDForSession: String = self.conversationID ?? newConversationID
+        let conversationIDForSession: String = existingConversationID ?? newConversationID
         aiChatState.clearGenerationCancellation(for: conversationIDForSession)
 
         // Build the user message ahead of time so we can capture its id
@@ -199,17 +222,27 @@ extension PromptInputView {
                 await MainActor.run {
                     aiChatState.clearTransientError(for: conversationIDForSession)
                 }
-                // Make sure agent config is loaded so the selected tier resolves
-                // through the server-defined model profile.
-                await loadAgentConfigIfNeeded()
+                guard let route = capturedRoute else { throw AIChatRoutingError.invalidRoute }
+                if route == .legacy, let existingConversationID {
+                    try await routing.loadLegacySelection(conversationID: existingConversationID)
+                } else if !route.usesBYOK {
+                    await schemeCatalog.refresh(force: true, forServerConversation: existingConversationID != nil)
+                }
                 guard AIChatAvailability.canUseAI else { throw CancellationError() }
-                guard let modelOption = await MainActor.run(body: { modelProfileOptionForSend(files: files) }) else {
-                    throw AIChatModelProfileUnavailableError()
+                if existingConversationID == nil || route == .legacy {
+                    try inferenceBilling.validateSelection(expectedRevision: billingRevision)
+                }
+                let modelOption = try routing.modelSelection(for: route, conversationID: existingConversationID)
+                guard !requiresImageInput || modelOption.supportsImageInput else {
+                    throw AIChatInputCapabilityError.noModelCanReadImages
                 }
                 let model = modelOption.model
                 attemptedModelProfileID = modelOption.profileID
                 await ensureConversationCacheLoaded()
-                let isNewConversation = self.conversation == nil
+                let isNewConversation = existingConversationID == nil
+                guard isNewConversation || llmState.getConversation(by: conversationIDForSession) != nil else {
+                    throw AIChatRoutingError.invalidRoute
+                }
                 let imageAttachments = AIChatImageAttachmentReference.makeReferences(from: files)
                 let canIncludeActiveFileContext = await activeFileAllowsAIContext()
                 let invocationPlan = AIChatInvocationPlan.make(
@@ -225,102 +258,101 @@ extension PromptInputView {
                         includesCurrentFileContext: invocationPlan.includesCurrentFileContext
                     )
                 }
-                try await LockedContentAIGuard.withProtectedContentAccessDenied {
-                    guard AIChatAvailability.canUseAI else { throw CancellationError() }
-                    let context = try await invocationPlan.makeContext(
-                        fileState: fileState,
-                        model: model,
-                        supportsImageInput: modelOption.supportsImageInput,
-                        imageAttachments: imageAttachments
-                    )
-                    let metadata = await makeTransactionMetadata(
-                        conversationID: conversationIDForSession,
-                        userMessageID: userMessageID,
-                        requestKind: isNewConversation ? .createConversation : .sendMessage,
-                        model: model,
-                        modelProfileID: modelOption.profileID,
-                        invocationPlan: invocationPlan,
-                        attachmentCount: files.count,
-                        hasCurrentFileData: context.currentFileData != nil,
-                        isNewConversation: isNewConversation
-                    )
-                    guard AIChatAvailability.canUseAI else { throw CancellationError() }
-
-                    // Open the AI chat session: snapshots the current active
-                    // file as `.aiPre` (anchored to this user message) and
-                    // flips suppression on so all canvas mutations during
-                    // the round don't write to user history.
-                    if invocationPlan.usesMutationSession {
-                        try await fileState.beginAIChatSession(
+                try await routing.withRequest(route: route,
+                    conversationID: isNewConversation ? nil : conversationIDForSession,
+                    state: llmState, expectedBillingRevision: billingRevision) {
+                    try await LockedContentAIGuard.withProtectedContentAccessDenied {
+                        guard AIChatAvailability.canUseAI else { throw CancellationError() }
+                        let context = try await invocationPlan.makeContext(
+                            fileState: fileState,
+                            model: model,
+                            supportsImageInput: modelOption.supportsImageInput,
+                            imageAttachments: imageAttachments
+                        )
+                        let metadata = await makeTransactionMetadata(
                             conversationID: conversationIDForSession,
-                            userMessageID: userMessageID
-                        )
-                        sessionOpened = true
-                    }
-
-                    if isNewConversation {
-                        self.conversationID = newConversationID
-                        // Promote the staged tier (if any) to a per-conversation
-                        // override now that we have an id. Without this, the
-                        // user's pre-send tier choice would be lost on reopen
-                        // — `pendingTierSelection` is @State, conversation
-                        // overrides survive the view's lifetime.
-                        if let pendingTier = await MainActor.run(body: { pendingTierSelection }) {
-                            await MainActor.run {
-                                prefs.setTier(pendingTier, for: newConversationID)
-                                pendingTierSelection = nil
-                            }
-                        }
-                        try await llmState.createConversation(
-                            id: newConversationID,
-                            type: .regular,
+                            userMessageID: userMessageID,
+                            requestKind: isNewConversation ? .createConversation : .sendMessage,
                             model: model,
-                            // Tool roster + agentID centralized in
-                            // `ExcalidrawAgentConfig` so the persistence
-                            // restore path uses the exact same wiring.
-                            agentConfig: ExcalidrawAgentConfig.defaultConfig(
-                                mode: invocationPlan.interactionMode,
-                                supportsImageInput: modelOption.supportsImageInput,
-                                includesCurrentFileContext: invocationPlan.includesCurrentFileContext
-                            ),
-                            messages: [.content(userMessage)],
-                            metadata: metadata,
-                            context: context
+                            modelProfileID: modelOption.profileID,
+                            invocationPlan: invocationPlan,
+                            attachmentCount: files.count,
+                            hasCurrentFileData: context.currentFileData != nil,
+                            isNewConversation: isNewConversation
                         )
+                        guard AIChatAvailability.canUseAI else { throw CancellationError() }
 
-                        // Bind the new conversation to the active file's
-                        // unified scope so library files, URL-backed files,
-                        // and collaboration files can all resume their own
-                        // latest conversation on the next open.
-                        let scopeForBinding = await MainActor.run {
-                            fileState.currentActiveFile?.aiConversationFileScope
+                        guard self.conversationID == existingConversationID,
+                              fileState.currentActiveFile?.aiConversationFileScope == fileScopeForSession else {
+                            throw AIInferenceBillingError.selectionChanged
                         }
-                        if let scope = scopeForBinding {
+                        // Open the AI chat session: snapshots the current active
+                        // file as `.aiPre` (anchored to this user message) and
+                        // flips suppression on so all canvas mutations during
+                        // the round don't write to user history.
+                        if invocationPlan.usesMutationSession {
+                            try await fileState.beginAIChatSession(
+                                conversationID: conversationIDForSession,
+                                userMessageID: userMessageID
+                            )
+                            sessionOpened = true
+                        }
+
+                        if isNewConversation {
+                            self.conversationID = newConversationID
+                            pendingProfileID = nil
                             do {
-                                try await PersistenceController.shared.aiConversationRepository
-                                    .bindConversationToFileScope(
-                                        conversationID: newConversationID,
-                                        scope: scope
-                                    )
-                            } catch {
-                                promptInputSendLogger.warning("Failed to bind new AI conversation to file scope: \(error)")
+                                try await llmState.createConversation(
+                                    id: newConversationID,
+                                    type: .regular,
+                                    model: model,
+                                    // Tool roster + agentID centralized in
+                                    // `ExcalidrawAgentConfig` so the persistence
+                                    // restore path uses the exact same wiring.
+                                    agentConfig: ExcalidrawAgentConfig.config(isDirect: route.isDirect,
+                                        mode: invocationPlan.interactionMode,
+                                        supportsImageInput: modelOption.supportsImageInput,
+                                        includesCurrentFileContext: invocationPlan.includesCurrentFileContext
+                                    ),
+                                    messages: [.content(userMessage)],
+                                    metadata: metadata,
+                                    context: context
+                                )
+                            }
+
+                            // Bind the new conversation to the active file's
+                            // unified scope so library files, URL-backed files,
+                            // and collaboration files can all resume their own
+                            // latest conversation on the next open.
+                            if let scope = fileScopeForSession {
+                                do {
+                                    try await PersistenceController.shared.aiConversationRepository
+                                        .bindConversationToFileScope(
+                                            conversationID: newConversationID,
+                                            scope: scope
+                                        )
+                                } catch {
+                                    promptInputSendLogger.warning("Failed to bind new AI conversation to file scope: \(error)")
+                                }
+                            }
+                        } else {
+                            do {
+                                try await llmState.sendMessage(
+                                    to: conversationIDForSession,
+                                    model: model,
+                                    message: .content(userMessage),
+                                    metadata: metadata,
+                                    context: context
+                                )
                             }
                         }
-                    } else {
-                        try await llmState.sendMessage(
-                            to: self.conversationID!,
-                            model: model,
-                            message: .content(userMessage),
-                            metadata: metadata,
-                            context: context
-                        )
-                    }
 
-                    // Stream completed without throwing. The `.aiPost`
-                    // snapshot will anchor to whatever the trailing assistant
-                    // message id ends up being — read after-the-fact rather
-                    // than guessing.
-                    streamSucceeded = true
+                        // Stream completed without throwing. The `.aiPost`
+                        // snapshot will anchor to whatever the trailing assistant
+                        // message id ends up being — read after-the-fact rather
+                        // than guessing.
+                        streamSucceeded = true
+                    }
                 }
             } catch {
                 // Keep send-pipeline failures in the chat transcript area as
@@ -393,11 +425,11 @@ extension PromptInputView {
         mode: AIChatInteractionMode,
         includesCurrentFileContext: Bool
     ) async throws {
-        let tools = ExcalidrawAgentConfig.toolNames(
+        let tools = ExcalidrawAgentConfig.config(isDirect: conversation?.directConnection != nil,
             mode: mode,
             supportsImageInput: supportsImageInput,
             includesCurrentFileContext: includesCurrentFileContext
-        )
+        ).tools
         let currentTools = await MainActor.run {
             conversation?.agentConfig.tools
         }
@@ -544,9 +576,8 @@ extension PromptInputView {
     /// drilling). On completion, drains the pending queue so any
     /// auto-compact-queued message fires next.
     ///
-    /// `summaryModel: .gpt4oMini` is the cheap "Low" tier; the
-    /// summary just compresses history, no need to spend Sonnet
-    /// credits on it. LLMKit always rolls in the full pre-compaction
+    /// Platform summaries use gpt4oMini. BYOK uses the current chat model.
+    /// LLMKit rolls in the full pre-compaction
     /// timeline (no keep-recent knob), so after this returns the
     /// chat shows just the summary card and any subsequent messages.
     func compactCurrentContext() {
@@ -554,13 +585,22 @@ extension PromptInputView {
               let id = conversationID,
               !isCompactingContext else { return }
         aiChatState.markCompacting(conversationID: id)
+        let capturedRoute = try? routeForSend()
         compactTask = Task {
             do {
                 guard AIChatAvailability.canUseAI else { throw CancellationError() }
-                try await llmState.compactConversation(
-                    id,
-                    summaryModel: .gpt4oMini
-                )
+                guard let route = capturedRoute else { throw AIChatRoutingError.invalidRoute }
+                try await routing.withRequest(route: route, conversationID: id, state: llmState) {
+                    let model: SupportedModel = route == .legacy
+                        ? try inferenceBilling.modelForAuxiliaryRequest(fallback: .gpt4oMini,
+                            conversationModel: routing.modelSelection(for: route, conversationID: id).model)
+                        : .gpt4oMini
+                    // The SDK resolves bound BYOK summaries from the saved chat/auxiliary model.
+                    try await llmState.compactConversation(
+                        id,
+                        summaryModel: model
+                    )
+                }
             } catch is CancellationError {
             } catch {
                 await MainActor.run {
@@ -594,6 +634,6 @@ extension PromptInputView {
         let next: PendingQueueMessage = withAnimation(.easeInOut(duration: 0.2)) {
             pendingQueue.removeFirst()
         }
-        startSend(prompt: next.text, files: next.files)
+        startSend(prompt: next.text, files: next.files, expectedBillingRevision: next.billingRevision)
     }
 }

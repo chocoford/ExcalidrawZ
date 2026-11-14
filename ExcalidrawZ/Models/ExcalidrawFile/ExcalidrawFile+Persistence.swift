@@ -158,8 +158,15 @@ extension ExcalidrawFile.ResourceFile {
 
     /// Initialize from MediaItem - async version with iCloud Drive support
     init(mediaItem: MediaItem) async throws {
-        guard let id = mediaItem.id else {
-            struct MissingIDError: Error {}
+        struct MissingIDError: Error {}
+        guard let context = mediaItem.managedObjectContext else { throw MissingIDError() }
+        let objectID = mediaItem.objectID
+        let metadata = try await context.perform {
+            guard let item = try context.existingObject(with: objectID) as? MediaItem else { throw MissingIDError() }
+            return (id: item.id, createdAt: item.createdAt,
+                    lastRetrievedAt: item.lastRetrievedAt, mimeType: item.mimeType)
+        }
+        guard let id = metadata.id else {
             throw MissingIDError()
         }
 
@@ -167,8 +174,8 @@ extension ExcalidrawFile.ResourceFile {
 
         self.id = id
         self.dataURL = dataURL
-        self.createdAt = mediaItem.createdAt ?? Date.distantPast
-        self.lastRetrievedAt = mediaItem.lastRetrievedAt ?? Date.distantPast
-        self.mimeType = mediaItem.mimeType ?? "image/png"
+        self.createdAt = metadata.createdAt ?? Date.distantPast
+        self.lastRetrievedAt = metadata.lastRetrievedAt ?? Date.distantPast
+        self.mimeType = metadata.mimeType ?? "image/png"
     }
 }

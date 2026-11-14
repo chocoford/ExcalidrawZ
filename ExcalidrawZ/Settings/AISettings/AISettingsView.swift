@@ -16,6 +16,8 @@ struct AISettingsView: View {
     @EnvironmentObject var llmState: LLMStateObject
     @Environment(Store.self) var store
     @Bindable var prefs = AIChatPreferences.shared
+    @Bindable var inferenceBilling = AIInferenceBillingState.shared
+    @Bindable var aiServiceConsent = AIServiceConsentState.shared
     @Bindable var router = SettingsRouter.shared
     @Bindable var mcpServerController = ExcalidrawZMCPServerController.shared
     
@@ -40,13 +42,17 @@ struct AISettingsView: View {
     @State var mcpBasicReadMeDraft: String = ""
     @State var selectedMCPConnectionGuideTab: MCPConnectionGuideTab = .claude
     @State var mcpServiceModePickerID = UUID()
-    @State var isPresentingAIEnableConsent: Bool = false
+    @State var pendingAIServiceMode: AIServiceMode?
     @State var preferredSettingsSection: SettingsSection = .general
-    
-    /// Model profile list for the Default Model picker, sourced from the
-    /// agent's server-defined `modelProfiles`.
-    @State var availableModelOptions: [ExcalidrawModelProfileOption] = []
-    
+    @State var byokStatusMessage: String?
+    @State var byokStatusIsError = false
+    @State var byokConnectionSheet: AIInferenceConnectionSheet?
+    @State var byokIntegrationHelpMode: AIInferenceIntegrationMode?
+    @State var byokIntegrationPickerID = UUID()
+
+    @Bindable var schemeCatalog = AIChatSchemeCatalog.shared
+    @Bindable var routing = AIChatRoutingState.shared
+
     let pageSize: Int = 20
     let aggregatePageSize: Int = 100
     let agentID = "excalidraw-canvas"
@@ -119,9 +125,11 @@ struct AISettingsView: View {
             }
         }
 #endif
-        .sheet(isPresented: $isPresentingAIEnableConsent) {
-            AIEnableConsentSheet {
-                prefs.isAIEnabled = true
+        .sheet(item: $pendingAIServiceMode) { mode in
+            AIEnableConsentSheet(mode: mode.billingMode ?? .platform) {
+                guard let billingMode = mode.billingMode else { return }
+                aiServiceConsent.accept(billingMode)
+                applyAIServiceMode(mode)
             }
         }
         .sheet(isPresented: $isPresentingMCPConnectionGuide) {
@@ -141,6 +149,12 @@ struct AISettingsView: View {
             Task {
                 await loadAISettingsDataIfEnabled()
             }
+        }
+        .watch(value: inferenceBilling.mode) {
+            Task { await loadAISettingsDataIfEnabled() }
+        }
+        .watch(value: inferenceBilling.integrationMode) {
+            Task { await loadAISettingsDataIfEnabled() }
         }
         .task {
             consumePendingAISettingsRoute()
@@ -165,28 +179,13 @@ struct AISettingsView: View {
     
     @MainActor
     private func loadAISettingsDataIfEnabled() async {
-        guard AIChatAvailability.canUseAI else { return }
+        guard AIChatAvailability.canUseAI, !AIChatAvailability.usesDirectInference else { return }
         await LLMServiceActivationCoordinator.shared.restoreIfAIEnabled(reason: .aiSettingsAppear)
+        await loadAvailableModelsIfNeeded()
         await loadInitialTransactions()
         await loadAllTransactionsIfNeeded()
-        await loadAvailableModelsIfNeeded()
         await LLMCreditsRefreshCoordinator.shared.refreshCredits(reason: .aiSettingsAppear)
         await loadAIAccountInfoIfNeeded()
     }
     
-    @MainActor
-    var aiEnabledBinding: Binding<Bool> {
-        Binding(
-            get: { prefs.isAIEnabled },
-            set: { isEnabled in
-                if isEnabled {
-                    if !prefs.isAIEnabled {
-                        isPresentingAIEnableConsent = true
-                    }
-                } else {
-                    prefs.isAIEnabled = false
-                }
-            }
-        )
-    }
 }

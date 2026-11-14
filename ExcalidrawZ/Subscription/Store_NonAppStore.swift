@@ -19,6 +19,7 @@ class Store {
     
     private(set) var purchasedPlans: [Product] = []
     private(set) var purchasedMemberships: [Product] = []
+    var hasLoadedSubscriptionEntitlements: Bool { true }
 
 #if DEBUG
     var debugActiveSubscriptionItem: SubscriptionItem? = .pro

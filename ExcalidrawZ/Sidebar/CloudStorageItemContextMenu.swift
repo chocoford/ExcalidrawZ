@@ -107,10 +107,7 @@ struct CloudStorageLocationActionsModifier: ViewModifier {
     }
 
     private var removeActionTitle: String {
-        String(
-            localized: "cloudStorageActionUnlink",
-            defaultValue: "Unlink"
-        )
+        String(localizable: .cloudStorageActionUnlink)
     }
 
     private func removeConnection() {
@@ -210,10 +207,7 @@ struct CloudStorageFileActionsModifier: ViewModifier {
                 isConflictResolutionPresented = true
             } label: {
                 Label(
-                    String(
-                        localized: "cloudStorageConflictResolveAction",
-                        defaultValue: "Resolve Conflict…"
-                    ),
+                    String(localizable: .cloudStorageConflictResolveAction),
                     systemImage: "exclamationmark.triangle"
                 )
             }

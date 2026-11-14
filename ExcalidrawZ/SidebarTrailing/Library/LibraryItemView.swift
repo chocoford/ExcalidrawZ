@@ -381,10 +381,11 @@ struct LibraryItemContentView: View {
             .onReceive(
                 NotificationCenter.default.publisher(for: .libraryItemPreviewDidUpdate)
             ) { notification in
-                guard let itemID = notification.object as? String,
-                      itemID == previewSource.id else { return }
+                guard let preview = notification.object as? LibraryItemPreviewUpdate,
+                      preview.sourceID == previewSource.id,
+                      preview.colorScheme == displayColorScheme else { return }
 
-                updatePreview(requestIfMissing: false)
+                image = preview.image
             }
     }
     
@@ -422,7 +423,7 @@ struct LibraryItemContentView: View {
 //        }
     }
 
-    private func updatePreview(requestIfMissing: Bool = true) {
+    private func updatePreview() {
         let colorScheme = displayColorScheme
         let cacheKey = LibraryItemPreviewCache.cacheKey(
             forID: previewSource.id,
@@ -435,10 +436,6 @@ struct LibraryItemContentView: View {
         }
 
         image = nil
-        guard requestIfMissing else {
-            return
-        }
-
         LibraryItemPreviewCoordinator.shared.request(
             source: previewSource,
             colorScheme: colorScheme,

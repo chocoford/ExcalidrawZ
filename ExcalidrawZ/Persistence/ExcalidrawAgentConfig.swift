@@ -4,8 +4,8 @@
 //
 //  Single source of truth for ExcalidrawZ's chat agent wiring.
 //
-//  Every conversation runs against the `excalidraw-canvas` server-side
-//  agent, while the local tool roster is selected by chat mode. The
+//  Platform/Optimized conversations use the `excalidraw-canvas` server
+//  scheme. Basic Direct uses an App-owned prompt and local tools. The
 //  baseline rosters live here, and model capability filters derive
 //  from the same list so create/send/restore can't drift:
 //
@@ -25,9 +25,8 @@ import Foundation
 import LLMCore
 
 enum ExcalidrawAgentConfig {
-    /// Server-side domain agent identifier. The backend resolves system
-    /// prompt + allowed-model whitelist from this; the client only
-    /// supplies the tool roster.
+    /// Dashboard Scheme identifier. The server resolves its prompt, profile
+    /// and access rules; Basic Direct uses the App-owned configuration below.
     static let agentID = "excalidraw-canvas"
 
     /// Full tool roster the chat agent is allowed to call. Order is
@@ -140,6 +139,64 @@ enum ExcalidrawAgentConfig {
 
     static func defaultConfig(tools: [String]?) -> AgentConfig {
         .withTools(tools ?? toolNames, maxThoughts: 30, agentID: agentID)
+    }
+
+    static func config(isDirect: Bool, mode: AIChatInteractionMode, supportsImageInput: Bool,
+                       includesCurrentFileContext: Bool) -> AgentConfig {
+        if isDirect {
+            return basicConfig(tools: basicToolNames(mode: mode, supportsImageInput: supportsImageInput,
+                                                    includesCurrentFileContext: includesCurrentFileContext))
+        }
+        return defaultConfig(mode: mode, supportsImageInput: supportsImageInput,
+                             includesCurrentFileContext: includesCurrentFileContext)
+    }
+
+    static let basicSystemPrompt = """
+    You are ExcalidrawZ's basic canvas assistant. Reply in the user's language.
+    Use native local tools to inspect and edit the canvas. Call read_me before drawing to read
+    the shared Basic MCP element guide. Its drawing examples apply to adjust_elements with
+    {"ops":[{"op":"add","elements":[...]}]}; MCP-only tool names and pseudo-elements are not available here.
+    Respect file access, tool approvals and proposal-canvas instructions. Do not claim a change
+    succeeded before the tool succeeds. ExcalidrawZ's platform search, fetch and server agents
+    are not part of Basic mode. This does not restrict search supplied by the model provider;
+    follow the current request's provider capabilities separately from the local drawing tools.
+    """
+
+    /// Request-scoped capabilities stay out of the shared MCP guide and saved history.
+    /// Direct options also apply to restored chats whose generated prompt predates this setting.
+    static func basicWebSearchPrompt(for configuration: LLMBYOKConfiguration) -> String? {
+        guard let search = configuration.webSearch, search.isEnabled else { return nil }
+        let capability: String = switch search.adapter {
+        case .openRouter: "OpenRouter's hosted web search tool is included in this request."
+        case .openAI: "This request enables OpenAI's provider-hosted search through web_search_options."
+        case .dashScope: "This request enables DashScope's provider-hosted search through enable_search."
+        case .groq: "Groq's hosted browser_search tool is included in this request."
+        @unknown default: "The configured provider-hosted search option is enabled."
+        }
+        return """
+        Provider-hosted web search is enabled for this request.
+        \(capability)
+        This capability is supplied by the provider, separately from ExcalidrawZ's local MCP drawing tools.
+        When the user asks to search or verify current information, use the provider's search before
+        answering or drawing that information, and cite the sources actually returned. Do not require
+        an ExcalidrawZ platform search tool to use provider search. Earlier messages about unavailable
+        search or failed platform tools do not describe the current request's capabilities.
+        If provider search fails or supplies no results, state that accurately; never invent searches or sources.
+        """
+    }
+
+    static func basicToolNames(mode: AIChatInteractionMode, supportsImageInput: Bool,
+                               includesCurrentFileContext: Bool) -> [String] {
+        basicToolNames(from: toolNames(mode: mode, supportsImageInput: supportsImageInput,
+                                      includesCurrentFileContext: includesCurrentFileContext))
+    }
+
+    private static func basicToolNames(from tools: [String]) -> [String] {
+        ["read_me"] + tools.filter { !["web_search", "web_fetch", "read_me"].contains($0) }
+    }
+
+    static func basicConfig(tools: [String]?) -> AgentConfig {
+        .withTools(basicToolNames(from: tools ?? toolNames), maxThoughts: 30, systemPrompt: basicSystemPrompt)
     }
 
     static func encodeToolNames(_ tools: [String]) -> Data? {

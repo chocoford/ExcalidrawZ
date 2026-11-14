@@ -31,6 +31,7 @@ struct LowCreditsBannerView: View {
     static let defaultThreshold: Double = 50
 
     @EnvironmentObject private var llmState: LLMStateObject
+    @Bindable private var inferenceBilling = AIInferenceBillingState.shared
 
     /// Show only while `creditsInfo.balance < threshold`. Default 50 — at
     /// that point the user has a few exchanges of runway, enough time to
@@ -61,6 +62,7 @@ struct LowCreditsBannerView: View {
     }
 
     private var shouldShow: Bool {
+        guard !inferenceBilling.usesBYOK else { return false }
         guard let balance else { return false }
         return balance < threshold
     }

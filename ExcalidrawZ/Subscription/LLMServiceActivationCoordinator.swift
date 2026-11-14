@@ -15,6 +15,7 @@ actor LLMServiceActivationCoordinator {
         case aiEnabledChanged
         case aiSettingsAppear
         case aiChatEnable
+        case savedServerConversation
     }
 
     private let logger = Logger(label: "LLMServiceActivationCoordinator")
@@ -23,6 +24,7 @@ actor LLMServiceActivationCoordinator {
     private var hasRestoredForCurrentEnabledSession = false
 
     func restoreIfAIEnabled(reason: Reason) async {
+        guard AIChatAvailability.supportsManagedInference else { return }
         guard AIChatAvailability.isAvailable else {
             restoreGeneration += 1
             restoreTask?.cancel()
@@ -32,6 +34,7 @@ actor LLMServiceActivationCoordinator {
             return
         }
 
+        guard !AIChatAvailability.usesDirectInference || reason == .savedServerConversation else { return }
         guard isAIEnabled else {
             hasRestoredForCurrentEnabledSession = false
             logger.debug("[LLMService] restore skipped reason=\(reason.rawValue) aiDisabled=true")

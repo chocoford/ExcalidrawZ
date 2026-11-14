@@ -187,13 +187,19 @@ extension AISettingsView {
         switch selectedTab {
             case .usage:
                 Section {
-                    activityBody
+                    if AIChatAvailability.usesDirectInference {
+                        Text(.localizable(.aIDirectNoCredits))
+                    } else {
+                        activityBody
+                    }
                 } header: {
                     VStack(spacing: 10) {
                         usageHeader
                             .textCase(nil)
 
-                        activityHeader
+                        if !AIChatAvailability.usesDirectInference {
+                            activityHeader
+                        }
                     }
                 }
             case .settings:
@@ -213,10 +219,24 @@ extension AISettingsView {
     @ViewBuilder
     var defaultModelSettingsSection: some View {
         Section {
-            defaultModelPicker
+            aiServiceModePicker
+            if inferenceBilling.usesBYOK {
+                if AIChatAvailability.supportsManagedInference { byokIntegrationModeRow }
+                byokConnectionsRow
+                basicWebSearchRow
+            } else if AIChatAvailability.supportsManagedInference {
+                defaultModelPicker
+            }
         } header: {
             settingsHeader
                 .textCase(nil)
+        } footer: {
+            aiServiceSettingsFooter
+            if inferenceBilling.usesBYOK {
+                byokConnectionsFooter
+            } else if AIChatAvailability.supportsManagedInference {
+                platformModelStatusFooter
+            }
         }
     }
 
@@ -237,6 +257,11 @@ extension AISettingsView {
         } header: {
             informationHeader
                 .textCase(nil)
+        } footer: {
+            if !prefs.isAIEnabled {
+                Text(localizable: .settingsAIEnableFeatureHelp)
+                aiServiceSettingsFooter
+            }
         }
     }
 }
