@@ -25,20 +25,20 @@ extension AISettingsView {
     }
 
     func loadInitialTransactions() async {
-        guard AIChatAvailability.canUseAI else { return }
+        guard AIChatAvailability.canUseAI, !AIChatAvailability.usesDirectInference else { return }
         guard transactions.isEmpty, !isLoadingTransactions else { return }
         await loadPage(1)
     }
 
     func loadNextPage() async {
-        guard AIChatAvailability.canUseAI else { return }
+        guard AIChatAvailability.canUseAI, !AIChatAvailability.usesDirectInference else { return }
         guard !isLoadingTransactions else { return }
         await loadPage(loadedPage + 1)
     }
 
     @MainActor
     func loadAllTransactionsIfNeeded() async {
-        guard AIChatAvailability.canUseAI else { return }
+        guard AIChatAvailability.canUseAI, !AIChatAvailability.usesDirectInference else { return }
         guard allTransactions.isEmpty, !isLoadingAllTransactions else { return }
         isLoadingAllTransactions = true
         allTransactionLoadError = nil
@@ -50,7 +50,7 @@ extension AISettingsView {
             var totalCount = 0
 
             repeat {
-                guard AIChatAvailability.canUseAI else { throw CancellationError() }
+                guard AIChatAvailability.canUseAI, !AIChatAvailability.usesDirectInference else { throw CancellationError() }
                 let history = try await LLMClient.shared.getTransactionHistory(
                     page: page,
                     pageSize: aggregatePageSize,
@@ -73,12 +73,12 @@ extension AISettingsView {
 
     @MainActor
     func loadPage(_ page: Int) async {
-        guard AIChatAvailability.canUseAI else { return }
+        guard AIChatAvailability.canUseAI, !AIChatAvailability.usesDirectInference else { return }
         isLoadingTransactions = true
         transactionLoadError = nil
         defer { isLoadingTransactions = false }
         do {
-            guard AIChatAvailability.canUseAI else { throw CancellationError() }
+            guard AIChatAvailability.canUseAI, !AIChatAvailability.usesDirectInference else { throw CancellationError() }
             let history = try await LLMClient.shared.getTransactionHistory(
                 page: page,
                 pageSize: pageSize,

@@ -82,10 +82,7 @@ struct CloudStorageConflictResolutionSheetView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(
-                    String(
-                        localized: "cloudStorageConflictResolutionTitle",
-                        defaultValue: "Choose a Version"
-                    )
+                    String(localizable: .cloudStorageConflictResolutionTitle)
                 )
                 .font(.headline)
 
@@ -109,10 +106,7 @@ struct CloudStorageConflictResolutionSheetView: View {
             ProgressView()
                 .controlSize(.small)
             Text(
-                String(
-                    localized: "cloudStorageConflictLoadingVersions",
-                    defaultValue: "Loading local and cloud versions…"
-                )
+                String(localizable: .cloudStorageConflictLoadingVersions)
             )
             .font(.callout)
             .foregroundStyle(.secondary)
@@ -126,10 +120,7 @@ struct CloudStorageConflictResolutionSheetView: View {
                 .foregroundStyle(.orange)
 
             Text(
-                String(
-                    localized: "cloudStorageConflictLoadFailed",
-                    defaultValue: "Unable to Load Versions"
-                )
+                String(localizable: .cloudStorageConflictLoadFailed)
             )
             .font(.headline)
 
@@ -152,10 +143,7 @@ struct CloudStorageConflictResolutionSheetView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Text(
-                    String(
-                        localized: "cloudStorageConflictResolutionMessage",
-                        defaultValue: "This file was changed both on this device and in cloud storage. Select the version you want to keep."
-                    )
+                    String(localizable: .cloudStorageConflictResolutionMessage)
                 )
                 .font(.callout)
                 .foregroundStyle(.secondary)
@@ -281,10 +269,7 @@ struct CloudStorageConflictResolutionSheetView: View {
                         .controlSize(.small)
                 } else {
                     Text(
-                        String(
-                            localized: "cloudStorageConflictUseSelectedVersion",
-                            defaultValue: "Use Selected Version"
-                        )
+                        String(localizable: .cloudStorageConflictUseSelectedVersion)
                     )
                 }
             }
@@ -349,15 +334,9 @@ struct CloudStorageConflictResolutionSheetView: View {
     private func versionTitle(_ version: CloudStorageConflictVersion) -> String {
         switch version {
             case .local:
-                String(
-                    localized: "cloudStorageConflictLocalVersion",
-                    defaultValue: "This Device"
-                )
+                String(localizable: .cloudStorageConflictLocalVersion)
             case .remote:
-                String(
-                    localized: "cloudStorageConflictRemoteVersion",
-                    defaultValue: "Cloud Version"
-                )
+                String(localizable: .cloudStorageConflictRemoteVersion)
         }
     }
 
@@ -366,15 +345,9 @@ struct CloudStorageConflictResolutionSheetView: View {
     ) -> String {
         switch version {
             case .local:
-                String(
-                    localized: "cloudStorageConflictKeepLocalMessage",
-                    defaultValue: "The version on this device will replace the cloud version."
-                )
+                String(localizable: .cloudStorageConflictKeepLocalMessage)
             case .remote:
-                String(
-                    localized: "cloudStorageConflictKeepRemoteMessage",
-                    defaultValue: "The cloud version will replace the unsynced version on this device."
-                )
+                String(localizable: .cloudStorageConflictKeepRemoteMessage)
         }
     }
 }

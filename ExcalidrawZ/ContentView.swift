@@ -27,7 +27,9 @@ struct ContentView: View {
     /// `.task(id:)` below) — the inspector / island panels then just
     /// read the already-pinned `aiChatConversationID` instead of
     /// each having to refresh on appear.
-    @EnvironmentObject private var llmState: LLMStateObject
+    @ObservedObject private var inferenceSessions = AIChatInferenceSessions.shared
+    @ObservedObject private var inferenceBilling = AIInferenceBillingState.shared
+    private var activeLLMState: LLMStateObject { inferenceSessions.session(for: fileState.aiChatConversationID).state }
     @EnvironmentObject private var aiChatState: AIChatState
     @EnvironmentObject private var lockedContentState: LockedContentStateStore
     @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
@@ -62,6 +64,7 @@ struct ContentView: View {
     
     var body: some View {
         content()
+            .modifier(AIChatInferenceEnvironment())
             .navigationTitle("")
             .modifier(PrintModifier())
             .modifier(WhatsNewSheetViewModifier())
@@ -136,7 +139,7 @@ struct ContentView: View {
             .watch(value: aiChatPreferences.isAIEnabled) { isEnabled in
                 if isEnabled {
                     Task {
-                        await llmState.refreshConversations()
+                        await activeLLMState.refreshConversations()
                     }
                 } else {
                     cancelActiveAIGenerationForDisabledAI()
@@ -251,7 +254,7 @@ struct ContentView: View {
     @MainActor
     private func cancelActiveAIGenerationForDisabledAI() {
         if let conversationID = fileState.aiChatConversationID {
-            llmState.cancelGeneration(conversationID: conversationID)
+            activeLLMState.cancelGeneration(conversationID: conversationID)
             aiChatState.markGenerationCancelled(conversationID: conversationID)
             aiChatState.unmarkCompacting(conversationID: conversationID)
         }

@@ -48,6 +48,11 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     }
                     Task { @MainActor in
                         do {
+                            try await self.enableNativePaste()
+                        } catch {
+                            self.logger.warning("Failed to enable native paste: \(error)")
+                        }
+                        do {
                             try await self.setNativeEyeDropperEnabled(true)
                         } catch {
                             self.logger.warning("Failed to enable native eye dropper: \(error)")
@@ -188,6 +193,11 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                 case .requestNativeEyeDropper(let message):
                     Task { @MainActor in
                         await self.nativeEyeDropper.request(message.data)
+                    }
+
+                case .requestNativePaste(let message):
+                    Task { @MainActor in
+                        self.nativePaste.request(message.data)
                     }
 
                 case .currentFileSaveStreamStarted(let message):
@@ -575,6 +585,9 @@ extension ExcalidrawCore {
         // Native eye dropper
         case requestNativeEyeDropper
 
+        // Native image paste
+        case requestNativePaste
+
         // Current file save stream
         case currentFileSaveStreamStarted
         case currentFileSaveStreamChunk
@@ -627,6 +640,9 @@ extension ExcalidrawCore {
 
         // Native eye dropper
         case requestNativeEyeDropper(RequestNativeEyeDropperMessage)
+
+        // Native image paste
+        case requestNativePaste(RequestNativePasteMessage)
 
         // Current file save stream
         case currentFileSaveStreamStarted(CurrentFileSaveStreamStartedMessage)
@@ -735,6 +751,9 @@ extension ExcalidrawCore {
                 case .requestNativeEyeDropper:
                     self = .requestNativeEyeDropper(try RequestNativeEyeDropperMessage(from: decoder))
 
+                case .requestNativePaste:
+                    self = .requestNativePaste(try RequestNativePasteMessage(from: decoder))
+
                 // Current file save stream
                 case .currentFileSaveStreamStarted:
                     self = .currentFileSaveStreamStarted(try CurrentFileSaveStreamStartedMessage(from: decoder))
@@ -773,6 +792,11 @@ extension ExcalidrawCore {
     struct RequestNativeEyeDropperMessage: AnyExcalidrawZMessage {
         var event: String
         var data: NativeEyeDropperRequest
+    }
+
+    struct RequestNativePasteMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: NativePasteRequest
     }
 
     struct CurrentFileSaveStreamStartedMessage: AnyExcalidrawZMessage {

@@ -104,17 +104,11 @@ struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
             } label: {
                 HStack {
                     LinkedStorageLocalFolderIcon(size: 16)
-                    Text(String(
-                        localized: "linkedStorageLinkLocalFolder",
-                        defaultValue: "Link Local Folder"
-                    ))
+                    Text(.localizable(.linkedStorageLinkLocalFolder))
                 }
             }
 
-            Section(String(
-                localized: "linkedStorageCloudStorageSection",
-                defaultValue: "Or Cloud Storage"
-            )) {
+            Section(.localizable(.linkedStorageCloudStorageSection)) {
                 ForEach(availableProviderDescriptors, id: \.id) { descriptor in
                     Button {
                         addLocation(to: descriptor.id)
@@ -172,18 +166,12 @@ struct LinkedStorageAddMenu<AdditionalContent: View, Label: View>: View {
         for descriptor: CloudStorageProviderDescriptor
     ) -> Text? {
         if descriptor.id == .webDAV {
-            return Text(String(
-                localized: "generalBadgeBeta",
-                defaultValue: "Beta"
-            ))
+            return Text(.localizable(.generalBadgeBeta))
                 .foregroundColor(.yellow)
                 .bold()
         }
         if !connections.accounts(for: descriptor.id).isEmpty {
-            return Text(String(
-                localized: "cloudStorageConnectedBadge",
-                defaultValue: "Connected"
-            ))
+            return Text(.localizable(.cloudStorageConnectedBadge))
                 .foregroundColor(.green)
                 .bold()
         }
@@ -243,10 +231,7 @@ private enum LinkedStorageConnectionFlow {
         sheetRoute.wrappedValue = .folderPicker(
             CloudStorageFolderPickerContext(
                 providerID: providerID,
-                providerName: connections.providerDescriptors.first(where: { $0.id == providerID })?.displayName ?? String(
-                    localized: "linkedStorageCloudStorageFallbackName",
-                    defaultValue: "Cloud Storage"
-                ),
+                providerName: connections.providerDescriptors.first(where: { $0.id == providerID })?.displayName ?? String(localizable: .linkedStorageCloudStorageFallbackName),
                 account: account,
                 session: session
             )

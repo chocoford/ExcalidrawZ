@@ -49,7 +49,7 @@ extension ExcalidrawCore {
     /// This method fetches all MediaItems and injects them into the WebView's IndexedDB
     /// Most work (fetching, loading files) runs on background threads for better performance
     /// - Returns: The count of injected MediaItems
-    func injectAllMediaItems() async throws -> Int {
+    func injectAllMediaItems(onlyMissing: Bool = false, matching requiredIDs: Set<String>? = nil) async throws -> Int {
         let hasParent = await MainActor.run {
             parent != nil
         }
@@ -58,7 +58,7 @@ extension ExcalidrawCore {
         }
 
         let isReady = await MainActor.run {
-            !isNavigating && (hasInjectIndexedDBData || isDocumentLoaded)
+            !isNavigating && isDocumentLoaded
         }
 
         guard isReady else {
@@ -66,22 +66,25 @@ extension ExcalidrawCore {
             return 0
         }
 
+        let loadedIDs = await MainActor.run { loadedMediaItemIDSnapshot() }
         let context = PersistenceController.shared.newTaskContext()
-        let allMedias = try await context.perform {
+        let mediaObjectIDs = try await context.perform {
             let allMediasFetch = NSFetchRequest<MediaItem>(entityName: "MediaItem")
-            return try context.fetch(allMediasFetch)
+            if let requiredIDs { allMediasFetch.predicate = NSPredicate(format: "id IN %@", Array(requiredIDs)) }
+            return try context.fetch(allMediasFetch).filter { item in
+                !onlyMissing || item.id.map { !loadedIDs.contains($0) } == true
+            }.map(\.objectID)
         }
-        let allMediaIDs = allMedias.compactMap(\.id)
 
         let mediaFiles = await withTaskGroup(of: ExcalidrawFile.ResourceFile?.self) { group in
             var files: [ExcalidrawFile.ResourceFile] = []
 
-            for id in allMedias.map({ $0.objectID }) {
+            for id in mediaObjectIDs {
                 group.addTask {
-                    if let mediaItem = context.object(with: id) as? MediaItem {
-                        return try? await ExcalidrawFile.ResourceFile(mediaItem: mediaItem)
-                    }
-                    return nil
+                    guard let mediaItem = try? await context.perform({
+                        try context.existingObject(with: id) as? MediaItem
+                    }) else { return nil }
+                    return try? await ExcalidrawFile.ResourceFile(mediaItem: mediaItem)
                 }
             }
 
@@ -94,10 +97,16 @@ extension ExcalidrawCore {
             return files
         }
 
+        try Task.checkCancellation()
         try await self.insertMediaFiles(mediaFiles)
         await MainActor.run {
-            self.updateLoadedMediaItemIDs(Set(allMediaIDs))
+            // insertMediaFiles records only successfully injected IDs. Failed reads
+            // must remain missing so reopening the file can retry them.
             self.hasInjectIndexedDBData = true
+        }
+        let failedCount = mediaObjectIDs.count - mediaFiles.count
+        if failedCount > 0 {
+            logger.warning("Could not restore \(failedCount) MediaItems; they remain eligible for retry")
         }
 
         return mediaFiles.count
@@ -105,23 +114,40 @@ extension ExcalidrawCore {
 
     /// Check if MediaItems have changed and re-inject if needed
     /// This is the public method that should be called when MediaItem changes are detected
-    public func refreshMediaItemsIfNeeded() async throws {
-        let (currentIDs, loadedIDs) = try await MainActor.run {
-            let context = PersistenceController.shared.container.viewContext
-            let fetchRequest = NSFetchRequest<MediaItem>(entityName: "MediaItem")
+    public func refreshMediaItemsIfNeeded(referencedBy data: Data? = nil) async throws {
+        let requiredIDs: Set<String>?
+        if let data {
+            let references = try JSONDecoder().decode(MediaReferences.self, from: data)
+            // External documents can already contain their image data. Native
+            // hydration is needed for references whose bytes live in app storage.
+            let embeddedIDs = references.files?.compactMap { id, file in
+                file.dataURL?.isEmpty == false ? id : nil
+            } ?? []
+            requiredIDs = Set(references.elements?.compactMap(\.fileId) ?? []).subtracting(embeddedIDs)
+        } else {
+            requiredIDs = nil
+        }
+        let context = PersistenceController.shared.newTaskContext()
+        let currentIDs = try await context.perform {
+            let fetchRequest = NSFetchRequest<NSDictionary>(entityName: "MediaItem")
+            fetchRequest.resultType = .dictionaryResultType
             fetchRequest.propertiesToFetch = ["id"]
-
-            let currentMedias = try context.fetch(fetchRequest)
-            let currentIDs = Set(currentMedias.compactMap { $0.id })
-
-            return (currentIDs, self.loadedMediaItemIDSnapshot())
+            if let requiredIDs { fetchRequest.predicate = NSPredicate(format: "id IN %@", Array(requiredIDs)) }
+            return Set(try context.fetch(fetchRequest).compactMap { $0["id"] as? String })
         }
-
-        let hasChanges = currentIDs != loadedIDs
-
-        if hasChanges {
-            _ = try await injectAllMediaItems()
+        let needsInjection = await MainActor.run {
+            !hasInjectIndexedDBData || !currentIDs.isSubset(of: loadedMediaItemIDSnapshot())
         }
+        if needsInjection {
+            _ = try await injectAllMediaItems(onlyMissing: true, matching: requiredIDs)
+        }
+    }
+
+    private struct MediaReferences: Decodable {
+        struct Element: Decodable { var fileId: String? }
+        struct EmbeddedFile: Decodable { var dataURL: String? }
+        var elements: [Element]?
+        var files: [String: EmbeddedFile]?
     }
 
     @MainActor

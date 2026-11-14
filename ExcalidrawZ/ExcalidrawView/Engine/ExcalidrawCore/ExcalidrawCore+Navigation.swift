@@ -58,7 +58,7 @@ extension ExcalidrawCore: WKNavigationDelegate {
             Task {
                 do {
                     // Use the extracted injection method
-                    let injectedCount = try await self.injectAllMediaItems()
+                    let injectedCount = try await self.injectAllMediaItems(onlyMissing: true)
                     self.logger.debug("Injected \(injectedCount) MediaItems on initial load")
                     
                     try await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
@@ -110,10 +110,13 @@ extension ExcalidrawCore: WKNavigationDelegate {
         self.parent?.loadingState = .loading
         Task { @MainActor in
             self.nativeEyeDropper.invalidate()
+            self.nativePaste.invalidate()
         }
         DispatchQueue.main.async {
             self.isNavigating = true
             self.isDocumentLoaded = false
+            self.hasInjectIndexedDBData = false
+            self.updateLoadedMediaItemIDs([])
         }
     }
     

@@ -217,8 +217,8 @@ extension MathInputSheetView {
         guard canGenerateLatexWithAI else {
             return
         }
-        if let balance = llmState.creditsInfo?.balance,
-           balance <= 0 {
+        if !inferenceBilling.usesBYOK,
+           let balance = llmState.creditsInfo?.balance, balance <= 0 {
             presentLatexAIInsufficientCreditsPaywall()
             return
         }
@@ -227,6 +227,7 @@ extension MathInputSheetView {
         latexAIGenerationTask?.cancel()
         isGeneratingLatex = true
         error = nil
+        let billingRevision = inferenceBilling.modelCatalogRevision
 
         latexAIGenerationTask = Task { @MainActor in
             defer {
@@ -235,12 +236,15 @@ extension MathInputSheetView {
             }
 
             do {
-                let response: APIResponse<ChatMessageContent> = try await LLMClient.shared.chat(
-                    model: .qwen3_6Plus,
-                    system: latexAIGenerationSystemPrompt,
-                    text: prompt,
-                    metadata: MathLatexAIGenerationMetadata()
-                )
+                let response: APIResponse<ChatMessageContent> = try await inferenceBilling.withSelectedBilling(expectedRevision: billingRevision) {
+                    let model = try inferenceBilling.modelForAuxiliaryRequest(fallback: .qwen3_6Plus)
+                    return try await inferenceBilling.selectedInferenceClient().chat(
+                        model: model,
+                        system: latexAIGenerationSystemPrompt,
+                        text: prompt,
+                        metadata: MathLatexAIGenerationMetadata()
+                    )
+                }
 
                 guard !Task.isCancelled else { return }
 
@@ -249,7 +253,7 @@ extension MathInputSheetView {
                         presentLatexAIInsufficientCreditsPaywall()
                         return
                     }
-                    throw MathLatexAIGenerationError.server(apiError.message)
+                    throw LLMError.server(statusCode: apiError.code, message: apiError.message)
                 }
 
                 guard let content = response.data?.content,
@@ -270,7 +274,7 @@ extension MathInputSheetView {
                     return
                 }
                 logger.error("[MathInputSheetView] latex AI generation error: \(error)")
-                self.error = error
+                self.error = AIInferenceErrorMessage.localizedError(for: error) ?? error
             }
         }
     }
@@ -375,14 +379,11 @@ private struct MathLatexAIGenerationMetadata: Codable, Equatable, Sendable {
 
 private enum MathLatexAIGenerationError: LocalizedError {
     case emptyResponse
-    case server(String)
 
     var errorDescription: String? {
         switch self {
             case .emptyResponse:
                 String(localizable: .toolbarLatexMathAIEmptyResponseError)
-            case .server(let message):
-                message
         }
     }
 }

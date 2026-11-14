@@ -15,18 +15,50 @@ import UIKit
 
 struct ExcalidrawTrailingControls: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
+    @Environment(\.accessibilityVoiceOverEnabled) private var isVoiceOverEnabled
 
     @EnvironmentObject private var appPreference: AppPreference
     @EnvironmentObject private var layoutState: LayoutState
     @EnvironmentObject private var fileState: FileState
     @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
     @AppStorage(FloatingInspectorMetrics.widthStorageKey) private var floatingInspectorWidth = FloatingInspectorMetrics.defaultWidth
+    @AppStorage(InspectorControlPins.storageKey) private var controlPinsData = Data()
+    @AppStorage(InspectorControlPins.expandedStorageKey) private var areUnpinnedControlsExpanded = false
     @State private var displayedHorizontalOffset: CGFloat = 0
     @State private var hasInitializedHorizontalOffset = false
     @State private var pendingHorizontalOffsetTask: Task<Void, Never>?
+    @State private var isControlsHovered = false
 
     private var historyDisabled: Bool {
         fileState.currentActiveFile == nil
+    }
+
+    private var controlPins: InspectorControlPins {
+        InspectorControlPins(storedData: controlPinsData)
+    }
+
+    private var visibleControls: [InspectorControlPins.Control] {
+        let presentedControls = Set(InspectorControlPins.Control.allCases.filter { control in
+            (control == .aiChat && layoutState.isAIChatIslandMode) ||
+            (layoutState.isInspectorPresented && layoutState.activeInspectorTab == control.tab)
+        })
+        return controlPins.visibleControls(
+            isExpanded: areUnpinnedControlsExpanded,
+            presentedControls: presentedControls
+        )
+    }
+
+    private var disclosureOpacity: Double {
+#if os(macOS)
+        isControlsHovered || isVoiceOverEnabled ? 1 : 0.2
+#else
+        1
+#endif
+    }
+
+    private var disclosureTitle: String {
+        String(localizable: areUnpinnedControlsExpanded
+            ? .trailingControlsCollapse : .trailingControlsExpand)
     }
 
     private var shouldShowControls: Bool {
@@ -148,59 +180,30 @@ struct ExcalidrawTrailingControls: View {
 
     var body: some View {
         if shouldShowControls {
-            VStack(alignment: .trailing, spacing: controlSpacing) {
-                InspectorTabButton(
-                    tab: .preference,
-                    icon: .sliderHorizontal3,
-                    title: String(localizable: .canvasPreferencesTitle),
-                    isDisabled: isDisabled(tab: .preference)
-                )
+            VStack(alignment: .center, spacing: controlSpacing) {
+                ForEach(visibleControls) { control in
+                    inspectorControlButton(control)
+                        .transition(.opacity.combined(with: .offset(y: -6)))
+                }
 
-                InspectorTabButton(
-                    tab: .search,
-                    icon: .magnifyingglass,
-                    title: String(localizable: .searchButtonTitle),
-                    isDisabled: isDisabled(tab: .search)
-                )
-                .keyboardShortcut("f", modifiers: .command)
-
-                InspectorTabButton(
-                    tab: .library,
-                    icon: .book,
-                    title: String(localizable: .librariesTitle),
-                    isDisabled: isDisabled(tab: .library)
-                )
-
-                InspectorTabButton(
-                    tab: .history,
-                    icon: .clockArrowCirclepath,
-                    title: String(localizable: .checkpoints),
-                    isDisabled: isDisabled(tab: .history)
-                )
-
-                InspectorTabButton(
-                    tab: .presentation,
-                    icon: .play,
-                    title: String(localizable: .presentationTitle),
-                    isDisabled: isDisabled(tab: .presentation)
-                )
-
-                InspectorTabButton(
-                    tab: .aiChat,
-                    icon: .sparkles,
-                    title: "AI Chat",
-                    isDisabled: isDisabled(tab: .aiChat),
-                    action: toggleAIChatPresentation
-                )
-
-#if DEBUG
-//                InspectorTabButton(
-//                    tab: .debug,
-//                    icon: .ladybug,
-//                    title: "Debug",
-//                    isDisabled: isDisabled(tab: .debug)
-//                )
+                if !controlPins.unpinnedControls.isEmpty {
+                    disclosureButton
+                }
+            }
+            .animation(.easeInOut(duration: 0.22), value: areUnpinnedControlsExpanded)
+            .animation(.easeInOut(duration: 0.22), value: visibleControls)
+#if os(macOS)
+            .contentShape(Rectangle())
+            .onHover { isControlsHovered = $0 }
 #endif
+            .background {
+                // Keep Find available even when its visible button is collapsed.
+                Button(String(localizable: .searchButtonTitle)) {
+                    layoutState.toggleInspector(.search)
+                }
+                .keyboardShortcut("f", modifiers: .command)
+                .hidden()
+                .accessibilityHidden(true)
             }
             .padding(.top, topPadding)
             .padding(.trailing, trailingPadding + effectiveHorizontalOffset)
@@ -211,6 +214,7 @@ struct ExcalidrawTrailingControls: View {
                 pendingHorizontalOffsetTask?.cancel()
                 pendingHorizontalOffsetTask = nil
                 hasInitializedHorizontalOffset = false
+                isControlsHovered = false
             }
             .watch(value: shouldReserveFloatingInspectorSpace) { _, _ in
                 scheduleAnimatedDisplayedHorizontalOffsetUpdate()
@@ -220,6 +224,62 @@ struct ExcalidrawTrailingControls: View {
                 syncDisplayedHorizontalOffsetWithoutAnimation()
             }
             .animation(.easeOut, value: topPadding)
+        }
+    }
+
+    private var disclosureButton: some View {
+        InspectorDisclosureButton(
+            isExpanded: $areUnpinnedControlsExpanded,
+            title: disclosureTitle,
+            opacity: disclosureOpacity
+        )
+        .contextMenu {
+            Button {
+                setAllControlsPinned(true)
+            } label: {
+                Label(.localizable(.trailingControlsPinAll), systemSymbol: .pin)
+            }
+            .disabled(controlPins.unpinnedControls.isEmpty)
+
+            Button {
+                setAllControlsPinned(false)
+            } label: {
+                Label(.localizable(.trailingControlsUnpinAll), systemSymbol: .pinSlash)
+            }
+            .disabled(controlPins.pinnedControls.isEmpty)
+        }
+    }
+
+    private func setAllControlsPinned(_ isPinned: Bool) {
+        var pins = controlPins
+        pins.setAllPinned(isPinned)
+        withAnimation(.easeInOut(duration: 0.18)) {
+            controlPinsData = pins.storedData
+        }
+    }
+
+    private func inspectorControlButton(_ control: InspectorControlPins.Control) -> some View {
+        InspectorTabButton(
+            tab: control.tab,
+            icon: control.icon,
+            title: control.title,
+            isDisabled: isDisabled(tab: control.tab),
+            action: control == .aiChat ? toggleAIChatPresentation : nil
+        )
+        .contextMenu {
+            Button {
+                var pins = controlPins
+                pins.setPinned(!pins.isPinned(control), for: control)
+                withAnimation(.easeInOut(duration: 0.18)) {
+                    controlPinsData = pins.storedData
+                }
+            } label: {
+                Label(
+                    .localizable(controlPins.isPinned(control)
+                        ? .trailingControlsUnpin : .trailingControlsPin),
+                    systemSymbol: controlPins.isPinned(control) ? .pinSlash : .pin
+                )
+            }
         }
     }
 
@@ -245,6 +305,43 @@ struct ExcalidrawTrailingControls: View {
             displayedHorizontalOffset = horizontalOffset
             hasInitializedHorizontalOffset = true
         }
+    }
+}
+
+private struct InspectorDisclosureButton: View {
+    @EnvironmentObject private var canvasPreferences: CanvasPreferencesState
+
+    @Binding var isExpanded: Bool
+    let title: String
+    let opacity: Double
+
+    private var foreground: Color {
+        InspectorControlContrast.prefersWhiteForeground(
+            backgroundColor: canvasPreferences.viewBackgroundColor,
+            isDark: canvasPreferences.theme == .dark
+        ) ? .white : .black
+    }
+
+    var body: some View {
+        Button {
+            isExpanded.toggle()
+        } label: {
+            Label {
+                Text(title)
+            } icon: {
+                Image(systemSymbol: .chevronDown)
+                    .rotationEffect(.degrees(isExpanded ? 180 : 0))
+            }
+            .labelStyle(.iconOnly)
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(foreground)
+            .frame(width: 40, height: 28)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .help(title)
+        .opacity(opacity)
+        .animation(.easeInOut(duration: 0.12), value: opacity)
     }
 }
 
@@ -315,5 +412,40 @@ private struct InspectorTabButton: View {
         .help(title)
         .opacity(isDisabled && !isActive ? 0.55 : 1)
         .allowsHitTesting(!isDisabled)
+    }
+}
+
+private extension InspectorControlPins.Control {
+    var tab: LayoutState.InspectorTab {
+        switch self {
+            case .preference: .preference
+            case .search: .search
+            case .library: .library
+            case .history: .history
+            case .presentation: .presentation
+            case .aiChat: .aiChat
+        }
+    }
+
+    var icon: SFSymbol {
+        switch self {
+            case .preference: .sliderHorizontal3
+            case .search: .magnifyingglass
+            case .library: .book
+            case .history: .clockArrowCirclepath
+            case .presentation: .play
+            case .aiChat: .sparkles
+        }
+    }
+
+    var title: String {
+        switch self {
+            case .preference: String(localizable: .canvasPreferencesTitle)
+            case .search: String(localizable: .searchButtonTitle)
+            case .library: String(localizable: .librariesTitle)
+            case .history: String(localizable: .checkpoints)
+            case .presentation: String(localizable: .presentationTitle)
+            case .aiChat: "AI Chat"
+        }
     }
 }

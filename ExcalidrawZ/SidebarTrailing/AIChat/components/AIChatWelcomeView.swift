@@ -19,7 +19,7 @@ struct AIChatWelcomeView: View {
     private let buttonTitle: String
     private let buttonCaption: String
     private let buttonURL: URL?
-    private let requiresEnableConfirmation: Bool
+    private let onEnableAI: ((AIInferenceBillingMode) -> Void)?
     
     @State private var hasAnimatedIn = false
     @State private var isBackgroundPresented = false
@@ -30,19 +30,20 @@ struct AIChatWelcomeView: View {
     
     
     @State private var isDismissing = false
-    @State private var isConfirmingEnable = false
+    @ObservedObject private var aiServiceConsent = AIServiceConsentState.shared
+    @State private var pendingConsentMode: AIInferenceBillingMode?
 
     init(
         buttonTitle: String = String(localizable: .aiChatWelcomeButtonGetStarted),
         buttonCaption: String = String(localizable: .aiChatWelcomeGetStartedCaption),
         buttonURL: URL? = nil,
-        requiresEnableConfirmation: Bool = false,
-        onGetStarted: @escaping () -> Void
+        onEnableAI: ((AIInferenceBillingMode) -> Void)? = nil,
+        onGetStarted: @escaping () -> Void = {}
     ) {
         self.buttonTitle = buttonTitle
         self.buttonCaption = buttonCaption
         self.buttonURL = buttonURL
-        self.requiresEnableConfirmation = requiresEnableConfirmation
+        self.onEnableAI = onEnableAI
         self.onGetStarted = onGetStarted
     }
     
@@ -100,11 +101,10 @@ struct AIChatWelcomeView: View {
                 isFeatureListPresented = true
             }
         }
-        .sheet(isPresented: $isConfirmingEnable) {
-            AIEnableConsentSheet {
-                Task {
-                    await dismissAndStart()
-                }
+        .sheet(item: $pendingConsentMode) { mode in
+            AIEnableConsentSheet(mode: mode) {
+                aiServiceConsent.accept(mode)
+                onEnableAI?(mode)
             }
         }
     }
@@ -318,8 +318,8 @@ struct AIChatWelcomeView: View {
                 .disabled(isDismissing)
             } else {
                 Button {
-                    if requiresEnableConfirmation {
-                        isConfirmingEnable = true
+                    if onEnableAI != nil {
+                        requestEnableAI(AIChatAvailability.supportsManagedInference ? .platform : .byok)
                     } else {
                         Task {
                             await dismissAndStart()
@@ -331,6 +331,17 @@ struct AIChatWelcomeView: View {
                 .modernButtonStyle(style: .glassProminent, size: .extraLarge, shape: .modern)
                 .keyboardShortcut(.defaultAction)
                 .disabled(isDismissing)
+
+                if onEnableAI != nil, AIChatAvailability.supportsManagedInference {
+                    Button {
+                        requestEnableAI(.byok)
+                    } label: {
+                        Text(.localizable(.aiBYOKEnableButton))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .modernButtonStyle(style: .glass, size: .regular, shape: .modern)
+                    .disabled(isDismissing)
+                }
             }
             
             getStartedCaption
@@ -368,12 +379,23 @@ struct AIChatWelcomeView: View {
 
     private var getStartedButtonLabel: some View {
         HStack(spacing: 6) {
-            Text(buttonTitle)
+            Text(onEnableAI == nil ? buttonTitle : String(localizable:
+                AIChatAvailability.supportsManagedInference ? .aiPlatformEnableButton : .aiBYOKEnableButton))
                 .fontWeight(.semibold)
             Image(systemSymbol: .arrowRight)
                 .font(.callout.weight(.semibold))
         }
         .frame(maxWidth: .infinity)
+    }
+
+    @MainActor
+    private func requestEnableAI(_ mode: AIInferenceBillingMode) {
+        guard let onEnableAI else { return }
+        if aiServiceConsent.hasAccepted(mode) {
+            onEnableAI(mode)
+        } else {
+            pendingConsentMode = mode
+        }
     }
     
     @ViewBuilder

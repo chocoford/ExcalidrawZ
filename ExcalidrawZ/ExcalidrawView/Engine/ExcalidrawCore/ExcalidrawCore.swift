@@ -31,6 +31,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     var webView: ExcalidrawWebView = .init(frame: .zero, configuration: .init()) { _ in }
     lazy var webActor = ExcalidrawWebActor(coordinator: self)
     lazy var nativeEyeDropper = ExcalidrawNativeEyeDropperCoordinator(core: self)
+    @MainActor lazy var nativePaste = ExcalidrawNativePasteCoordinator(core: self)
     
     override init() {
         self.publishError = { error in }
@@ -285,10 +286,9 @@ extension ExcalidrawCore {
             // JS onload signal, not on the broader loading state used by the UI.
             let documentLoading = self.isNavigating || !self.isDocumentLoaded
             let webLoading = await self.webView.isLoading
-            let initialMediaLoading = parent != nil
-                && !hasInjectIndexedDBData
-
-            if !documentLoading && !webLoading && !initialMediaLoading {
+            // The document load pipeline awaits media hydration after this gate;
+            // it must not depend on the startup injection having run on time.
+            if !documentLoading && !webLoading {
                 return true
             }
 
@@ -297,21 +297,15 @@ extension ExcalidrawCore {
             }
 
             if Date() >= deadline {
-                if !documentLoading && !webLoading && initialMediaLoading {
-                    logger.warning(
-                        "Timed out waiting for initial media injection before loading file \(fileID); continuing with available media"
-                    )
-                    return true
-                }
                 logger.warning(
-                    "Timed out waiting to load file \(fileID). documentLoading=\(documentLoading) webLoading=\(webLoading) initialMediaLoading=\(initialMediaLoading)"
+                    "Timed out waiting to load file \(fileID). documentLoading=\(documentLoading) webLoading=\(webLoading)"
                 )
                 return false
             }
 
             if !didLogWait {
                 logger.info(
-                    "Waiting for Excalidraw readiness before loading file \(fileID), initialMediaLoading=\(initialMediaLoading)"
+                    "Waiting for Excalidraw readiness before loading file \(fileID)"
                 )
                 didLogWait = true
             }

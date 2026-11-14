@@ -107,10 +107,7 @@ struct LinkedStorageSidebarSection: View {
 
     private var header: some View {
         HStack {
-            Text(String(
-                localized: "linkedStorageTitle",
-                defaultValue: "Linked Storage"
-            ))
+            Text(.localizable(.linkedStorageTitle))
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -121,10 +118,7 @@ struct LinkedStorageSidebarSection: View {
                         .controlSize(.mini)
                 } else {
                     SidebarSectionAddIcon(
-                        accessibilityLabel: Text(String(
-                            localized: "linkedStorageAddStorage",
-                            defaultValue: "Add Storage"
-                        ))
+                        accessibilityLabel: Text(.localizable(.linkedStorageAddStorage))
                     )
                 }
             }
@@ -161,10 +155,7 @@ struct LinkedStorageSidebarSection: View {
                 }
             }
 
-            Text(String(
-                localized: "linkedStorageEmptyDescription",
-                defaultValue: "Link a local folder or cloud storage to browse drawings from one place."
-            ))
+            Text(.localizable(.linkedStorageEmptyDescription))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -177,10 +168,7 @@ struct LinkedStorageSidebarSection: View {
                             .controlSize(.small)
                     } else {
                         Label(
-                            String(
-                                localized: "linkedStorageAddStorage",
-                                defaultValue: "Add Storage"
-                            ),
+                            String(localizable: .linkedStorageAddStorage),
                             systemImage: "link.badge.plus"
                         )
                     }

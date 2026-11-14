@@ -17,6 +17,7 @@ class Store: ObservableObject {
     
     @Published private(set) var purchasedPlans: [Product] = []
     @Published private(set) var purchasedMemberships: [Product] = []
+    var hasLoadedSubscriptionEntitlements: Bool { true }
 
 #if DEBUG
     @Published var debugActiveSubscriptionItem: SubscriptionItem? = .pro

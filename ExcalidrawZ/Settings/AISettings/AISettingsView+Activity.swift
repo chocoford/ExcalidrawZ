@@ -202,9 +202,8 @@ extension AISettingsView {
         guard let metadata = tx.decodedUserMetadata(as: ExcalidrawAITransactionMetadata.self) else {
             return nil
         }
-        if let profileID = metadata.modelProfileID,
-           let tier = ExcalidrawModelTier(profileID: profileID) {
-            return tier.name
+        if let profileID = metadata.modelProfileID {
+            return AIChatSchemeCatalog.shared.options.first { $0.profileID == profileID }?.title ?? profileID
         }
         return modelTierName(for: metadata.model)
     }
