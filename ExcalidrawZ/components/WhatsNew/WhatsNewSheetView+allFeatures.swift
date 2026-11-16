@@ -18,26 +18,11 @@ import SFSafeSymbols
 extension WhatsNewView {
     @ViewBuilder
     func featuresContent() -> some View {
-#if os(macOS)
-        let minimumSystemVersion = "macOS 14"
-#else
-        let minimumSystemVersion = "iOS 17 / iPadOS 17"
-#endif
-
         WhatsNewFeatureRow(
             title: .localizable(.whatsNewNativeExperienceTitle),
             description: .localizable(.whatsNewNativeExperienceDescription),
         ) {
-            Image(systemName: "arrow.triangle.2.circlepath")
-                .resizable()
-                .symbolRenderingMode(.hierarchical)
-        }
-
-        WhatsNewFeatureRow(
-            title: .localizable(.whatsNewSystemRequirementsTitle),
-            description: .localizable(.whatsNewSystemRequirementsDescription(minimumSystemVersion)),
-        ) {
-            Image(systemName: "checkmark.seal")
+            Image(systemSymbol: .gaugeWithDotsNeedle67percent)
                 .resizable()
                 .symbolRenderingMode(.hierarchical)
         }

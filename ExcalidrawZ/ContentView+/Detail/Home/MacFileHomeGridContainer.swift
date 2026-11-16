@@ -32,6 +32,7 @@ struct MacFileHomeGridContainer<Header: View, Background: View>: View {
     let files: [FileState.ActiveFile]
     let itemWidth: CGFloat
     let contentRevision: Int
+    let headerSpacing: CGFloat
     let bottomPadding: CGFloat
     let animatesChanges: Bool
     let header: Header
@@ -42,6 +43,7 @@ struct MacFileHomeGridContainer<Header: View, Background: View>: View {
             files: files,
             minimumItemWidth: itemWidth,
             contentRevision: contentRevision,
+            headerSpacing: headerSpacing,
             bottomPadding: bottomPadding,
             animatesChanges: animatesChanges,
             fileToReveal: transitionState.canShowItemContainerView
@@ -57,6 +59,7 @@ private struct MacFileHomeCollectionView: NSViewRepresentable {
     let files: [FileState.ActiveFile]
     let minimumItemWidth: CGFloat
     let contentRevision: Int
+    let headerSpacing: CGFloat
     let bottomPadding: CGFloat
     let animatesChanges: Bool
     let fileToReveal: String?
@@ -184,6 +187,7 @@ private struct MacFileHomeCollectionView: NSViewRepresentable {
                 if filesByID.updateValue(file, forKey: id) == nil { newIDs.append(id) }
             }
             minimumItemWidth = container.minimumItemWidth
+            layout.sectionInset.top = container.headerSpacing
             layout.sectionInset.bottom = container.bottomPadding
             headerController.rootView = AnyView(container.header.environment(\.self, environment))
             backgroundController.rootView = AnyView(container.background.environment(\.self, environment))

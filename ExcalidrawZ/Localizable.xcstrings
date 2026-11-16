@@ -154208,229 +154208,229 @@
       }
     },
     "whatsNewNativeExperienceDescription": {
-      "comment": "What's New 3.0 description of canvas, sidebar, and panel state synchronization. Avoid performance benchmarks or implementation terminology in user-facing copy.",
+      "comment": "What's New 3.0 description of a modern approach to efficient data updates. Keep the benefit user-facing; avoid component details, implementation terminology, and numerical performance claims.",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A refreshed native experience keeps the canvas, sidebar, and panels in sync as you switch files and adjust your workspace."
+            "value": "A more modern approach to data updates reduces unnecessary refreshes for smoother file switching and everyday use."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "优化画布、侧栏与设置面板之间的状态同步，让文件切换和布局调整时的体验更连贯。"
+            "value": "采用更现代的数据更新方式，减少不必要的刷新，让文件切换与日常操作更流畅。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "改善畫布、側邊欄與設定面板之間的狀態同步，讓切換檔案與調整版面配置時的體驗更一致。"
+            "value": "採用更現代的資料更新方式，減少不必要的更新，讓檔案切換與日常操作更流暢。"
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تحافظ التجربة الأصلية المُحسّنة على تزامن اللوحة والشريط الجانبي واللوحات أثناء تبديل الملفات وضبط مساحة العمل."
+            "value": "أسلوب أكثر حداثة لتحديث البيانات يقلل التحديثات غير الضرورية، لتبديل ملفات واستخدام يومي أكثر سلاسة."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Leinwand, Seitenleiste und Panels bleiben beim Wechseln von Dateien und Anpassen des Arbeitsbereichs aufeinander abgestimmt."
+            "value": "Ein modernerer Ansatz für Datenaktualisierungen reduziert unnötige Aktualisierungen und sorgt für flüssigere Dateiwechsel und Bedienung im Alltag."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Una experiencia nativa renovada mantiene sincronizados el lienzo, la barra lateral y los paneles al cambiar de archivo y ajustar el espacio de trabajo."
+            "value": "Una forma más moderna de actualizar los datos reduce las actualizaciones innecesarias para cambiar de archivo y trabajar a diario con mayor fluidez."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Une expérience native renouvelée garde le canevas, la barre latérale et les panneaux synchronisés lorsque vous changez de fichier et ajustez votre espace de travail."
+            "value": "Une approche plus moderne de la mise à jour des données réduit les actualisations inutiles, pour des changements de fichier et une utilisation quotidienne plus fluides."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "नया नेटिव अनुभव फ़ाइलें बदलते और कार्यक्षेत्र समायोजित करते समय कैनवास, साइडबार और पैनल को सिंक में रखता है।"
+            "value": "डेटा अपडेट करने का अधिक आधुनिक तरीका अनावश्यक रीफ़्रेश कम करता है, जिससे फ़ाइलें बदलना और रोज़मर्रा का उपयोग अधिक सहज होता है।"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Un’esperienza nativa rinnovata mantiene sincronizzati la tela, la barra laterale e i pannelli quando cambi file e regoli lo spazio di lavoro."
+            "value": "Un approccio più moderno all’aggiornamento dei dati riduce gli aggiornamenti superflui, rendendo più fluidi il passaggio tra i file e l’uso quotidiano."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ファイルの切り替えやワークスペースの調整時に、キャンバス、サイドバー、パネルの状態を同期する仕組みを見直しました。"
+            "value": "よりモダンなデータ更新の仕組みを採用し、不要な再描画を削減。ファイルの切り替えや日常の操作をよりスムーズにします。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "파일을 전환하거나 작업 공간을 조정할 때 캔버스, 사이드바와 패널의 상태가 일관되게 유지되도록 개선했습니다."
+            "value": "더 현대적인 데이터 업데이트 방식을 도입해 불필요한 새로 고침을 줄이고, 파일 전환과 일상적인 작업을 더 매끄럽게 만듭니다."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Een vernieuwde native ervaring houdt het canvas, de zijbalk en de panelen op elkaar afgestemd wanneer je van bestand wisselt en je werkruimte aanpast."
+            "value": "Een modernere aanpak voor gegevensupdates vermindert onnodige vernieuwingen, zodat je soepeler van bestand wisselt en prettiger werkt."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Odświeżone natywne środowisko utrzymuje płótno, pasek boczny i panele w synchronizacji podczas przełączania plików i dostosowywania obszaru roboczego."
+            "value": "Nowocześniejszy sposób aktualizacji danych ogranicza niepotrzebne odświeżanie, zapewniając płynniejsze przełączanie plików i codzienną pracę."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uma experiência nativa renovada mantém a tela, a barra lateral e os painéis sincronizados ao alternar entre arquivos e ajustar o espaço de trabalho."
+            "value": "Uma abordagem mais moderna para atualizar os dados reduz atualizações desnecessárias, tornando a troca de arquivos e o uso diário mais fluidos."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Обновлённый нативный интерфейс поддерживает согласованное состояние холста, боковой панели и других панелей при переключении файлов и настройке рабочего пространства."
+            "value": "Более современный подход к обновлению данных сокращает ненужные обновления, делая переключение файлов и повседневную работу более плавными."
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "ประสบการณ์เนทีฟที่ปรับปรุงใหม่ช่วยให้แคนวาส แถบด้านข้าง และแผงต่าง ๆ ซิงค์กันขณะสลับไฟล์และปรับพื้นที่ทำงาน"
+            "value": "ใช้วิธีอัปเดตข้อมูลที่ทันสมัยยิ่งขึ้น ลดการรีเฟรชที่ไม่จำเป็น เพื่อให้สลับไฟล์และใช้งานประจำวันได้ลื่นไหลยิ่งขึ้น"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Yenilenen yerel deneyim, dosyalar arasında geçiş yaparken ve çalışma alanınızı düzenlerken tuvali, kenar çubuğunu ve panelleri uyum içinde tutar."
+            "value": "Veri güncellemelerinde daha modern bir yaklaşım, gereksiz yenilemeleri azaltarak dosya geçişlerini ve günlük kullanımı daha akıcı hâle getirir."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Trải nghiệm gốc được cải tiến giúp khung vẽ, thanh bên và các bảng luôn đồng bộ khi bạn chuyển tệp và điều chỉnh không gian làm việc."
+            "value": "Cách cập nhật dữ liệu hiện đại hơn giúp giảm những lần làm mới không cần thiết, để chuyển tệp và thao tác hằng ngày mượt mà hơn."
           }
         }
       }
     },
     "whatsNewNativeExperienceTitle": {
-      "comment": "What's New 3.0 title for the native experience updated during the Observation migration.",
+      "comment": "What's New 3.0 title for more efficient data updates.",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Refreshed Native Experience"
+            "value": "More Efficient Data Updates"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "原生体验焕新"
+            "value": "更高效的数据更新"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "原生體驗煥新"
+            "value": "更有效率的資料更新"
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تجربة أصلية مُحسّنة"
+            "value": "تحديثات بيانات أكثر كفاءة"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Überarbeitetes natives Erlebnis"
+            "value": "Effizientere Datenaktualisierung"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Experiencia nativa renovada"
+            "value": "Actualizaciones de datos más eficientes"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Une expérience native renouvelée"
+            "value": "Des mises à jour de données plus efficaces"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "बेहतर नेटिव अनुभव"
+            "value": "डेटा अपडेट में बेहतर दक्षता"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esperienza nativa rinnovata"
+            "value": "Aggiornamenti dei dati più efficienti"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ネイティブ体験を刷新"
+            "value": "データ更新を効率化"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "새로워진 네이티브 경험"
+            "value": "더 효율적인 데이터 업데이트"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vernieuwde native ervaring"
+            "value": "Efficiëntere gegevensupdates"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Odświeżone natywne środowisko"
+            "value": "Wydajniejsze aktualizacje danych"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Experiência nativa renovada"
+            "value": "Atualizações de dados mais eficientes"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Обновлённый нативный интерфейс"
+            "value": "Более эффективное обновление данных"
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "ประสบการณ์เนทีฟที่ปรับปรุงใหม่"
+            "value": "อัปเดตข้อมูลได้อย่างมีประสิทธิภาพยิ่งขึ้น"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Yenilenen Yerel Deneyim"
+            "value": "Daha Verimli Veri Güncellemeleri"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Trải nghiệm gốc được cải tiến"
+            "value": "Cập nhật dữ liệu hiệu quả hơn"
           }
         }
       }
@@ -156804,234 +156804,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "強大的 LaTeX 數學支持"
-          }
-        }
-      }
-    },
-    "whatsNewSystemRequirementsDescription": {
-      "comment": "What's New 3.0 minimum system requirement. The argument is a system version, such as macOS 14 or iOS 17 / iPadOS 17.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0 requires %@ or later."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0 需要 %@ 或更新版本。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0 需要 %@ 或更新版本。"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يتطلب ExcalidrawZ 3.0 نظام %@ أو أحدث."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0 erfordert %@ oder neuer."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0 requiere %@ o posterior."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0 nécessite %@ ou une version ultérieure."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0 के लिए %@ या बाद का संस्करण आवश्यक है।"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0 richiede %@ o versioni successive."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0には%@以降が必要です。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0은 %@ 이상이 필요합니다."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0 vereist %@ of nieuwer."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0 wymaga systemu %@ lub nowszego."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O ExcalidrawZ 3.0 requer %@ ou posterior."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Для ExcalidrawZ 3.0 требуется %@ или новее."
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0 ต้องใช้ %@ หรือใหม่กว่า"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0, %@ veya üzerini gerektirir."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ExcalidrawZ 3.0 yêu cầu %@ trở lên."
-          }
-        }
-      }
-    },
-    "whatsNewSystemRequirementsTitle": {
-      "comment": "What's New 3.0 title for the increased minimum supported operating system versions.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Updated System Requirements"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新的系统要求"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新的系統需求"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "متطلبات النظام المحدّثة"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aktualisierte Systemanforderungen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Requisitos del sistema actualizados"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configuration système requise"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "अपडेट की गई सिस्टम आवश्यकताएँ"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Requisiti di sistema aggiornati"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "システム要件の変更"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "업데이트된 시스템 요구 사항"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bijgewerkte systeemvereisten"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zaktualizowane wymagania systemowe"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Requisitos de sistema atualizados"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обновлённые системные требования"
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ข้อกำหนดของระบบที่อัปเดต"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Güncellenen Sistem Gereksinimleri"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Yêu cầu hệ thống mới"
           }
         }
       }

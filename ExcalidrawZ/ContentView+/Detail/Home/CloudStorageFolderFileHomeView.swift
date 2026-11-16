@@ -101,8 +101,10 @@ struct CloudStorageFolderFileHomeView: View {
             quickActions
                 .padding(.horizontal, 30)
 
-            childFolderGrid
-                .padding(.horizontal, 30)
+            if !childFolders.isEmpty {
+                childFolderGrid
+                    .padding(.horizontal, 30)
+            }
         }
         .padding(.top, parentFolders.isEmpty ? 36 : 15)
     }

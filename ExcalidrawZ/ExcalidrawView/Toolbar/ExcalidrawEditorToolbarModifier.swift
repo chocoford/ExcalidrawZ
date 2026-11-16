@@ -200,6 +200,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
         ToolbarItemGroup(placement: .topBarLeading) {
             sharedNavigationToolbarContent()
         }
+        groupHomeTitleToolbarContent(placement: .topBarLeading)
 
         if lockedContentState.activeFileLockState != .locked {
             if usesCompactIOSBottomToolbar {
@@ -227,6 +228,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
         ToolbarItemGroup(placement: .navigation) {
             sharedNavigationToolbarContent()
         }
+        groupHomeTitleToolbarContent(placement: .navigation)
         if isMacOSToolPickerToolbarContentPresented {
             macOSToolPickerToolbarContent()
         }
@@ -258,6 +260,40 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
         if #available(macOS 13.0, iOS 16.0, *) { } else {
             NewFileButton()
         }
+    }
+
+    @ToolbarContentBuilder
+    private func groupHomeTitleToolbarContent(placement: ToolbarItemPlacement) -> some ToolbarContent {
+        if fileState.currentActiveFile == nil, let groupTitle {
+            if #available(macOS 26.0, iOS 26.0, *) {
+                ToolbarItem(placement: placement) {
+                    groupHomeTitle(groupTitle)
+                }
+                .sharedBackgroundVisibility(.hidden)
+            } else {
+                ToolbarItem(placement: placement) {
+                    groupHomeTitle(groupTitle)
+                }
+            }
+        }
+    }
+
+    private func groupHomeTitle(_ title: String) -> some View {
+        let path = groupPath
+        return VStack(alignment: .leading, spacing: 1) {
+            Text(title)
+                .font(.headline)
+
+            if let path {
+                Text(path)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .lineLimit(1)
+        .truncationMode(.middle)
+        .frame(maxWidth: 240, alignment: .leading)
+        .help(path ?? title)
     }
 
 
@@ -339,7 +375,25 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                     .help(String(localizable: .lockedContentLockFilesHelp))
                 }
 
-                if aiChatPreferences.isAIEnabled && AIChatAvailability.isAvailable {
+#if os(macOS)
+                switch fileState.currentActiveGroup {
+                    case .group(let group):
+                        if group.groupType != .trash {
+                            NewGroupButton(parentID: group.objectID)
+                        }
+                        FileHomeGroupActionsMenu(group: group)
+                            .id(group.objectID)
+                    case .localFolder(let folder):
+                        NewGroupButton(parentID: folder.objectID)
+                        FileHomeGroupActionsMenu(group: folder)
+                            .id(folder.objectID)
+                    default:
+                        EmptyView()
+                }
+#endif
+
+                if fileState.currentActiveGroup == nil,
+                   aiChatPreferences.isAIEnabled && AIChatAvailability.isAvailable {
                     AICreditsToolbarButton()
                 }
             }
@@ -637,6 +691,34 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                 }
             }
             .frame(width: 120, alignment: .leading)
+        }
+    }
+
+    private var groupTitle: String? {
+        switch fileState.currentActiveGroup {
+            case .group(let group):
+                group.name ?? String(localizable: .generalUntitled)
+            case .localFolder(let folder):
+                folder.name ?? String(localizable: .generalUntitled)
+            default:
+                nil
+        }
+    }
+
+    private var groupPath: String? {
+        switch fileState.currentActiveGroup {
+            case .group(let group):
+                var components: [String] = []
+                var current: Group? = group
+                while let ancestor = current {
+                    components.append(ancestor.name ?? String(localizable: .generalUntitled))
+                    current = ancestor.parent
+                }
+                return "/" + components.reversed().joined(separator: "/")
+            case .localFolder(let folder):
+                return folder.url?.filePath
+            default:
+                return nil
         }
     }
     

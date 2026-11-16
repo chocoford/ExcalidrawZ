@@ -75,6 +75,7 @@ struct FileHomeGridContainer<Header: View, Background: View>: View {
     let itemWidth: CGFloat
     let contentRevision: Int
     let showsPlaceholder: Bool
+    let headerSpacing: CGFloat
     let bottomPadding: CGFloat
     let animatesChanges: Bool
     let backend: FileHomeGridBackend
@@ -87,6 +88,7 @@ struct FileHomeGridContainer<Header: View, Background: View>: View {
         itemWidth: CGFloat = 240,
         contentRevision: Int = 0,
         showsPlaceholder: Bool = false,
+        headerSpacing: CGFloat = 30,
         bottomPadding: CGFloat = 30,
         animatesChanges: Bool = true,
         backend: FileHomeGridBackend = .defaultBackend,
@@ -98,6 +100,7 @@ struct FileHomeGridContainer<Header: View, Background: View>: View {
         self.itemWidth = itemWidth
         self.contentRevision = contentRevision
         self.showsPlaceholder = showsPlaceholder
+        self.headerSpacing = headerSpacing
         self.bottomPadding = bottomPadding
         self.animatesChanges = animatesChanges
         self.backend = backend
@@ -140,6 +143,7 @@ struct FileHomeGridContainer<Header: View, Background: View>: View {
                             files: files,
                             itemWidth: itemWidth,
                             contentRevision: contentRevision,
+                            headerSpacing: headerSpacing,
                             bottomPadding: bottomPadding,
                             animatesChanges: animatesChanges,
                             header: header,
@@ -159,7 +163,7 @@ struct FileHomeGridContainer<Header: View, Background: View>: View {
 
     private var swiftUIContainer: some View {
         FileHomeContainer {
-            VStack(spacing: 30) {
+            VStack(spacing: headerSpacing) {
                 header
                 FileHomeFilesGrid(
                     files: files,
