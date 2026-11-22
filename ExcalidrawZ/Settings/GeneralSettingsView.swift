@@ -35,6 +35,7 @@ struct GeneralSettingsView: View {
     @EnvironmentObject var appPreference: AppPreference
     
     @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
+    @AppStorage(AppPreference.showMyFilesInSidebarKey) private var showMyFilesInSidebar = true
     
     @AppStorage("FolderStructureStyle") var folderStructStyle: FolderStructureStyle = .disclosureGroup
     
@@ -199,8 +200,11 @@ struct GeneralSettingsView: View {
                 }
             )
             .modifier(ToggleICloudSyncingModifier())
+            Toggle(.localizable(.settingsICloudShowMyFilesInSidebar), isOn: $showMyFilesInSidebar)
         } header: {
             Text(localizable: .settingsICloudTitle)
+        } footer: {
+            Text(localizable: .settingsICloudShowMyFilesInSidebarHint)
         }
         
         Section {} footer: {

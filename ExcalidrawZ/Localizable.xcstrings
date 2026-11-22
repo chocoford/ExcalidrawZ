@@ -107143,6 +107143,64 @@
         }
       }
     },
+    "settingsICloudShowMyFilesInSidebar": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meine Dateien in der Seitenleiste anzeigen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show My Files in Sidebar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在边栏中显示“我的文件”"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在側邊欄中顯示「我的檔案」"
+          }
+        }
+      }
+    },
+    "settingsICloudShowMyFilesInSidebarHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Ausblenden von „Meine Dateien“ ändert nur die Seitenleiste. Ihre Zeichnungen und die iCloud-Synchronisierung bleiben unverändert."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiding My Files only changes the sidebar. Your drawings and iCloud synchronization remain unchanged."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏“我的文件”只会更改边栏。您的绘图和 iCloud 同步不受影响。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱藏「我的檔案」只會變更側邊欄。您的繪圖和 iCloud 同步不受影響。"
+          }
+        }
+      }
+    },
     "settingsICloudTitle": {
       "extractionState": "manual",
       "localizations": {
