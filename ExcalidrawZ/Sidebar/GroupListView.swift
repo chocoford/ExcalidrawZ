@@ -20,6 +20,7 @@ struct GroupListView: View {
     @Environment(\.searchExcalidrawAction) private var searchExcalidraw
 
     @EnvironmentObject var fileState: FileState
+    @AppStorage(AppPreference.showMyFilesInSidebarKey) private var showMyFilesInSidebar = true
     
     init(sortField: ExcalidrawFileSortField) {
         self.sortField = sortField
@@ -101,14 +102,16 @@ struct GroupListView: View {
                             
                             Divider()
                             
-                            // App-managed files, optionally synchronized through iCloud.
-                            DatabaseGroupsListView(sortField: sortField, fileState: fileState)
-                                .modifier(
-                                    ContentHeaderCreateButtonModifier(
-                                        groupType: .group,
-                                        title: .localizable(.sidebarGroupListSectionHeaderMyFiles)
+                            if showMyFilesInSidebar {
+                                // App-managed files, optionally synchronized through iCloud.
+                                DatabaseGroupsListView(sortField: sortField, fileState: fileState)
+                                    .modifier(
+                                        ContentHeaderCreateButtonModifier(
+                                            groupType: .group,
+                                            title: .localizable(.sidebarGroupListSectionHeaderMyFiles)
+                                        )
                                     )
-                                )
+                            }
 
                             LinkedStorageSidebarSection()
                         }

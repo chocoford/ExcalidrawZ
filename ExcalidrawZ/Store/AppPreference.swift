@@ -16,6 +16,8 @@ import UniformTypeIdentifiers
 private let appPreferenceLogger = Logger(label: "AppPreference")
 
 final class AppPreference: ObservableObject {
+    static let showMyFilesInSidebarKey = "ShowMyFilesInSidebar"
+
     enum SidebarMode: Hashable, Sendable {
         case all
         case filesOnly
