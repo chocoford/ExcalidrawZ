@@ -134,7 +134,8 @@ final class CloudStorageSyncService {
     func prioritizeDocuments(
         in location: CloudStorageLocation,
         parentID: CloudStorageItemID,
-        connections: CloudStorageConnectionStore? = nil
+        connections: CloudStorageConnectionStore? = nil,
+        reloadAfterCurrent: Bool = false
     ) async {
         let connections = connections ?? .shared
         connectivity.startIfNeeded()
@@ -142,7 +143,8 @@ final class CloudStorageSyncService {
         guard await documentStore.refresh(
             location,
             connections: connections,
-            force: true
+            force: true,
+            reloadAfterCurrent: reloadAfterCurrent
         ) else { return }
         scheduleDocumentSynchronizations(
             in: location,

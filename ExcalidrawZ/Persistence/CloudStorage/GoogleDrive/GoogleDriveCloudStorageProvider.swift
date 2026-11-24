@@ -96,6 +96,19 @@ struct GoogleDriveCloudStorageProvider: CloudStorageProvider {
         )
     }
 
+    func authorizeAdditionalItems(for account: CloudStorageAccount) async throws -> CloudStorageAccount {
+        guard account.providerID == descriptor.id else {
+            throw CloudStorageError.accountUnavailable(account.id)
+        }
+        let authorizedAccount = try await authenticator.authorizeAdditionalItems(for: account)
+        guard authorizedAccount.providerID == descriptor.id, authorizedAccount.id == account.id else {
+            throw CloudStorageError.invalidProviderResponse(
+                String(localizable: .cloudStorageGoogleDriveUseLinkedAccount)
+            )
+        }
+        return authorizedAccount
+    }
+
     func signOut(accountID: CloudStorageAccountID) async throws {
         try await authenticator.signOut(accountID: accountID)
     }

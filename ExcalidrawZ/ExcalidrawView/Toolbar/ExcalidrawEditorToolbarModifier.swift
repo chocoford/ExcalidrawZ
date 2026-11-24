@@ -285,7 +285,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                 .font(.headline)
 
             if let path {
-                Text(path)
+                Text(groupPathForDisplay(path))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -294,6 +294,21 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
         .truncationMode(.middle)
         .frame(maxWidth: 240, alignment: .leading)
         .help(path ?? title)
+    }
+
+    private func groupPathForDisplay(_ path: String) -> String {
+#if os(macOS)
+        if case .localFolder = fileState.currentActiveGroup,
+           let homePath = FileManager.default.homeDirectory(forUser: NSUserName())?.path(percentEncoded: false) {
+            if path == homePath {
+                return "~"
+            }
+            if path.hasPrefix(homePath + "/") {
+                return "~" + path.dropFirst(homePath.count)
+            }
+        }
+#endif
+        return path
     }
 
 
@@ -387,6 +402,14 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                         NewGroupButton(parentID: folder.objectID)
                         FileHomeGroupActionsMenu(group: folder)
                             .id(folder.objectID)
+                    case .cloudStorageFolder(let folder):
+                        NewGroupButton(
+                            type: .cloudStorageFolder,
+                            parentID: nil,
+                            cloudStorageParent: folder
+                        )
+                        CloudStorageFileHomeActionsMenu(folder: folder)
+                            .id(folder.id)
                     default:
                         EmptyView()
                 }
@@ -700,6 +723,8 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                 group.name ?? String(localizable: .generalUntitled)
             case .localFolder(let folder):
                 folder.name ?? String(localizable: .generalUntitled)
+            case .cloudStorageFolder(let folder):
+                folder.name
             default:
                 nil
         }
@@ -717,6 +742,9 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                 return "/" + components.reversed().joined(separator: "/")
             case .localFolder(let folder):
                 return folder.url?.filePath
+            case .cloudStorageFolder(let folder):
+                let path = CloudStorageDocumentStore.shared.folderPath(for: folder)
+                return "/" + path.map(\.name).joined(separator: "/")
             default:
                 return nil
         }

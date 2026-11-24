@@ -116,7 +116,7 @@ enum WebDAVServiceIdentity {
         "\(displayName(for: serverURL, detectedService: detectedService)) · \(username)"
     }
 
-    private static func service(forAccountDisplayName displayName: String?) -> WebDAVService? {
+    static func service(forAccountDisplayName displayName: String?) -> WebDAVService? {
         guard let displayName else { return nil }
         return WebDAVService.allCases.first { displayName.hasPrefix($0.displayName) }
     }

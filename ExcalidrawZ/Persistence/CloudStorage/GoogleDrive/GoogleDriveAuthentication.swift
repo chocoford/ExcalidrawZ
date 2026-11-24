@@ -16,6 +16,7 @@ protocol GoogleDriveAuthenticating: GoogleDriveAccessTokenProviding {
         accountHint: CloudStorageAccount?,
         folderIDHint: CloudStorageItemID?
     ) async throws -> GoogleDriveFolderAuthorization
+    func authorizeAdditionalItems(for account: CloudStorageAccount) async throws -> CloudStorageAccount
     func signOut(accountID: CloudStorageAccountID) async throws
 }
 

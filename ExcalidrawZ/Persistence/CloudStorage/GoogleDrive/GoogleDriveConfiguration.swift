@@ -46,3 +46,42 @@ struct GoogleDriveConfiguration: Sendable {
         return "com.googleusercontent.apps.\(clientID.dropLast(suffix.count))"
     }
 }
+
+/// Supplemental access must allow selecting existing files as well as folders.
+/// Selecting the linked root again does not grant access to its descendants.
+enum GoogleDrivePickerMode {
+    case none
+    case folder
+    case additionalItems
+
+    var requiresSelection: Bool {
+        switch self {
+            case .none: false
+            case .folder, .additionalItems: true
+        }
+    }
+
+    func queryItems(folderIDHint: String? = nil) -> [URLQueryItem] {
+        switch self {
+            case .none:
+                return []
+            case .folder:
+                var items = [
+                    URLQueryItem(name: "trigger_onepick", value: "true"),
+                    URLQueryItem(name: "allow_folder_selection", value: "true"),
+                    URLQueryItem(name: "allow_multiple", value: "false"),
+                    URLQueryItem(name: "mimetypes", value: "application/vnd.google-apps.folder"),
+                ]
+                if let folderIDHint {
+                    items.append(URLQueryItem(name: "file_ids", value: folderIDHint))
+                }
+                return items
+            case .additionalItems:
+                return [
+                    URLQueryItem(name: "trigger_onepick", value: "true"),
+                    URLQueryItem(name: "allow_folder_selection", value: "true"),
+                    URLQueryItem(name: "allow_multiple", value: "true"),
+                ]
+        }
+    }
+}

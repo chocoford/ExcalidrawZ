@@ -8,6 +8,7 @@ import SwiftyAlert
 import ChocofordUI
 
 struct CloudStorageFolderFileHomeView: View {
+    @AppStorage("googleDriveAccessHintDismissed.v1") private var isGoogleDriveAccessHintDismissed = false
     @Environment(\.alertToast) private var alertToast
     @Environment(FileState.self) private var fileState
 
@@ -53,7 +54,8 @@ struct CloudStorageFolderFileHomeView: View {
             files: files,
             itemWidth: fileItemWidth,
             contentRevision: documentStore.metadataRevision(for: folder.location.id),
-            showsPlaceholder: items?.isEmpty == true
+            showsPlaceholder: items?.isEmpty == true,
+            headerSpacing: fileGridHeaderSpacing
         ) {
             containerHeader
         } background: {
@@ -95,18 +97,49 @@ struct CloudStorageFolderFileHomeView: View {
 
     private var containerHeader: some View {
         VStack(spacing: 30) {
-            header
-                .padding(.horizontal, 20)
-
+#if os(iOS)
             quickActions
                 .padding(.horizontal, 30)
+#endif
+
+            if let errorMessage = browser.errorMessage {
+                HStack {
+                    Spacer()
+                    retryButton(errorMessage: errorMessage)
+#if os(macOS)
+                        .modifier(CloudStorageFileHomeAccessoryButtonModifier())
+#else
+                        .modernButtonStyle(style: .glass, shape: .circle)
+#endif
+                }
+                .padding(.horizontal, 30)
+            }
+
+            if showsGoogleDriveAccessBanner {
+                GoogleDriveAccessBanner(folder: folder) {
+                    isGoogleDriveAccessHintDismissed = true
+                }
+                .padding(.horizontal, 30)
+            }
 
             if !childFolders.isEmpty {
                 childFolderGrid
                     .padding(.horizontal, 30)
             }
         }
-        .padding(.top, parentFolders.isEmpty ? 36 : 15)
+        .padding(.top, 36)
+    }
+
+    private var showsGoogleDriveAccessBanner: Bool {
+        folder.location.providerID == .googleDrive && !isGoogleDriveAccessHintDismissed
+    }
+
+    private var fileGridHeaderSpacing: CGFloat {
+#if os(macOS)
+        showsGoogleDriveAccessBanner || !childFolders.isEmpty || browser.errorMessage != nil ? 30 : 0
+#else
+        30
+#endif
     }
 
     private var items: [CloudStorageItem]? {
@@ -133,62 +166,6 @@ struct CloudStorageFolderFileHomeView: View {
         }
     }
 
-    private var folderPath: [CloudStorageFolderReference] {
-        documentStore.folderPath(for: folder)
-    }
-
-    private var parentFolders: [CloudStorageFolderReference] {
-        Array(folderPath.dropLast())
-    }
-
-    private var header: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 2) {
-                ForEach(parentFolders) { parent in
-                    Button {
-                        fileState.setActiveFile(nil)
-                        fileState.setActiveGroupIfNeeded(.cloudStorageFolder(parent))
-                    } label: {
-                        Text(parent.name)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    .buttonStyle(.text(size: .small))
-
-                    if parent != parentFolders.last {
-                        Image(systemSymbol: .chevronRight)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Spacer()
-            }
-            .font(.caption)
-
-            HStack {
-                Text(folder.name)
-                    .font(.title)
-                Spacer()
-
-                if let errorMessage = browser.errorMessage {
-#if os(macOS)
-                    if #available(macOS 14.0, *) {
-                        retryButton(errorMessage: errorMessage)
-                            .buttonStyle(.accessoryBar)
-                    } else {
-                        retryButton(errorMessage: errorMessage)
-                    }
-#else
-                    retryButton(errorMessage: errorMessage)
-                        .modernButtonStyle(style: .glass, shape: .circle)
-#endif
-                }
-
-                actionsMenu
-            }
-            .padding(.horizontal, 10)
-        }
-    }
-
     private func retryButton(errorMessage: String) -> some View {
         Button {
             Task {
@@ -198,7 +175,7 @@ struct CloudStorageFolderFileHomeView: View {
                     connections: connections
                 )
                 if let errorMessage = browser.errorMessage {
-                    alertToast(CloudStorageError.transport(errorMessage))
+                    alertToast(.init(displayMode: .hud, type: .error(.red), title: errorMessage))
                 }
             }
         } label: {
@@ -207,7 +184,7 @@ struct CloudStorageFolderFileHomeView: View {
         .help(errorMessage)
     }
 
-    @ViewBuilder
+#if os(iOS)
     private var quickActions: some View {
         HStack(spacing: 10) {
             NewFileButton(usesFileHomeOpenTransition: true)
@@ -218,63 +195,32 @@ struct CloudStorageFolderFileHomeView: View {
                 cloudStorageParent: folder
             )
 
+            if editMode.isEditing {
+                Button {
+                    withAnimation(.smooth) {
+                        editMode = .inactive
+                    }
+                    fileState.resetSelections()
+                } label: {
+                    Image(systemSymbol: .checkmark)
+                        .padding(6)
+                }
+                .modernButtonStyle(style: .glassProminent, size: .regular, shape: .circle)
+            } else {
+                actionsMenu
+            }
+
             Spacer()
         }
-#if os(iOS)
         .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
-#else
-        .modifier(FileHomeQuickActionButtonStyleModifier())
-#endif
     }
 
-    @ViewBuilder
     private var actionsMenu: some View {
-        if folder.isLocationRoot {
-            styledActionsMenu(
-                actionsMenuLabel.modifier(
-                    CloudStorageLocationActionsModifier(
-                        location: folder.location,
-                        presentation: .fileHomeMenu
-                    )
-                )
-            )
-        } else {
-            styledActionsMenu(
-                actionsMenuLabel.modifier(
-                    CloudStorageFolderActionsModifier(
-                        folder: folder,
-                        presentation: .fileHomeMenu
-                    )
-                )
-            )
-        }
-    }
-
-    @ViewBuilder
-    private var actionsMenuLabel: some View {
-        ZStack {
-#if os(iOS)
-            Label(.localizable(.generalButtonMore), systemSymbol: .ellipsis)
-                .padding(6)
-#else
-            Image(systemSymbol: .ellipsisCircle)
-#endif
-        }
-    }
-
-    private func styledActionsMenu<MenuContent: View>(
-        _ content: MenuContent
-    ) -> some View {
-        content
-            .menuIndicator(.hidden)
-#if os(iOS)
+        CloudStorageFileHomeActionsMenu(folder: folder)
             .modernButtonStyle(style: .glass, shape: .circle)
-            .labelStyle(.iconOnly)
-#else
-            .modifier(CloudStorageFileHomeAccessoryButtonModifier())
             .fixedSize()
-#endif
     }
+#endif
 
     @ViewBuilder
     private var childFolderGrid: some View {
@@ -348,6 +294,40 @@ struct CloudStorageFolderFileHomeView: View {
                 alertToast(error)
             }
         }
+    }
+}
+
+/// Shared by the macOS toolbar and the iOS file-home action row.
+struct CloudStorageFileHomeActionsMenu: View {
+    let folder: CloudStorageFolderReference
+
+    var body: some View {
+        SwiftUI.Group {
+            if folder.isLocationRoot {
+                menuLabel.modifier(
+                    CloudStorageLocationActionsModifier(
+                        location: folder.location,
+                        presentation: .fileHomeMenu
+                    )
+                )
+            } else {
+                menuLabel.modifier(
+                    CloudStorageFolderActionsModifier(
+                        folder: folder,
+                        presentation: .fileHomeMenu
+                    )
+                )
+            }
+        }
+        .menuIndicator(.hidden)
+        .labelStyle(.iconOnly)
+    }
+
+    private var menuLabel: some View {
+        Label(.localizable(.generalButtonMore), systemSymbol: .ellipsis)
+#if os(iOS)
+            .padding(6)
+#endif
     }
 }
 

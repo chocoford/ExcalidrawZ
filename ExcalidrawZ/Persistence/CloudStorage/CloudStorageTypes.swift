@@ -573,6 +573,7 @@ enum CloudStorageError: LocalizedError, Equatable, Sendable {
     case itemNotFound(CloudStorageItemID)
     case itemNameAlreadyExists(String?)
     case invalidOneDriveItemName
+    case remoteItemPendingSync
     case conflict
     case permissionDenied(CloudStorageOperation)
     /// The provider can no longer continue from the persisted change cursor.
@@ -600,6 +601,8 @@ enum CloudStorageError: LocalizedError, Equatable, Sendable {
                 return "An item with this name already exists in this folder."
             case .invalidOneDriveItemName:
                 return String(localizable: .cloudStorageOneDriveInvalidItemName)
+            case .remoteItemPendingSync:
+                return String(localizable: .cloudStorageRemoteItemPendingSync)
             case .conflict:
                 return "The cloud storage item changed before the operation completed."
             case .permissionDenied(let operation):

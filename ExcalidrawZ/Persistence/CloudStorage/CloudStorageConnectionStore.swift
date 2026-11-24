@@ -225,6 +225,37 @@ final class CloudStorageConnectionStore {
         return selection
     }
 
+    /// Adds per-file Google Drive grants without replacing the linked root.
+    func authorizeAdditionalGoogleDriveItems(in location: CloudStorageLocation) async throws {
+        guard location.providerID == .googleDrive else {
+            throw CloudStorageError.unsupportedOperation(.authorize)
+        }
+        guard locations.contains(location),
+              !connectingProviderIDs.contains(location.providerID) else {
+            throw CloudStorageError.authorizationCancelled
+        }
+        connectingProviderIDs.insert(location.providerID)
+        defer { connectingProviderIDs.remove(location.providerID) }
+
+        let provider = try await registry.provider(withID: location.providerID)
+        guard let googleDrive = provider as? GoogleDriveCloudStorageProvider else {
+            throw CloudStorageError.unsupportedOperation(.authorize)
+        }
+        let accountHint = account(for: location) ?? CloudStorageAccount(
+            providerID: location.providerID,
+            id: location.accountID,
+            displayName: location.displayName,
+            emailAddress: nil
+        )
+        let account = try await googleDrive.authorizeAdditionalItems(for: accountHint)
+        try Task.checkCancellation()
+        guard locations.contains(location) else {
+            throw CloudStorageError.authorizationCancelled
+        }
+        storeConnectedAccount(account)
+        clearAuthenticationRequirement(for: location)
+    }
+
     /// Validates a persisted location before a user-initiated operation. A
     /// missing account or an expired token starts the provider's interactive
     /// authorization flow, while background synchronization remains silent.

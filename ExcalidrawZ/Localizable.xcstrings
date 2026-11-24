@@ -1,6 +1,458 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "cloudStorageGoogleDriveAuthorizeMoreAction": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authorize More…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "继续授权…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繼續授權…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アクセスを追加…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "추가 접근 권한 허용…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiteren Zugriff erlauben…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autorizar más…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autoriser davantage…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autorizza altri elementi…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meer toegang toestaan…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przyznaj dodatkowy dostęp…"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autorizar mais…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Предоставить дополнительный доступ…"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "منح وصول إضافي…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "और ऐक्सेस की अनुमति दें…"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "อนุญาตการเข้าถึงเพิ่มเติม…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha Fazla Erişime İzin Ver…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cấp thêm quyền truy cập…"
+          }
+        }
+      }
+    },
+    "cloudStorageGoogleDriveAuthorizeMore": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't find your files?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有看到想要的文件？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "找不到想要的檔案？"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファイルが見つかりませんか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "파일이 보이지 않나요?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dateien nicht gefunden?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿No encuentras tus archivos?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous ne trouvez pas vos fichiers ?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non trovi i tuoi file?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kun je je bestanden niet vinden?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie widzisz swoich plików?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não encontra os seus ficheiros?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не видите нужные файлы?"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا تجد ملفاتك؟"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अपनी फ़ाइलें नहीं दिख रही हैं?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่พบไฟล์ที่ต้องการใช่ไหม"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyalarınızı göremiyor musunuz?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thấy tệp bạn cần?"
+          }
+        }
+      }
+    },
+    "cloudStorageGoogleDriveAccessExplanation": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive requires you to grant access to existing files and subfolders separately."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive 需要为已有文件和子文件夹单独授权。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive 需要為現有檔案與子資料夾單獨授權。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive の既存のファイルやサブフォルダには、個別にアクセスを許可する必要があります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive에 이미 있는 파일과 하위 폴더에는 각각 접근 권한을 부여해야 합니다."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für vorhandene Dateien und Unterordner in Google Drive musst du den Zugriff separat erlauben."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En Google Drive debes autorizar por separado el acceso a los archivos y subcarpetas existentes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dans Google Drive, vous devez autoriser séparément l’accès aux fichiers et sous-dossiers existants."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Google Drive devi concedere separatamente l’accesso ai file e alle sottocartelle esistenti."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Google Drive moet je afzonderlijk toegang geven tot bestaande bestanden en submappen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na Dysku Google musisz osobno zezwolić na dostęp do istniejących plików i podfolderów."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Google Drive, tens de autorizar separadamente o acesso aos ficheiros e às subpastas existentes."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На Google Диске нужно отдельно предоставить доступ к существующим файлам и подпапкам."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتطلب Google Drive منح إذن منفصل للوصول إلى الملفات والمجلدات الفرعية الموجودة."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive में पहले से मौजूद फ़ाइलों और सबफ़ोल्डरों के लिए अलग से अनुमति देनी होगी।"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ใน Google Drive คุณต้องให้สิทธิ์เข้าถึงไฟล์และโฟลเดอร์ย่อยที่มีอยู่แยกต่างหาก"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive’da mevcut dosyalara ve alt klasörlere erişim iznini ayrı ayrı vermen gerekir."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trong Google Drive, bạn cần cấp quyền riêng cho các tệp và thư mục con hiện có."
+          }
+        }
+      }
+    },
+    "cloudStorageGoogleDriveUseLinkedAccount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to the Google account used for this linked folder."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请登录关联此文件夹时使用的 Google 账号。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請登入連結此資料夾時使用的 Google 帳戶。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このフォルダの連携に使用した Google アカウントでログインしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 폴더를 연결할 때 사용한 Google 계정으로 로그인하세요."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich mit dem Google-Konto an, das für diesen verknüpften Ordner verwendet wurde."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión con la cuenta de Google utilizada para vincular esta carpeta."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous au compte Google utilisé pour lier ce dossier."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi con l’account Google utilizzato per collegare questa cartella."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log in met het Google-account waarmee deze map is gekoppeld."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się na konto Google użyte do połączenia tego folderu."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicie sessão com a conta Google utilizada para associar esta pasta."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Войдите в аккаунт Google, использованный для подключения этой папки."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سجّل الدخول إلى حساب Google المستخدم لربط هذا المجلد."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस फ़ोल्डर को लिंक करने के लिए इस्तेमाल किए गए Google खाते से साइन इन करें।"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลงชื่อเข้าใช้บัญชี Google ที่ใช้เชื่อมโยงโฟลเดอร์นี้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu klasörü bağlamak için kullanılan Google hesabıyla oturum açın."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng nhập bằng tài khoản Google đã dùng để liên kết thư mục này."
+          }
+        }
+      }
+    },
     "aiBYOKRequiredKey": {
       "comment": "Compact BYOK settings footer or field placeholder; edits are saved automatically.",
       "extractionState": "manual",
@@ -9228,6 +9680,29 @@
         }
       }
     },
+    "cloudStorageRemoteItemPendingSync": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This item will have a cloud link once it syncs."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此项目同步后即可使用云端链接。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此項目同步後即可使用雲端連結。"
+          }
+        }
+      }
+    },
     "cloudStorageContextMenuCopyLink": {
       "extractionState": "manual",
       "localizations": {
@@ -9450,6 +9925,1602 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hiển thị trong %@"
+          }
+        }
+      }
+    },
+    "cloudStorageDeleteBoxMessage": {
+      "comment": "Cloud-storage deletion confirmation; recovery takes place on the provider website. Folder wording applies to its entire contents.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Box may move items to Trash or permanently delete them, depending on your account’s settings."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Box 会根据账户设置，将项目移至回收站或永久删除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Box 會根據帳戶設定，將項目移至垃圾桶或永久刪除。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قد ينقل Box العناصر إلى سلة المهملات أو يحذفها نهائيًا، حسب إعدادات حسابك."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je nach Kontoeinstellungen verschiebt Box die Objekte in den Papierkorb oder löscht sie endgültig."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Box puede mover los elementos a la papelera o eliminarlos permanentemente, según la configuración de tu cuenta."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selon les paramètres de votre compte, Box peut placer les éléments dans la corbeille ou les supprimer définitivement."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपके खाते की सेटिंग के अनुसार Box आइटम को ट्रैश में भेज सकता है या स्थायी रूप से मिटा सकता है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Box può spostare gli elementi nel cestino o eliminarli definitivamente, in base alle impostazioni del tuo account."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Box のアカウント設定に応じて、項目はゴミ箱に移動されるか、完全に削除されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계정 설정에 따라 Box가 항목을 휴지통으로 이동하거나 영구 삭제할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afhankelijk van je accountinstellingen verplaatst Box de onderdelen naar de prullenmand of verwijdert ze definitief."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W zależności od ustawień konta Box może przenieść elementy do kosza lub trwale je usunąć."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Box pode mover os itens para a lixeira ou excluí-los permanentemente, dependendo das configurações da sua conta."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В зависимости от настроек аккаунта Box может переместить объекты в корзину или удалить их безвозвратно."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Box อาจย้ายรายการไปที่ถังขยะหรือลบอย่างถาวร ขึ้นอยู่กับการตั้งค่าบัญชีของคุณ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Box, hesap ayarlarınıza bağlı olarak öğeleri çöp kutusuna taşıyabilir veya kalıcı olarak silebilir."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Box có thể chuyển các mục vào thùng rác hoặc xóa vĩnh viễn, tùy theo cài đặt tài khoản."
+          }
+        }
+      }
+    },
+    "cloudStorageDeleteDropboxMessage": {
+      "comment": "Cloud-storage deletion confirmation; recovery takes place on the provider website. Folder wording applies to its entire contents.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Items will be moved to Deleted files in Dropbox. You can restore them on dropbox.com within your account’s retention period."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目将移至 Dropbox 的“已删除文件”。您可以在账户的保留期限内前往 dropbox.com 恢复。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目將移至 Dropbox 的「已刪除檔案」。您可以在帳戶的保留期限內前往 dropbox.com 還原。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ستُنقل العناصر إلى «الملفات المحذوفة» في Dropbox. يمكنك استعادتها من dropbox.com خلال فترة الاحتفاظ الخاصة بحسابك."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Objekte werden in „Gelöschte Dateien“ bei Dropbox verschoben. Sie können sie innerhalb der Aufbewahrungsfrist Ihres Kontos auf dropbox.com wiederherstellen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los elementos se moverán a «Archivos eliminados» de Dropbox. Puedes restaurarlos en dropbox.com durante el período de retención de tu cuenta."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les éléments seront déplacés vers « Fichiers supprimés » dans Dropbox. Vous pourrez les restaurer sur dropbox.com pendant la durée de conservation de votre compte."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आइटम Dropbox में “मिटाई गई फ़ाइलें” में भेजे जाएँगे। आप उन्हें अपने खाते की प्रतिधारण अवधि के भीतर dropbox.com से रीस्टोर कर सकते हैं।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli elementi verranno spostati in “File eliminati” su Dropbox. Potrai ripristinarli su dropbox.com entro il periodo di conservazione del tuo account."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目は Dropbox の「削除したファイル」に移動されます。アカウントの保存期間内であれば、dropbox.com から復元できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "항목이 Dropbox의 ‘삭제된 파일’로 이동됩니다. 계정의 보관 기간 내에 dropbox.com에서 복원할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De onderdelen worden naar ‘Verwijderde bestanden’ in Dropbox verplaatst. Je kunt ze binnen de bewaartermijn van je account op dropbox.com herstellen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elementy zostaną przeniesione do „Usuniętych plików” w Dropbox. Można je przywrócić na dropbox.com w okresie przechowywania określonym dla konta."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os itens serão movidos para “Arquivos excluídos” no Dropbox. Você pode restaurá-los em dropbox.com durante o período de retenção da sua conta."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Объекты будут перемещены в раздел «Удалённые файлы» Dropbox. Их можно восстановить на dropbox.com в течение срока хранения, установленного для аккаунта."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รายการจะถูกย้ายไปที่ “ไฟล์ที่ลบแล้ว” ใน Dropbox คุณสามารถกู้คืนได้ที่ dropbox.com ภายในระยะเวลาเก็บรักษาของบัญชี"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öğeler Dropbox’taki “Silinen dosyalar” bölümüne taşınacak. Hesabınızın saklama süresi içinde dropbox.com üzerinden geri yükleyebilirsiniz."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các mục sẽ được chuyển vào “Tệp đã xóa” trong Dropbox. Bạn có thể khôi phục trên dropbox.com trong thời hạn lưu giữ của tài khoản."
+          }
+        }
+      }
+    },
+    "cloudStorageDeleteFolderContentsMessage": {
+      "comment": "Cloud-storage deletion confirmation; recovery takes place on the provider website. Folder wording applies to its entire contents.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This includes all files and subfolders."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包括文件夹内的所有文件和子文件夹。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包括檔案夾內的所有檔案和子檔案夾。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يشمل ذلك جميع الملفات والمجلدات الفرعية."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dies umfasst alle Dateien und Unterordner."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esto incluye todos los archivos y las subcarpetas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cela inclut tous les fichiers et sous-dossiers."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इसमें सभी फ़ाइलें और सबफ़ोल्डर शामिल हैं।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sono inclusi tutti i file e le sottocartelle."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "すべてのファイルとサブフォルダが含まれます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "모든 파일과 하위 폴더가 포함됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit omvat alle bestanden en submappen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obejmuje to wszystkie pliki i podfoldery."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isso inclui todos os arquivos e subpastas."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это включает все файлы и вложенные папки."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รวมถึงไฟล์และโฟลเดอร์ย่อยทั้งหมด"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm dosyalar ve alt klasörler buna dahildir."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bao gồm tất cả các tệp và thư mục con."
+          }
+        }
+      }
+    },
+    "cloudStorageDeleteItemTitle": {
+      "comment": "Cloud-storage deletion confirmation; recovery takes place on the provider website. Folder wording applies to its entire contents.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete “%@”?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要删除“%@”吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要刪除「%@」嗎？"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هل تريد حذف «%@»؟"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ löschen?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar «%@»?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer « %@ » ?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” को मिटाएँ?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminare “%@”?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%@」を削除しますか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@”을(를) 삭제할까요?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‘%@’ verwijderen?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć „%@”?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excluir “%@”?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить «%@»?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลบ “%@” หรือไม่?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” silinsin mi?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa “%@”?"
+          }
+        }
+      }
+    },
+    "cloudStorageDeleteItemsTitle": {
+      "comment": "Cloud-storage deletion confirmation; recovery takes place on the provider website. Folder wording applies to its entire contents.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete %d items?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定要删除 %d 个项目吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要刪除 %d 個項目嗎？"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هل تريد حذف العناصر المحددة (%d)؟"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausgewählte Objekte (%d) löschen?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar %d elementos?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer %d éléments ?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "चुने गए आइटम (%d) मिटाएँ?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminare %d elementi?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 個の項目を削除しますか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "항목 %d개를 삭제할까요?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d onderdelen verwijderen?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć zaznaczone elementy (%d)?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excluir %d itens?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить выбранные объекты (%d)?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลบ %d รายการหรือไม่?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçili öğeler (%d) silinsin mi?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa %d mục?"
+          }
+        }
+      }
+    },
+    "cloudStorageDeleteProviderMessage": {
+      "comment": "Cloud-storage deletion confirmation; recovery takes place on the provider website. Folder wording applies to its entire contents.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Items will be deleted from cloud storage. Recovery depends on the provider’s policies and is not guaranteed."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目将从云端存储删除。能否恢复取决于服务商的政策，无法保证恢复。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目將從雲端儲存空間刪除。能否還原取決於服務商的政策，無法保證還原。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ستُحذف العناصر من التخزين السحابي. تعتمد الاستعادة على سياسات مزوّد الخدمة وليست مضمونة."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Objekte werden aus dem Cloud-Speicher gelöscht. Eine Wiederherstellung hängt von den Richtlinien des Anbieters ab und ist nicht garantiert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los elementos se eliminarán del almacenamiento en la nube. La recuperación depende de las políticas del proveedor y no está garantizada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les éléments seront supprimés du stockage cloud. La récupération dépend des règles du fournisseur et n’est pas garantie."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आइटम क्लाउड स्टोरेज से मिटा दिए जाएँगे। रिकवरी प्रदाता की नीतियों पर निर्भर करती है और इसकी गारंटी नहीं है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli elementi verranno eliminati dall’archivio cloud. Il recupero dipende dalle politiche del fornitore e non è garantito."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目はクラウドストレージから削除されます。復元できるかどうかはプロバイダーのポリシーによって異なり、保証されません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "항목이 클라우드 저장소에서 삭제됩니다. 복구는 제공업체의 정책에 따라 달라지며 보장되지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De onderdelen worden uit de cloudopslag verwijderd. Herstel hangt af van het beleid van de aanbieder en is niet gegarandeerd."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elementy zostaną usunięte z chmury. Możliwość odzyskania zależy od zasad dostawcy i nie jest gwarantowana."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os itens serão excluídos do armazenamento em nuvem. A recuperação depende das políticas do provedor e não é garantida."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Объекты будут удалены из облачного хранилища. Восстановление зависит от правил провайдера и не гарантируется."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รายการจะถูกลบออกจากที่เก็บข้อมูลบนคลาวด์ การกู้คืนขึ้นอยู่กับนโยบายของผู้ให้บริการและไม่รับประกันว่าจะกู้คืนได้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öğeler bulut depolamadan silinecek. Kurtarma olanağı sağlayıcının politikalarına bağlıdır ve garanti edilmez."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các mục sẽ bị xóa khỏi bộ nhớ đám mây. Khả năng khôi phục tùy thuộc vào chính sách của nhà cung cấp và không được bảo đảm."
+          }
+        }
+      }
+    },
+    "cloudStorageDeleteTrashAction": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نقل إلى سلة المهملات"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In den Papierkorb verschieben"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move to Trash"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mover a la Papelera"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déplacer vers la corbeille"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कचरे में डालें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sposta nel cestino"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ゴミ箱に移動"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "휴지통으로 이동"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verplaats naar Prullenmand"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przenieś do kosza"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mover para a Lixeira"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переместить в корзину"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ย้ายไปยังถังขยะ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çöp Kutusuna Taşı"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di chuyển vào Thùng rác"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至回收站"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至垃圾桶"
+          }
+        }
+      },
+      "comment": "Cloud-provider recycle-bin action, shared by OneDrive and Google Drive."
+    },
+    "cloudStorageDeleteTrashItemTitle": {
+      "comment": "Cloud-storage deletion confirmation; recovery takes place on the provider website. Folder wording applies to its entire contents.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move “%@” to Trash?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将“%@”移至回收站？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要將「%@」移至垃圾桶嗎？"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هل تريد نقل «%@» إلى سلة المهملات؟"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ in den Papierkorb verschieben?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Mover «%@» a la papelera?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Placer « %@ » dans la corbeille ?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” को ट्रैश में ले जाएँ?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spostare “%@” nel cestino?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%@」をゴミ箱に移動しますか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@”을(를) 휴지통으로 이동할까요?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‘%@’ naar de prullenmand verplaatsen?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przenieść „%@” do kosza?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mover “%@” para a lixeira?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переместить «%@» в корзину?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ย้าย “%@” ไปที่ถังขยะหรือไม่?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” çöp kutusuna taşınsın mı?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển “%@” vào thùng rác?"
+          }
+        }
+      }
+    },
+    "cloudStorageDeleteTrashItemsTitle": {
+      "comment": "Cloud-storage deletion confirmation; recovery takes place on the provider website. Folder wording applies to its entire contents.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move %d items to Trash?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将 %d 个项目移至回收站？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要將 %d 個項目移至垃圾桶嗎？"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هل تريد نقل العناصر المحددة (%d) إلى سلة المهملات؟"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausgewählte Objekte (%d) in den Papierkorb verschieben?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Mover %d elementos a la papelera?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Placer %d éléments dans la corbeille ?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "चुने गए आइटम (%d) ट्रैश में ले जाएँ?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spostare %d elementi nel cestino?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 個の項目をゴミ箱に移動しますか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "항목 %d개를 휴지통으로 이동할까요?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d onderdelen naar de prullenmand verplaatsen?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przenieść zaznaczone elementy (%d) do kosza?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mover %d itens para a lixeira?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переместить выбранные объекты (%d) в корзину?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ย้าย %d รายการไปที่ถังขยะหรือไม่?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçili öğeler (%d) çöp kutusuna taşınsın mı?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển %d mục vào thùng rác?"
+          }
+        }
+      }
+    },
+    "cloudStorageDeleteTrashMessage": {
+      "comment": "Cloud-storage deletion confirmation; recovery takes place on the provider website. Folder wording applies to its entire contents.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Items will be moved to the trash in %@. You can restore them on its website within the retention period."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目将移至 %@ 的回收站。您可以在保留期限内前往其网站恢复。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目將移至 %@ 的垃圾桶。您可以在保留期限內前往其網站還原。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ستُنقل العناصر إلى سلة المهملات في %@. يمكنك استعادتها من موقع الخدمة خلال فترة الاحتفاظ."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Objekte werden in den Papierkorb bei %@ verschoben. Sie können sie innerhalb der Aufbewahrungsfrist auf der Website des Dienstes wiederherstellen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los elementos se moverán a la papelera de %@. Puedes restaurarlos en su sitio web durante el período de retención."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les éléments seront placés dans la corbeille sur %@. Vous pourrez les restaurer sur son site web pendant la durée de conservation."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आइटम %@ के ट्रैश में भेजे जाएँगे। आप उन्हें सेवा की वेबसाइट से प्रतिधारण अवधि के भीतर रीस्टोर कर सकते हैं।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli elementi verranno spostati nel cestino di %@. Potrai ripristinarli dal sito web del servizio entro il periodo di conservazione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目は %@ のゴミ箱に移動されます。保存期間内であれば、サービスのウェブサイトから復元できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "항목이 %@의 휴지통으로 이동됩니다. 보관 기간 내에 해당 서비스의 웹사이트에서 복원할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De onderdelen worden naar de prullenmand van %@ verplaatst. Je kunt ze binnen de bewaartermijn op de website van de dienst herstellen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elementy zostaną przeniesione do kosza w %@. Można je przywrócić na stronie usługi w okresie przechowywania."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os itens serão movidos para a lixeira do %@. Você pode restaurá-los no site do serviço durante o período de retenção."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Объекты будут перемещены в корзину %@. Их можно восстановить на сайте сервиса в течение срока хранения."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รายการจะถูกย้ายไปที่ถังขยะของ %@ คุณสามารถกู้คืนได้บนเว็บไซต์ของบริการภายในระยะเวลาเก็บรักษา"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öğeler %@ üzerindeki çöp kutusuna taşınacak. Saklama süresi içinde hizmetin web sitesinden geri yükleyebilirsiniz."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các mục sẽ được chuyển vào thùng rác của %@. Bạn có thể khôi phục trên trang web của dịch vụ trong thời hạn lưu giữ."
+          }
+        }
+      }
+    },
+    "cloudStorageDeleteWebDAVMessage": {
+      "comment": "Cloud-storage deletion confirmation; recovery takes place on the provider website. Folder wording applies to its entire contents.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Items will be deleted from the server. Recovery depends on the server’s settings and may not be available."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目将从服务器删除。能否恢复取决于服务器设置，删除后可能无法恢复。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目將從伺服器刪除。能否還原取決於伺服器設定，刪除後可能無法還原。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ستُحذف العناصر من الخادم. تعتمد إمكانية الاستعادة على إعدادات الخادم وقد لا تكون متاحة."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Objekte werden vom Server gelöscht. Ob eine Wiederherstellung möglich ist, hängt von den Servereinstellungen ab."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los elementos se eliminarán del servidor. La recuperación depende de su configuración y puede no estar disponible."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les éléments seront supprimés du serveur. La récupération dépend des paramètres du serveur et peut être impossible."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आइटम सर्वर से मिटा दिए जाएँगे। रिकवरी सर्वर की सेटिंग पर निर्भर करती है और संभव नहीं भी हो सकती है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli elementi verranno eliminati dal server. Il recupero dipende dalle impostazioni del server e potrebbe non essere disponibile."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "項目はサーバーから削除されます。復元できるかどうかはサーバーの設定によって異なり、復元できない場合があります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "항목이 서버에서 삭제됩니다. 복구 가능 여부는 서버 설정에 따라 달라지며, 복구할 수 없을 수도 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De onderdelen worden van de server verwijderd. Herstel hangt af van de serverinstellingen en is mogelijk niet beschikbaar."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elementy zostaną usunięte z serwera. Możliwość ich odzyskania zależy od ustawień serwera i może być niedostępna."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os itens serão excluídos do servidor. A recuperação depende das configurações do servidor e pode não estar disponível."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Объекты будут удалены с сервера. Возможность восстановления зависит от настроек сервера и может отсутствовать."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รายการจะถูกลบออกจากเซิร์ฟเวอร์ การกู้คืนขึ้นอยู่กับการตั้งค่าของเซิร์ฟเวอร์และอาจไม่สามารถทำได้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öğeler sunucudan silinecek. Kurtarma olanağı sunucunun ayarlarına bağlıdır ve kullanılamayabilir."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các mục sẽ bị xóa khỏi máy chủ. Khả năng khôi phục tùy thuộc vào cài đặt máy chủ và có thể không khả dụng."
+          }
+        }
+      }
+    },
+    "cloudStorageOpenDeletedFilesInBrowser": {
+      "comment": "Cloud storage menu opens the provider’s recycle bin website in the default browser; Dropbox calls this Deleted files.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Deleted Files in Browser"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在浏览器中打开已删除文件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在瀏覽器中開啟已刪除的檔案"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فتح الملفات المحذوفة في المتصفح"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gelöschte Dateien im Browser öffnen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir archivos eliminados en el navegador"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir les fichiers supprimés dans le navigateur"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ब्राउज़र में हटाई गई फ़ाइलें खोलें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri i file eliminati nel browser"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブラウザで削除済みファイルを開く"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "브라우저에서 삭제된 파일 열기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijderde bestanden openen in browser"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz usunięte pliki w przeglądarce"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir arquivos excluídos no navegador"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть удалённые файлы в браузере"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิดไฟล์ที่ลบในเบราว์เซอร์"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silinen Dosyaları Tarayıcıda Aç"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở tệp đã xóa trong trình duyệt"
+          }
+        }
+      }
+    },
+    "cloudStorageOpenTrashInBrowser": {
+      "comment": "Cloud storage menu opens the provider’s recycle bin website in the default browser; Dropbox calls this Deleted files.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Trash in Browser"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在浏览器中打开回收站"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在瀏覽器中開啟垃圾桶"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فتح سلة المهملات في المتصفح"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Papierkorb im Browser öffnen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir papelera en el navegador"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir la corbeille dans le navigateur"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ब्राउज़र में ट्रैश खोलें"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri il cestino nel browser"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ブラウザでゴミ箱を開く"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "브라우저에서 휴지통 열기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prullenbak openen in browser"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz kosz w przeglądarce"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir lixeira no navegador"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть корзину в браузере"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิดถังขยะในเบราว์เซอร์"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çöp Kutusunu Tarayıcıda Aç"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở thùng rác trong trình duyệt"
+          }
+        }
+      }
+    },
+    "cloudStorageTrashWebUnavailable": {
+      "comment": "Cloud storage menu opens the provider’s recycle bin website in the default browser; Dropbox calls this Deleted files.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The recycle bin website could not be determined for this connection."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法确定此连接的网页回收站地址。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法確定此連線的網頁垃圾桶網址。"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر تحديد عنوان صفحة سلة المهملات لهذا الاتصال."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Adresse des Papierkorbs für diese Verbindung konnte nicht ermittelt werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo determinar la dirección web de la papelera de esta conexión."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de déterminer l’adresse de la corbeille pour cette connexion."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस कनेक्शन के ट्रैश का वेब पता निर्धारित नहीं किया जा सका।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile determinare l’indirizzo web del cestino per questa connessione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この接続のゴミ箱のウェブアドレスを特定できませんでした。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 연결의 휴지통 웹 주소를 확인할 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het webadres van de prullenbak voor deze verbinding kon niet worden bepaald."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można ustalić adresu strony kosza dla tego połączenia."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível determinar o endereço da lixeira desta conexão."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось определить адрес веб-корзины для этого подключения."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่สามารถระบุที่อยู่เว็บของถังขยะสำหรับการเชื่อมต่อนี้ได้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bağlantının çöp kutusu web adresi belirlenemedi."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể xác định địa chỉ web của thùng rác cho kết nối này."
           }
         }
       }
