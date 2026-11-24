@@ -39,7 +39,6 @@ struct AISettingsView: View {
     @State var isPresentingMCPConnectionGuide: Bool = false
     @State var isPresentingMCPServiceModeHelp: Bool = false
     @State var isPresentingMCPBasicReadMeEditor: Bool = false
-    @State var mcpBasicReadMeDraft: String = ""
     @State var selectedMCPConnectionGuideTab: MCPConnectionGuideTab = .claude
     @State var mcpServiceModePickerID = UUID()
     @State var pendingAIServiceMode: AIServiceMode?
