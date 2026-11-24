@@ -26,6 +26,15 @@ extension WhatsNewView {
                 .resizable()
                 .symbolRenderingMode(.hierarchical)
         }
+
+        WhatsNewFeatureRow(
+            title: .localizable(.whatsNewCollapsibleControlsTitle),
+            description: .localizable(.whatsNewCollapsibleControlsDescription),
+        ) {
+            Image(systemName: "chevron.up.chevron.down")
+                .resizable()
+                .symbolRenderingMode(.hierarchical)
+        }
     }
 
     @ViewBuilder
@@ -37,25 +46,6 @@ extension WhatsNewView {
                         version: Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
                     ) {
                         featuresContent()
-                    }
-                    WhatsNewVersionSection(version: "v2.6.0") {
-                        WhatsNewFeatureRow(
-                            title: .localizable(.whatsNewBYOKTitle),
-                            description: .localizable(.whatsNewBYOKDescription),
-                        ) {
-                            Image(systemName: "key")
-                                .resizable()
-                                .symbolRenderingMode(.hierarchical)
-                        }
-
-                        WhatsNewFeatureRow(
-                            title: .localizable(.whatsNewCollapsibleControlsTitle),
-                            description: .localizable(.whatsNewCollapsibleControlsDescription),
-                        ) {
-                            Image(systemName: "chevron.up.chevron.down")
-                                .resizable()
-                                .symbolRenderingMode(.hierarchical)
-                        }
                     }
                     WhatsNewVersionSection(version: "v2.5.1") {
                         WhatsNewFeatureRow(
