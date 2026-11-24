@@ -67,6 +67,7 @@ class ExcalidrawCore: NSObject {
     var canRedo = false
     private(set) var aiCameraSession = AICameraSessionInfo()
     private(set) var mathImageEditRequest: MathImageEditRequest?
+    var nativeFileDrop: NativeFileDropSession?
     
     let documentSyncController = ExcalidrawDocumentSyncController()
     let currentFileSaveStreamBridge = ExcalidrawCore.CurrentFileSaveStreamBridge()

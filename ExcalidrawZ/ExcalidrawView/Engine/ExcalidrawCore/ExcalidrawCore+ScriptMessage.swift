@@ -21,6 +21,7 @@ protocol AnyExcalidrawZMessage: Codable {
 typealias Collaborator = ExcalidrawCore.CollaboratorsChangedMessage.Collobrator
 
 extension ExcalidrawCore: WKScriptMessageHandler {
+    @MainActor
     func userContentController(
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
@@ -30,7 +31,40 @@ extension ExcalidrawCore: WKScriptMessageHandler {
             return
         }
 
+        let eventName = scriptMessageEventName(message.body)
+        let eventType = ExcalidrawZEventType(rawValue: eventName)
+        let isDirectDropPayload = eventType == .onDropExcalidrawFile || eventType == .onDropPDF
+        let isFileDropPayload = isDirectDropPayload || eventType == .onLoadLibrary
+        let payload = isFileDropPayload ? (message.body as? [String: Any])?["data"] as? [String: Any] : nil
+        let dropID = isFileDropPayload ? payload?["dropId"] as? String : nil
+        if let dropID, !isAwaitingNativeFileDropPayload(dropID) { return }
+        if isDirectDropPayload || dropID != nil || eventType == .onFileDropStarted || eventType == .onFileDropFinished {
+            guard message.frameInfo.isMainFrame else { return }
+        }
+
         do {
+            // These payloads already contain strings and numbers only. Avoid
+            // round-tripping a whole dropped file through JSON on the main actor.
+            if eventType == .onDropExcalidrawFile,
+               let fileName = payload?["fileName"] as? String,
+               let fileSize = payload?["fileSize"] as? Int,
+               let dataString = payload?["dataString"] as? String {
+                receiveDroppedDrawing(.init(fileName: fileName, fileSize: fileSize, dataString: dataString, dropId: dropID))
+                return
+            }
+            if eventType == .onDropPDF,
+               let fileName = payload?["fileName"] as? String,
+               let fileSize = payload?["fileSize"] as? Double,
+               let base64Data = payload?["base64Data"] as? String,
+               let sceneX = payload?["sceneX"] as? Double,
+               let sceneY = payload?["sceneY"] as? Double,
+               sceneX.isFinite, sceneY.isFinite {
+                receiveDroppedPDF(.init(
+                    fileName: fileName, fileSize: fileSize, base64Data: base64Data,
+                    sceneX: sceneX, sceneY: sceneY, dropId: dropID
+                ))
+                return
+            }
             let sanitization = sanitizeScriptMessageBody(message.body)
 #if DEBUG
             if !sanitization.nonFiniteNumberPaths.isEmpty {
@@ -39,14 +73,23 @@ extension ExcalidrawCore: WKScriptMessageHandler {
 #endif
             let sanitizedBody = sanitization.value
             let data = try JSONSerialization.data(withJSONObject: sanitizedBody)
-            let message = try JSONDecoder().decode(ExcalidrawZMessage.self, from: data)
+            if eventType == .onLoadLibrary, let dropID {
+                receiveDroppedLibrary(data, dropID: dropID)
+                return
+            }
+            let event = try JSONDecoder().decode(ExcalidrawZMessage.self, from: data)
             
-            switch message {
+            switch event {
                 case .onload:
                     DispatchQueue.main.async {
                         self.isDocumentLoaded = true
                     }
                     Task { @MainActor in
+                        do {
+                            try await self.enableNativeFileDropNotifications()
+                        } catch {
+                            self.logger.warning("Failed to enable native file drop notifications: \(error)")
+                        }
                         do {
                             try await self.enableNativePaste()
                         } catch {
@@ -168,8 +211,16 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                         }
                     }
 
+                case .onFileDropStarted(let message):
+                    startNativeFileDrop(message.data)
+                case .onFileDropFinished(let message):
+                    finishNativeFileDrop(message.data)
+
+                case .onDropExcalidrawFile(let message):
+                    receiveDroppedDrawing(message.data)
+
                 case .onDropPDF(let message):
-                    self.handleDropPDF(message.data)
+                    receiveDroppedPDF(message.data)
 
                 case .openPDFNatively(let message):
                     self.handleOpenPDFNatively(message.data)
@@ -215,8 +266,16 @@ extension ExcalidrawCore: WKScriptMessageHandler {
                     break
             }
         } catch {
-            self.logger.error("[WKScriptMessageHandler] Decode received message failed. Raw data:\n\(String(describing: message.body))")
-            self.publishError(error)
+            if let dropID {
+                logger.warning("[WKScriptMessageHandler] Invalid file drop payload for \(eventName)")
+                failNativeFileDrop(dropID, error: error)
+            } else if eventName == ExcalidrawZEventType.onDropExcalidrawFile.rawValue {
+                logger.warning("[WKScriptMessageHandler] Invalid drawing drop message")
+                publishError(DroppedDrawing.ImportError.invalidDrawing)
+            } else {
+                logger.error("[WKScriptMessageHandler] Decode received message failed. Raw data:\n\(String(describing: message.body))")
+                publishError(error)
+            }
         }
     }
 
@@ -424,39 +483,6 @@ extension ExcalidrawCore {
         }
     }
 
-    func handleDropPDF(_ data: OnDropPDFMessage.OnDropPDFMessageData) {
-        // Parse base64 data to PDF data
-        guard let pdfData = decodeBase64(data.base64Data) else {
-            logger.error("Failed to decode base64 PDF data")
-            return
-        }
-        
-#if canImport(PDFKit)
-        if PDFDocument(data: pdfData) == nil {
-            logger.error("Invalid PDF Data")
-            return
-        }
-#endif
-
-        // Create PDF drop info struct
-        let dropInfo = PDFDropInfo(
-            pdfData: pdfData,
-            fileName: data.fileName,
-            sceneX: data.sceneX,
-            sceneY: data.sceneY
-        )
-
-        // Post notification to trigger PDF insert sheet
-        DispatchQueue.main.async {
-            NotificationCenter.default.post(
-                name: .showPDFInsertSheet,
-                object: dropInfo
-            )
-        }
-
-        logger.info("PDF drop event received: \(data.fileName) at (\(data.sceneX), \(data.sceneY))")
-    }
-
     func handleOpenPDFNatively(_ data: OpenPDFNativelyMessage.OpenPDFNativelyMessageData) {
         // Open viewer immediately, then decode PDF in background.
         let placeholderInfo = PDFViewerInfo(
@@ -569,6 +595,10 @@ extension ExcalidrawCore {
         case didOpenLiveCollaboration
         case onCollaboratorsChanged
 
+        case onFileDropStarted
+        case onFileDropFinished
+        case onDropExcalidrawFile
+
         // PDF
         case onDropPDF
         case openPDFNatively
@@ -624,6 +654,10 @@ extension ExcalidrawCore {
         // Collab
         case didOpenLiveCollaboration(DidOpenLiveCollaborationMessage)
         case onCollaboratorsChanged(CollaboratorsChangedMessage)
+
+        case onFileDropStarted(OnFileDropStartedMessage)
+        case onFileDropFinished(OnFileDropFinishedMessage)
+        case onDropExcalidrawFile(OnDropExcalidrawFileMessage)
 
         // PDF
         case onDropPDF(OnDropPDFMessage)
@@ -728,6 +762,13 @@ extension ExcalidrawCore {
                     self = .didOpenLiveCollaboration(try DidOpenLiveCollaborationMessage(from: decoder))
                 case .onCollaboratorsChanged:
                     self = .onCollaboratorsChanged(try CollaboratorsChangedMessage(from: decoder))
+
+                case .onFileDropStarted:
+                    self = .onFileDropStarted(try OnFileDropStartedMessage(from: decoder))
+                case .onFileDropFinished:
+                    self = .onFileDropFinished(try OnFileDropFinishedMessage(from: decoder))
+                case .onDropExcalidrawFile:
+                    self = .onDropExcalidrawFile(try OnDropExcalidrawFileMessage(from: decoder))
 
                 // PDF
                 case .onDropPDF:
@@ -1275,16 +1316,39 @@ extension ExcalidrawCore {
         var count: Int
     }
 
+    struct OnFileDropStartedMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: NativeFileDropStarted
+    }
+
+    struct OnFileDropFinishedMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: NativeFileDropFinished
+    }
+
+    struct OnDropExcalidrawFileMessage: AnyExcalidrawZMessage {
+        var event: String
+        var data: Payload
+
+        struct Payload: Codable, Sendable {
+            let fileName: String
+            let fileSize: Int
+            let dataString: String
+            let dropId: String?
+        }
+    }
+
     struct OnDropPDFMessage: AnyExcalidrawZMessage {
         var event: String
         var data: OnDropPDFMessageData
 
-        struct OnDropPDFMessageData: Codable {
+        struct OnDropPDFMessageData: Codable, Sendable {
             var fileName: String
             var fileSize: Double
             var base64Data: String
             var sceneX: Double
             var sceneY: Double
+            var dropId: String?
         }
     }
 
@@ -1414,7 +1478,7 @@ extension ExcalidrawCore {
 
 // MARK: - PDF Drop Info
 
-struct PDFDropInfo: Identifiable, Hashable {
+struct PDFDropInfo: Identifiable, Hashable, Sendable {
     let id = UUID()
     let pdfData: Data
     let fileName: String
@@ -1436,10 +1500,6 @@ struct PDFViewerInfo: Identifiable {
         self.pdfData = pdfData
         self.mimeType = mimeType
     }
-}
-
-extension Notification.Name {
-    static let showPDFInsertSheet = Notification.Name("showPDFInsertSheet")
 }
 
 extension ExcalidrawFile {

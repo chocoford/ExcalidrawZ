@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ExcalidrawLibrary: Codable, Hashable {
+struct ExcalidrawLibrary: Codable, Hashable, Sendable {
     var id: UUID = UUID()
     var name: String?
     var type: String
@@ -60,8 +60,8 @@ struct ExcalidrawLibrary: Codable, Hashable {
         }
     }
     
-    struct Item: Codable, Hashable {
-        enum Status: String, Codable {
+    struct Item: Codable, Hashable, Sendable {
+        enum Status: String, Codable, Sendable {
             case published = "published"
             case unpublished = "unpublished"
         }

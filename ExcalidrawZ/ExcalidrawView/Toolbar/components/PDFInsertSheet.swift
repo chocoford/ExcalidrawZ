@@ -42,6 +42,7 @@ struct PDFInsertSheet: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     
     var pdfInfo: PDFDropInfo?
+    var onCancel: (() -> Void)? = nil
     var onInsert: (Data, PDFInsertMode, String, Int?) async throws -> Void
     
     @State private var selectedMode: PDFInsertMode = .viewer
@@ -91,6 +92,7 @@ struct PDFInsertSheet: View {
                 self.fileName = nil
             }
         }
+        .interactiveDismissDisabled(isLoading)
     }
 
     private var usesCompactLayout: Bool {
@@ -350,12 +352,10 @@ struct PDFInsertSheet: View {
     @ToolbarContentBuilder
     private func regularPDFInsertToolbar() -> some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
-            Button {
-                dismiss()
-            } label: {
-                Text(.localizable(.generalButtonCancel))
-            }
-            .modernButtonStyle(style: .glass, shape: .modern)
+            Button(.localizable(.generalButtonCancel), role: .cancel, action: cancel)
+                .modernButtonStyle(style: .glass, shape: .capsule)
+                .keyboardShortcut(.cancelAction)
+                .disabled(isLoading)
         }
         ToolbarItem(placement: .confirmationAction) {
             Button {
@@ -363,7 +363,7 @@ struct PDFInsertSheet: View {
             } label: {
                 Text(.localizable(.insertPDFSheetButtonInsert))
             }
-            .modernButtonStyle(style: .glassProminent, shape: .modern)
+            .modernButtonStyle(style: .glassProminent, shape: .capsule)
             .disabled(pdfData == nil || isLoading)
         }
     }
@@ -371,11 +371,7 @@ struct PDFInsertSheet: View {
     @ToolbarContentBuilder
     private func compactPDFInsertToolbar() -> some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
-            Button {
-                dismiss()
-            } label: {
-                Image(systemSymbol: .xmark)
-            }
+            cancelButton
         }
         ToolbarItem(placement: .confirmationAction) {
             Button {
@@ -386,6 +382,21 @@ struct PDFInsertSheet: View {
             .modernButtonStyle(style: .glassProminent)
             .disabled(pdfData == nil || isLoading)
         }
+    }
+
+    private var cancelButton: some View {
+        Button(role: .cancel, action: cancel) {
+            Label(.localizable(.generalButtonCancel), systemImage: "xmark")
+                .labelStyle(.iconOnly)
+        }
+        .modernButtonStyle(style: .glass, size: .large, shape: .circle)
+        .keyboardShortcut(.cancelAction)
+        .disabled(isLoading)
+    }
+
+    private func cancel() {
+        onCancel?()
+        dismiss()
     }
 
     @ViewBuilder
@@ -656,7 +667,7 @@ struct PDFInsertSheet: View {
     }
     
     private func insertPDF() {
-        guard let pdfData else { return }
+        guard !isLoading, let pdfData else { return }
         
         isLoading = true
         errorMessage = nil

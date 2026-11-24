@@ -24,6 +24,8 @@ final class FileState {
     
     @ObservationIgnored var currentGroupPublisherCancellables: [AnyCancellable] = []
     @ObservationIgnored var currentFilePublisherCancellables: [AnyCancellable] = []
+    @ObservationIgnored private var pendingCanvasWrites: [String: [UUID: Task<Void, Never>]] = [:]
+    @ObservationIgnored private var replacingDrawingFileIDs: Set<String> = []
     private var isRestoringActiveGroupAfterBlockedSwitch = false
     private var pendingActiveFileCloseTransitionIDs: Set<String> = []
     private var activeFileCloseTransitionContinuations: [
@@ -605,7 +607,10 @@ final class FileState {
     }
 
     @MainActor
-    private func capturedCanvasSaveTarget(for activeFile: ActiveFile) -> CapturedCanvasSaveTarget? {
+    private func capturedCanvasSaveTarget(
+        for activeFile: ActiveFile,
+        forceNewCheckpoint: Bool = false
+    ) -> CapturedCanvasSaveTarget? {
         switch activeFile {
             case .file(let file):
                 guard !file.inTrash else { return nil }
@@ -617,7 +622,7 @@ final class FileState {
                         fileName: file.name ?? "Untitled",
                         newCheckpoint: suppressCheckpoint
                             ? false
-                            : shouldCreateUserCheckpoint(for: activeFile),
+                            : forceNewCheckpoint || shouldCreateUserCheckpoint(for: activeFile),
                         suppressCheckpoint: suppressCheckpoint
                     )
                 )
@@ -630,7 +635,7 @@ final class FileState {
                         url: url,
                         newCheckpoint: suppressCheckpoint
                             ? false
-                            : shouldCreateUserCheckpoint(for: activeFile),
+                            : forceNewCheckpoint || shouldCreateUserCheckpoint(for: activeFile),
                         suppressCheckpoint: suppressCheckpoint
                     )
                 )
@@ -653,7 +658,7 @@ final class FileState {
                         reference: reference,
                         newCheckpoint: suppressCheckpoint
                             ? false
-                            : shouldCreateUserCheckpoint(for: activeFile),
+                            : forceNewCheckpoint || shouldCreateUserCheckpoint(for: activeFile),
                         suppressCheckpoint: suppressCheckpoint
                     )
                 )
@@ -1340,7 +1345,7 @@ final class FileState {
             ? false
             : shouldCreateUserCheckpoint(for: activeFile)
         self.didUpdateFileState[activeFile] = true
-        Task.detached {
+        return enqueueCanvasWrite(for: activeFile.id) {
             do {
                 guard let content = excalidrawFile.content else { return }
                 
@@ -1364,12 +1369,27 @@ final class FileState {
                     checkpoint: checkpointPolicy
                 )
                 self.logger.debug("File update saved")
-                await MainActor.run {
-                    // already throttled
-                    self.invalidateFileMetadata()
-                }
+                self.invalidateFileMetadata()
             } catch {
                 self.logger.error("Failed to update file \(file.name ?? "Untitled"): \(error)")
+            }
+        }
+    }
+
+    @MainActor
+    @discardableResult
+    func enqueueCanvasWrite(
+        for fileID: String,
+        operation: @escaping @MainActor () async -> Void
+    ) -> Bool {
+        guard !replacingDrawingFileIDs.contains(fileID) else { return false }
+        let writeID = UUID()
+        pendingCanvasWrites[fileID, default: [:]][writeID] = Task { [weak self] in
+            await operation()
+            guard let self else { return }
+            pendingCanvasWrites[fileID]?.removeValue(forKey: writeID)
+            if pendingCanvasWrites[fileID]?.isEmpty == true {
+                pendingCanvasWrites.removeValue(forKey: fileID)
             }
         }
         return true
@@ -1581,15 +1601,18 @@ final class FileState {
         with file: ExcalidrawFile,
         newCheckpoint: Bool,
         suppressCheckpoint: Bool,
-        logger: Logger
+        logger: Logger,
+        openInPlaceAccessStore: OpenInPlaceAccessStore? = nil
     ) async throws {
         var file = file
         try file.updateContentFilesFromFiles()
         guard let data = file.content else { return }
 
-        try await LocalFolder.withSecurityScopedAccessToContainingFolder(for: url) {
-            try await FileCoordinator.shared.coordinatedWrite(url: url, data: data)
-            touchLocalFileModificationDate(url, logger: logger)
+        if try await openInPlaceAccessStore?.save(data, to: url) != true {
+            try await LocalFolder.withSecurityScopedAccessToContainingFolder(for: url) {
+                try await FileCoordinator.shared.coordinatedWrite(url: url, data: data)
+                touchLocalFileModificationDate(url, logger: logger)
+            }
         }
 
         guard !suppressCheckpoint else {
@@ -1627,7 +1650,7 @@ final class FileState {
                 guard !file.inTrash else { return }
                 let fileObjectID = file.objectID
                 let fileName = file.name ?? "Untitled"
-                Task.detached {
+                enqueueCanvasWrite(for: activeFile.id) {
                     do {
                         try await PersistenceController.shared.fileRepository.updateElements(
                             fileObjectID: fileObjectID,
@@ -1642,7 +1665,7 @@ final class FileState {
                 }
 
             case .localFile(let url), .temporaryFile(let url):
-                Task.detached {
+                enqueueCanvasWrite(for: activeFile.id) {
                     do {
                         try await LocalFolder.withSecurityScopedAccessToContainingFolder(for: url) {
                             try await FileCoordinator.shared.coordinatedWrite(url: url, data: content)
@@ -1657,7 +1680,7 @@ final class FileState {
                 break
 
             case .cloudStorageFile(let reference):
-                Task {
+                enqueueCanvasWrite(for: activeFile.id) {
                     do {
                         try await Self.stageCloudStorageUpload(content, for: reference)
                         self.logger.debug("AppState-only cloud storage file update cached")
@@ -1706,6 +1729,57 @@ final class FileState {
                 target: saveTarget,
                 forceCurrentAppState: true
             )
+    }
+
+    @MainActor
+    func replaceActiveDrawing(
+        with drawing: ExcalidrawFile,
+        expectedFileID: String,
+        canReplace: () -> Bool
+    ) async throws -> ExcalidrawFile {
+        guard canReplace(), currentActiveFile?.id == expectedFileID,
+              replacingDrawingFileIDs.insert(expectedFileID).inserted else {
+            throw DroppedDrawing.ImportError.replacementUnavailable
+        }
+        defer { replacingDrawingFileIDs.remove(expectedFileID) }
+
+        // The snapshot drain is separate from the disk writes it schedules.
+        // Finish both before saving the imported content under the same ID.
+        if let writes = pendingCanvasWrites[expectedFileID] {
+            for write in writes.values {
+                await write.value
+            }
+        }
+        await flushPendingCanvasSnapshotBeforeExternalMutation(fileID: expectedFileID)
+
+        guard canReplace(), let activeFile = currentActiveFile, activeFile.id == expectedFileID,
+              let target = capturedCanvasSaveTarget(for: activeFile, forceNewCheckpoint: true) else {
+            throw DroppedDrawing.ImportError.replacementUnavailable
+        }
+
+        var replacement = drawing
+        replacement.id = expectedFileID
+        try replacement.prepareContentForExport(fileName: activeFile.name)
+        if case .temporaryFile(let url) = activeFile {
+            try await Self.saveCapturedLocalCanvasUpdate(
+                to: url,
+                with: replacement,
+                newCheckpoint: true,
+                suppressCheckpoint: false,
+                logger: logger,
+                openInPlaceAccessStore: openInPlaceAccessStore
+            )
+        } else {
+            try await Self.persistCapturedCanvasUpdate(target, with: replacement, logger: logger)
+        }
+
+        if currentActiveFile?.id == expectedFileID {
+            userCheckpointWindowStartedAt[expectedFileID] = Date()
+            didUpdateFileState[activeFile] = true
+        }
+        invalidateFileMetadata()
+        FileCoverCacheCoordinator.shared.refreshCover(for: activeFile)
+        return replacement
     }
 
     @discardableResult
@@ -1853,6 +1927,10 @@ final class FileState {
     }
     func importFile(_ url: URL, to targetGroupType: ImportGroupType = .current) async throws {
         let excalidrawFile = try ExcalidrawFile(contentsOf: url)
+        try await importFile(excalidrawFile, to: targetGroupType)
+    }
+
+    func importFile(_ excalidrawFile: ExcalidrawFile, to targetGroupType: ImportGroupType = .current) async throws {
         let context = PersistenceController.shared.newTaskContext()
         let currentGroup: Group? = {
             if case .group(let currentGroup) = self.currentActiveGroup {

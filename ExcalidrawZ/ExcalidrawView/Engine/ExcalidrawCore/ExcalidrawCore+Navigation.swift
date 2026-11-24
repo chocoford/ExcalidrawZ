@@ -111,6 +111,9 @@ extension ExcalidrawCore: WKNavigationDelegate {
         Task { @MainActor in
             self.nativeEyeDropper.invalidate()
             self.nativePaste.invalidate()
+            if let session = self.nativeFileDrop {
+                self.cancelNativeFileDrop(session, notifyWeb: false)
+            }
         }
         DispatchQueue.main.async {
             self.isNavigating = true

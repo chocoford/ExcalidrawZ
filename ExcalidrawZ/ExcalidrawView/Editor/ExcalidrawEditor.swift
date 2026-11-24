@@ -221,7 +221,9 @@ struct ExcalidrawEditor: View {
                     onDocumentLoadFinished: { fileID in
                         documentLoadCompletion = ExcalidrawDocumentLoadCompletion(fileID: fileID)
                         revealLoadedFileAfterRender(fileID: fileID)
-                    }
+                    },
+                    canReplaceDroppedDrawing: canReplaceDroppedDrawing,
+                    onReplaceDroppedDrawing: replaceWithDroppedDrawing
                 ) { error in
                     alertToast(error)
                 }
@@ -1082,6 +1084,46 @@ struct ExcalidrawEditor: View {
         isSyncing = false
     }
 
+    private var canReplaceDroppedDrawing: Bool {
+        guard interactionEnabled, !isInCollaborationSpace, !isLoadingFile,
+              let activeFile, activeFile.id == excalidrawFile?.id,
+              activeFile.fileType == .excalidrawFile, !activeFile.isInTrash,
+              lockedContentState.activeFileLockState != .locked,
+              !fileState.automaticCheckpointWritesSuppressed else { return false }
+        if case .cloudStorageFile(let reference) = activeFile {
+            if case .conflict = cloudStorageDocumentStore.syncState(for: reference) {
+                return false
+            }
+            return cloudStorageDocumentStore.item(for: reference)?
+                .effectiveCapabilities.contains(.updateContent) ?? true
+        }
+        return true
+    }
+
+    @MainActor
+    private func replaceWithDroppedDrawing(_ drawing: DroppedDrawing) async throws {
+        let fileID = drawing.targetFileID
+        guard let coordinator = fileState.excalidrawWebCoordinator else {
+            throw DroppedDrawing.ImportError.replacementUnavailable
+        }
+
+        let replacement = try await fileState.replaceActiveDrawing(
+            with: drawing.file,
+            expectedFileID: fileID
+        ) {
+            activeFile?.id == fileID && canReplaceDroppedDrawing
+                && coordinator.documentSyncController.currentLoadedFileID == fileID
+                && !coordinator.documentSyncController.hasPendingFileLoad
+        }
+        guard activeFile?.id == fileID else { return }
+
+        cancelPendingCloudUpdate()
+        lastEditTime = Date()
+        lockedContentState.noteUserActivity()
+        excalidrawFile = replacement
+        await coordinator.documentSyncController.load(replacement, force: true)
+    }
+
     private func latestLocalCanvasEditTime() -> Date? {
         let mutationDate = fileState.recentLocalCanvasMutationDate(for: activeFile)
         switch (lastEditTime, mutationDate) {
@@ -1228,7 +1270,7 @@ struct ExcalidrawEditor: View {
 
             case .localFile(let url):
                 logger.debug("Persisting local canvas update id=\(file.id) url=\(url.lastPathComponent) elements=\(file.elements.count)")
-                Task {
+                let enqueued = fileState.enqueueCanvasWrite(for: file.id) {
                     do {
                         try await LocalFolder.withSecurityScopedAccessToContainingFolder(for: url) {
                             let oldFile = try ExcalidrawFile(contentsOf: url)
@@ -1245,11 +1287,11 @@ struct ExcalidrawEditor: View {
                         alertToast(error)
                     }
                 }
-                return .accepted
+                return enqueued ? .accepted : .rejected
 
             case .temporaryFile(let url):
                 logger.debug("Persisting temporary canvas update id=\(file.id) url=\(url.lastPathComponent) elements=\(file.elements.count)")
-                Task {
+                let enqueued = fileState.enqueueCanvasWrite(for: file.id) {
                     do {
                         let oldContent = try await fileState.readTemporaryFileContent(at: url)
                         let oldFile = try ExcalidrawFile(data: oldContent, id: file.id)
@@ -1265,7 +1307,7 @@ struct ExcalidrawEditor: View {
                         alertToast(error)
                     }
                 }
-                return .accepted
+                return enqueued ? .accepted : .rejected
 
             case .cloudStorageFile(let reference):
                 if case .conflict = cloudStorageDocumentStore.syncState(for: reference) {
@@ -1281,7 +1323,7 @@ struct ExcalidrawEditor: View {
                 logger.debug(
                     "Persisting cloud storage canvas update id=\(file.id) name=\(cloudStorageDocumentStore.displayName(for: reference)) elements=\(file.elements.count)"
                 )
-                Task {
+                let enqueued = fileState.enqueueCanvasWrite(for: file.id) {
                     do {
                         var file = file
                         try file.updateContentFilesFromFiles()
@@ -1299,7 +1341,7 @@ struct ExcalidrawEditor: View {
                         alertToast(error)
                     }
                 }
-                return .accepted
+                return enqueued ? .accepted : .rejected
 
             default:
                 return .rejected

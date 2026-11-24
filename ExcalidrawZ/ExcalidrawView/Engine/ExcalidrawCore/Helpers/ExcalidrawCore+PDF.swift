@@ -19,6 +19,25 @@ import UIKit
 #endif
 
 extension ExcalidrawCore {
+    @MainActor
+    func insertPDF(
+        _ pdfData: Data,
+        mode: PDFInsertMode,
+        direction: String,
+        itemsPerLine: Int?,
+        sceneX: Double,
+        sceneY: Double
+    ) async throws {
+        switch mode {
+            case .viewer:
+                _ = try await loadPDF(pdfData: pdfData, x: sceneX, y: sceneY)
+            case .tiled:
+                _ = try await loadPDFAsTiledImages(
+                    pdfData: pdfData, direction: direction, itemsPerLine: itemsPerLine
+                )
+        }
+    }
+
     /// Load PDF file into Excalidraw canvas
     /// - Parameters:
     ///   - pdfData: PDF file data (will be converted to ArrayBuffer)

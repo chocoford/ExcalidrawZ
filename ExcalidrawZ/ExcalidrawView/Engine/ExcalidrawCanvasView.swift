@@ -70,6 +70,8 @@ struct ExcalidrawCanvasView: View {
     @Binding var loadingState: LoadingState
     var savingType: UTType
     var onDocumentLoadFinished: (String) -> Void
+    var canReplaceDroppedDrawing: Bool
+    var onReplaceDroppedDrawing: (@MainActor (DroppedDrawing) async throws -> Void)?
     var onError: (Error) -> Void
     var interactionEnabled: Bool
     
@@ -95,6 +97,8 @@ struct ExcalidrawCanvasView: View {
         loadingState: Binding<LoadingState>,
         interactionEnabled: Bool = true,
         onDocumentLoadFinished: @escaping (String) -> Void = { _ in },
+        canReplaceDroppedDrawing: Bool = false,
+        onReplaceDroppedDrawing: (@MainActor (DroppedDrawing) async throws -> Void)? = nil,
         onError: @escaping (Error) -> Void
     ) {
         self.type = type
@@ -103,6 +107,8 @@ struct ExcalidrawCanvasView: View {
         self._loadingState = loadingState
         self.interactionEnabled = interactionEnabled
         self.onDocumentLoadFinished = onDocumentLoadFinished
+        self.canReplaceDroppedDrawing = canReplaceDroppedDrawing
+        self.onReplaceDroppedDrawing = onReplaceDroppedDrawing
         self.onError = onError
     }
     
@@ -110,6 +116,19 @@ struct ExcalidrawCanvasView: View {
     
     var body: some View {
         canvasWithSettings
+            .onChange(of: fileState.currentActiveFile?.id) { _, fileID in
+                if let session = excalidrawCore.nativeFileDrop, session.targetFileID != fileID {
+                    excalidrawCore.dismissNativeFileDrop(session)
+                }
+            }
+            .sheet(item: nativeFileDropBinding) { session in
+                NativeFileDropSheet(
+                    session: session,
+                    coordinator: excalidrawCore,
+                    replacementTargetName: replacementTargetName(for:),
+                    onReplace: onReplaceDroppedDrawing
+                )
+            }
             .watch(value: scenePhase) { scenePhase in
 #if os(iOS)
                 if scenePhase == .active {
@@ -148,6 +167,24 @@ struct ExcalidrawCanvasView: View {
             .onDisappear {
                 handleDisappear()
             }
+    }
+
+    private var nativeFileDropBinding: Binding<NativeFileDropSession?> {
+        let session = excalidrawCore.nativeFileDrop
+        return Binding {
+            excalidrawCore.nativeFileDrop
+        } set: { value in
+            if value == nil, let session {
+                excalidrawCore.dismissNativeFileDrop(session)
+            }
+        }
+    }
+
+    private func replacementTargetName(for drawing: DroppedDrawing) -> String? {
+        guard canReplaceDroppedDrawing,
+              let target = fileState.currentActiveFile,
+              target.id == drawing.targetFileID else { return nil }
+        return target.name ?? String(localizable: .generalUntitled)
     }
 
     private var canvasContent: some View {
@@ -230,6 +267,9 @@ struct ExcalidrawCanvasView: View {
     }
 
     private func handleDisappear() {
+        if let session = excalidrawCore.nativeFileDrop {
+            excalidrawCore.dismissNativeFileDrop(session)
+        }
         clearToolStateCoordinatorBindingIfNeeded()
 #if os(macOS)
         ViewerMirrorController.shared.unregister(editor: excalidrawCore)

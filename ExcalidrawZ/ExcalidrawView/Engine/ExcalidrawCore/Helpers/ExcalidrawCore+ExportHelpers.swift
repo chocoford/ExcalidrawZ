@@ -228,18 +228,7 @@ extension ExcalidrawCore {
         exportScale: Int = 1,
         timeoutNanoseconds: UInt64 = 8_000_000_000
     ) async throws -> PlatformImage {
-        guard isReadyForPreviewExport else {
-            throw ExcalidrawPreviewExportError.notReady(previewExportReadinessSummary)
-        }
-
-        await PreviewExportSerialQueue.shared.acquire()
-        defer {
-            Task {
-                await PreviewExportSerialQueue.shared.release()
-            }
-        }
-
-        let data = try await withPreviewExportTimeout(
+        let data = try await withSerializedPreviewExport(
             label: "elements",
             timeoutNanoseconds: timeoutNanoseconds
         ) {
@@ -258,6 +247,75 @@ extension ExcalidrawCore {
             throw DecodeImageFailed()
         }
         return image
+    }
+
+    struct DrawingPreview {
+        let drawing: PlatformImage?
+        let background: PlatformImage
+    }
+
+    /// Export the drawing and its themed canvas color separately so the
+    /// preview can extend the background without compositing it twice.
+    @MainActor
+    func exportDrawingPreview(sceneData: Data, colorScheme: ColorScheme) async throws -> DrawingPreview {
+        try await withSerializedPreviewExport(
+            label: "drawing",
+            timeoutNanoseconds: 8_000_000_000
+        ) {
+            let raw = try await self.webView.callAsyncJavaScript(
+                """
+                const { elements, appState, files } = JSON.parse(sceneJSON);
+                const visible = elements.filter(element => !element.isDeleted);
+                const viewBackgroundColor = appState?.viewBackgroundColor || "#ffffff";
+                const helper = window.excalidrawZHelper;
+                const background = await helper.exportViewportToBlob({
+                    elements: [],
+                    files: {},
+                    appState: {
+                        width: 1, height: 1, scrollX: 0, scrollY: 0, zoom: { value: 1 },
+                        theme: darkMode ? "dark" : "light",
+                        viewBackgroundColor,
+                    },
+                });
+                if (visible.length === 0) {
+                    return { background };
+                }
+                const bounds = helper._getCommonBounds?.(visible);
+                const longestEdge = bounds
+                    ? Math.max(bounds[2] - bounds[0], bounds[3] - bounds[1])
+                    : 0;
+                const exportScale = Number.isFinite(longestEdge) && longestEdge > 1024
+                    ? 1024 / longestEdge
+                    : 1;
+                const drawing = await helper.exportElementsToBlob(visible, files ?? {}, {
+                    withBackground: false,
+                    exportWithDarkMode: darkMode,
+                    viewBackgroundColor,
+                    mimeType: "image/png",
+                    exportScale,
+                });
+                return { drawing, background };
+                """,
+                arguments: [
+                    "sceneJSON": String(decoding: sceneData, as: UTF8.self),
+                    "darkMode": colorScheme == .dark,
+                ],
+                contentWorld: .page
+            )
+            guard let result = raw as? [String: Any],
+                  let background = PlatformImage(
+                      data: try self.decodeViewportImageExportResult(result["background"]).data
+                  ) else {
+                throw InvalidJavaScriptResult()
+            }
+            let drawing = try result["drawing"].map {
+                guard let image = PlatformImage(data: try self.decodeViewportImageExportResult($0).data) else {
+                    throw InvalidJavaScriptResult()
+                }
+                return image
+            }
+            return DrawingPreview(drawing: drawing, background: background)
+        }
     }
 
     @MainActor
@@ -280,18 +338,7 @@ extension ExcalidrawCore {
         colorScheme: ColorScheme? = nil,
         timeoutNanoseconds: UInt64 = 8_000_000_000
     ) async throws -> Data {
-        guard isReadyForPreviewExport else {
-            throw ExcalidrawPreviewExportError.notReady(previewExportReadinessSummary)
-        }
-
-        await PreviewExportSerialQueue.shared.acquire()
-        defer {
-            Task {
-                await PreviewExportSerialQueue.shared.release()
-            }
-        }
-
-        let result = try await withPreviewExportTimeout(
+        let result = try await withSerializedPreviewExport(
             label: "viewport",
             timeoutNanoseconds: timeoutNanoseconds
         ) {
@@ -504,6 +551,28 @@ private actor PreviewExportSerialQueue {
 }
 
 private extension ExcalidrawCore {
+    @MainActor
+    func withSerializedPreviewExport<Value>(
+        label: String,
+        timeoutNanoseconds: UInt64,
+        operation: @escaping @MainActor () async throws -> Value
+    ) async throws -> Value {
+        guard isReadyForPreviewExport else {
+            throw ExcalidrawPreviewExportError.notReady(previewExportReadinessSummary)
+        }
+        try Task.checkCancellation()
+        await PreviewExportSerialQueue.shared.acquire()
+        defer {
+            Task { await PreviewExportSerialQueue.shared.release() }
+        }
+        try Task.checkCancellation()
+        return try await withPreviewExportTimeout(
+            label: label,
+            timeoutNanoseconds: timeoutNanoseconds,
+            operation: operation
+        )
+    }
+
     @MainActor
     func withPreviewExportTimeout<Value>(
         label: String,
