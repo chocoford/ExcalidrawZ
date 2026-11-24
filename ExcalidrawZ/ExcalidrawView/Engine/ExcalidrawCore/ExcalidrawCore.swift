@@ -104,6 +104,11 @@ class ExcalidrawCore: NSObject {
         
         let userContentController = WKUserContentController()
         userContentController.add(self, name: "excalidrawZ")
+        userContentController.addUserScript(WKUserScript(
+            source: "window.__excalidrawZNativeSceneStorage = true;",
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        ))
         
         do {
             let consoleHandlerScript = try WKUserScript(
