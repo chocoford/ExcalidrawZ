@@ -194,22 +194,21 @@ struct OpenFromURLModifier: ViewModifier {
         let context = viewContext
         var canAddToTemp = true
         do {
-            let folder: LocalFolder? = try context.performAndWait {
-                let folderFetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                folderFetchRequest.predicate = NSPredicate(format: "filePath == %@", url.deletingLastPathComponent().filePath)
-                return try context.fetch(folderFetchRequest).first
-            }
-            if let folder {
+            let root = try LocalFolder.rootFolder(containing: url, in: context)
+            if root != nil {
                 canAddToTemp = false
                 Task {
-                    await MainActor.run {
+                    do {
+                        let navigationContext = PersistenceController.shared.newTaskContext()
+                        let folderID = try await navigationContext.perform {
+                            try LocalFolder.deepestFolder(containingLocalFileAt: url, in: navigationContext)?.objectID
+                        }
+                        guard let folderID,
+                              let folder = try context.existingObject(with: folderID) as? LocalFolder else { return }
                         fileState.currentActiveGroup = .localFolder(folder)
                         fileState.expandToGroup(folder.objectID)
-                    }
-                    try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.1))
-                    await MainActor.run {
                         fileState.setActiveFile(.localFile(url))
-                    }
+                    } catch { alertToast(error) }
                 }
             }
             

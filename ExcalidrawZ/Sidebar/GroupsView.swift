@@ -79,6 +79,13 @@ struct GroupsView: View {
 
     var body: some View {
         content()
+            .reportSidebarFileRevealContents(
+                of: group.sidebarGroupScrollTarget,
+                available: folderStructStyle == .tree || isExpanded,
+                fileAvailable: showFiles && isExpanded && containsActiveFile
+            ) { target in
+                children.contains { $0.sidebarGroupScrollTarget == target }
+            }
             .animation(.smooth, value: folderStructStyle)
             .onAppear {
                 selectionState.bind(group: group, fileState: fileState)
@@ -89,6 +96,11 @@ struct GroupsView: View {
                     fileState.setActiveFile(.file(file))
                 }
             }
+    }
+
+    private var containsActiveFile: Bool {
+        guard case .file(let file) = fileState.currentActiveFile else { return false }
+        return files.contains(file)
     }
     
     @ViewBuilder
@@ -153,7 +165,7 @@ struct GroupsView: View {
             isSelected: isSelectedBinding,
             isExpanded: $isExpanded
         ) {
-            ForEach(children) { group in
+            ForEach(children, id: \.sidebarGroupScrollTarget) { group in
                 GroupsView(group: group, sortField: sortField, showFiles: showFiles, fileState: fileState)
             }
             
@@ -236,6 +248,7 @@ struct GroupsView: View {
                 }
         }
         .disclosureGroupIndicatorVisibility(children.isEmpty && (files.isEmpty || !showFiles) ? .hidden : .visible)
+        .expandForSidebarFileReveal(group.sidebarGroupScrollTarget, isExpanded: $isExpanded)
         .onReceive(NotificationCenter.default.publisher(for: .shouldExpandGroup)) { notification in
             guard let targetGroupID = notification.object as? NSManagedObjectID,
                   targetGroupID == self.group.objectID else { return }
@@ -253,7 +266,7 @@ struct GroupsView: View {
     
     @ViewBuilder
     private func treeView() -> some View {
-        TreeStructureView(children: children, paddingLeading: 6) {
+        TreeStructureView(children: children, id: \.sidebarGroupScrollTarget, paddingLeading: 6) {
             GroupRowView(
                 group: group,
                 isSelected: isSelectedBinding.wrappedValue,

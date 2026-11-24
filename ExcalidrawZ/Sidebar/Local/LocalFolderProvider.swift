@@ -55,13 +55,7 @@ struct LocalFoldersProvider<Content: View>: View {
             ) { notification in
                 if let window = notification.object as? NSWindow,
                    window == self.window {
-                    do {
-                        try self.refreshFoldersContent()
-                        try redirectToCurrentFolder()
-                    } catch {
-                        alertToast(error)
-                    }
-                    folderUrlBeforeResignKey = nil
+                    self.refreshFoldersContent()
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { notification in
@@ -75,28 +69,25 @@ struct LocalFoldersProvider<Content: View>: View {
 #elseif os(iOS)
             .watch(value: scenePhase) { newValue in
                 if newValue == .active {
-                    do {
-                        try self.refreshFoldersContent()
-                        try redirectToCurrentFolder()
-                    } catch {
-                        alertToast(error)
-                    }
+                    self.refreshFoldersContent()
                 }
             }
 #endif
+            .onReceive(NotificationCenter.default.publisher(for: .localFolderResolvedLocationDidChange)) { notification in
+                guard let previous = folderUrlBeforeResignKey,
+                      let oldURL = notification.userInfo?[LocalFolderLocationChangeUserInfoKey.oldURL] as? URL,
+                      let newURL = notification.userInfo?[LocalFolderLocationChangeUserInfoKey.newURL] as? URL else { return }
+                folderUrlBeforeResignKey = previous.rebased(from: oldURL, to: newURL) ?? previous
+            }
     }
 
-    @MainActor
-    private func refreshFoldersContent() throws {
-        for i in 0..<folders.count {
-            if let change = try folders[i].refreshResolvedLocation(context: viewContext),
-               let folderUrlBeforeResignKey {
-                self.folderUrlBeforeResignKey = folderUrlBeforeResignKey.rebased(
-                    from: change.oldURL,
-                    to: change.newURL
-                ) ?? folderUrlBeforeResignKey
-            }
-            try folders[i].refreshChildren(context: viewContext)
+    private func refreshFoldersContent() {
+        Task {
+            await LinkedFolderIndexState.refreshRootLocations()
+            await LinkedFolderIndexState.configureFromPersistence()
+            await LinkedFolderIndex.shared.reconcile()
+            do { try redirectToCurrentFolder() } catch { alertToast(error) }
+            folderUrlBeforeResignKey = nil
         }
     }
 
@@ -104,9 +95,10 @@ struct LocalFoldersProvider<Content: View>: View {
         guard fileState.currentActiveGroup == nil, let folderUrlBeforeResignKey else { return }
         let context = viewContext
         let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-        let allFolders = try context.fetch(fetchRequest)
+        fetchRequest.predicate = NSPredicate(format: "filePath == %@", folderUrlBeforeResignKey.filePath)
+        fetchRequest.fetchLimit = 1
 
-        if let folder = allFolders.first(where: {$0.url == folderUrlBeforeResignKey}) {
+        if let folder = try context.fetch(fetchRequest).first {
             fileState.currentActiveGroup = .localFolder(folder)
         }
     }

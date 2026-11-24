@@ -21,6 +21,10 @@ enum LocalFolderLocationChangeUserInfoKey {
 
 extension LocalFolder {
 
+    static func refreshImmediateChildren(of folderID: NSManagedObjectID) async throws {
+        try await LinkedFolderDirectoryLoader.shared.refresh(folderID)
+    }
+
     struct ResolvedLocationChange: Sendable {
         let oldURL: URL
         let newURL: URL
@@ -121,6 +125,14 @@ extension LocalFolder {
         if let change {
             let folderID = objectID
             DispatchQueue.main.async {
+                // Session IDs are UI-owned; filesystem reconciliation now runs
+                // on a background context and must not mutate this map there.
+                let existingMappings = ExcalidrawFile.localFileURLIDMapping
+                for (sourceURL, fileID) in existingMappings {
+                    guard let destinationURL = sourceURL.rebased(from: change.oldURL, to: change.newURL) else { continue }
+                    ExcalidrawFile.localFileURLIDMapping[sourceURL] = nil
+                    ExcalidrawFile.localFileURLIDMapping[destinationURL] = fileID
+                }
                 NotificationCenter.default.post(
                     name: .localFolderResolvedLocationDidChange,
                     object: folderID,
@@ -159,12 +171,6 @@ extension LocalFolder {
             }
         }
 
-        let existingMappings = ExcalidrawFile.localFileURLIDMapping
-        for (sourceURL, fileID) in existingMappings {
-            guard let destinationURL = sourceURL.rebased(from: oldRootURL, to: newRootURL) else { continue }
-            ExcalidrawFile.localFileURLIDMapping[sourceURL] = nil
-            ExcalidrawFile.localFileURLIDMapping[destinationURL] = fileID
-        }
     }
     
     private struct InvalidScopedURLError: Error {}
@@ -329,18 +335,21 @@ extension LocalFolder {
         in context: NSManagedObjectContext
     ) throws -> LocalFolder? {
         let parentURL = fileURL.deletingLastPathComponent().standardizedFileURL
-        let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-
-        return try context.fetch(request)
-            .compactMap { folder -> (folder: LocalFolder, url: URL)? in
-                guard let folderPath = folder.filePath else { return nil }
-                let folderURL = URL(fileURLWithPath: folderPath, isDirectory: true)
-                    .standardizedFileURL
-                guard parentURL.isContained(in: folderURL) else { return nil }
-                return (folder, folderURL)
+        guard let root = try rootFolder(containing: parentURL, in: context) else { return nil }
+        return try root.withSecurityScopedURL { rootURL in
+            guard parentURL.isContained(in: rootURL) else { return root }
+            // Opening a recent/deep-linked file materializes only its ancestors.
+            // Its siblings and other branches are discovered when browsed.
+            var folder = root
+            var url = rootURL.standardizedFileURL
+            let relative = parentURL.path.dropFirst(url.path.count)
+            for component in relative.split(separator: "/") {
+                url.appendPathComponent(String(component), isDirectory: true)
+                folder = try Self.localFolder(for: url, parent: folder, context: context)
             }
-            .max { $0.url.path.count < $1.url.path.count }?
-            .folder
+            if context.hasChanges { try context.save() }
+            return folder
+        }
     }
 
     private static func securityScopedBookmarkData(forLocalFileAt fileURL: URL) async throws -> Data? {
@@ -382,7 +391,8 @@ extension LocalFolder {
         context: NSManagedObjectContext
     ) throws -> LocalFolder {
         let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-        fetchRequest.predicate = NSPredicate(format: "filePath == %@", url.filePath)
+        // An independently linked descendant must retain its own root bookmark.
+        fetchRequest.predicate = NSPredicate(format: "filePath == %@ AND parent == %@", url.filePath, parent)
         fetchRequest.fetchLimit = 1
 
         if let existingFolder = try context.fetch(fetchRequest).first {
@@ -397,35 +407,38 @@ extension LocalFolder {
     
     func refreshChildren(
         context: NSManagedObjectContext,
-        recursively: Bool = true
+        recursively: Bool = false,
+        cancellation: LinkedFolderScanCancellation? = nil
     ) throws {
         try refreshResolvedLocation(context: context)
         try self.withSecurityScopedURL { url in
-            guard let contents = try Self.materializedDirectoryContents(
-                at: url,
-                includingPropertiesForKeys: [.nameKey, .isHiddenKey]
-            ) else { return }
+#if os(iOS)
+            if Self.isPendingUbiquitousDownload(url) {
+                try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+                return
+            }
+#endif
+            // Keep only directories rather than retaining a URL for every build output.
+            let contents = try LinkedFolderScanner.immediateDirectories(at: url) {
+                cancellation?.isCancelled == true || Task.isCancelled
+            }
+            if cancellation?.isCancelled == true { throw CancellationError() }
             try context.performAndWait {
                 let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
                 fetchRequest.predicate = NSPredicate(format: "parent = %@", self)
                 let childeren = try context.fetch(fetchRequest)
                 /// Children folders that should be deleted
                 var missingChidren = childeren
-                for url in contents.filter({
-                    $0.isDirectory && (try? $0.resourceValues(forKeys: [.isHiddenKey]))?.isHidden == false
-                }) {
-                    /// If found, remove from `missingChidren`
-                    if let index = missingChidren.firstIndex(where: {$0.url == url}) {
-                        missingChidren.remove(at: index)
-                    }
-                    
-                    /// If self.children already contains this folder, skip
-                    if self.children?.contains(where: {
-                        if let child = $0 as? LocalFolder {
-                            return child.url == url
-                        }
-                        return false
-                    }) == true {
+                let existingByURL = Dictionary(childeren.compactMap { child in
+                    child.url.map { ($0.standardizedFileURL, child) }
+                }, uniquingKeysWith: { first, _ in first })
+                let currentURLs = Set(contents.map(\.standardizedFileURL))
+                missingChidren.removeAll { child in
+                    child.url.map { currentURLs.contains($0.standardizedFileURL) } == true
+                }
+                for url in contents {
+                    if cancellation?.isCancelled == true { throw CancellationError() }
+                    if existingByURL[url.standardizedFileURL] != nil {
                         continue
                     }
                     /// Otherwise, create/reuse a LocalFolder instance and add it to children
@@ -438,44 +451,48 @@ extension LocalFolder {
                     // also delete all children of this folder
                     try deleteLocalFolder(folder, context: context)
                 }
+                if cancellation?.isCancelled == true { throw CancellationError() }
                 
                 if recursively {
                     for case let subfolder as LocalFolder in self.children?.allObjects ?? [] {
-                        try subfolder.refreshChildren(context: context)
+                        try Task.checkCancellation()
+                        try subfolder.refreshChildren(context: context, recursively: true, cancellation: cancellation)
                     }
                 }
                 
-                try context.save()
+                if context.hasChanges { try context.save() }
             }
         }
     }
     
     func getFiles<T>(
         deep: Bool,
+        limit: Int? = nil,
         properties: [URLResourceKey]? = nil,
         action: (_ fileURL: URL) throws -> T = { $0 }
     ) throws -> [T] {
-        try self.withSecurityScopedURL { scopedURL in
-            let filemanager = FileManager.default
-            if deep {
-                guard let enumerator = filemanager.enumerator(at: scopedURL, includingPropertiesForKeys: properties) else {
-                    return []
+        if let limit, limit <= 0 { return [] }
+        return try self.withSecurityScopedURL { scopedURL in
+            var rootError: Error?
+            let options: FileManager.DirectoryEnumerationOptions = deep
+                ? [.skipsHiddenFiles] : [.skipsHiddenFiles, .skipsSubdirectoryDescendants]
+            guard let enumerator = FileManager.default.enumerator(
+                at: scopedURL, includingPropertiesForKeys: properties, options: options,
+                errorHandler: { url, error in
+                    if url.path == scopedURL.path { rootError = error }
+                    return true
                 }
-                var results: [T] = []
-                for case let file as URL in enumerator {
-                    if file.pathExtension == "excalidraw" {
-                        try results.append(action(file))
-                    }
-                }
-                return results
-            } else {
-                let urls = try filemanager.contentsOfDirectory(at: scopedURL, includingPropertiesForKeys: properties)
-                return try urls.filter({
-                    $0.pathExtension == "excalidraw"
-                }).map {
-                    try action($0)
+            ) else { return [] }
+            var results: [T] = []
+            for case let file as URL in enumerator {
+                try Task.checkCancellation()
+                if file.pathExtension == "excalidraw" {
+                    try results.append(action(file))
+                    if let limit, results.count >= limit { break }
                 }
             }
+            if let rootError { throw rootError }
+            return results
         }
     }
     
@@ -575,15 +592,13 @@ func deleteLocalFolder(
     context: NSManagedObjectContext
 ) throws {
     try context.performAndWait {
-        let children: [LocalFolder] = folder.children?.allObjects.compactMap { $0 as? LocalFolder } ?? []
-        if withChildren {
-            for child in children {
-                try deleteLocalFolder(child, withChildren: true, context: context)
+        var pending = [folder]
+        while let current = pending.popLast() {
+            if withChildren {
+                pending.append(contentsOf: current.children?.allObjects.compactMap { $0 as? LocalFolder } ?? [])
             }
+            context.delete(current)
         }
-        
-        context.delete(folder)
-        
-        try context.save()
+        if context.hasChanges { try context.save() }
     }
 }

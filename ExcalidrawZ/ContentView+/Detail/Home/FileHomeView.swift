@@ -98,6 +98,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     }
     
     @State private var selection: String?
+    @State private var folderRefreshRevision = 0
     
     
 #if os(iOS)
@@ -112,6 +113,16 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
             } else {
                 content()
             }
+        }
+        .task(id: "\(group.objectID.uriRepresentation().absoluteString):\((group as? LocalFolder)?.filePath ?? ""):\(folderRefreshRevision)") {
+            guard let folder = group as? LocalFolder else { return }
+            do { try await LocalFolder.refreshImmediateChildren(of: folder.objectID) }
+            catch is CancellationError {} catch { alertToast(error) }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .linkedFolderContentsDidChange)) { notification in
+            guard let folder = group as? LocalFolder,
+                  LinkedFolderIndexState.affects(notification, folderURL: folder.url) else { return }
+            folderRefreshRevision += 1
         }
         .background {
             // Not working
@@ -270,31 +281,34 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 spacing: 20
             ) {
                 ForEach(childGroups) { group in
-                    HomeFolderItemView(
-                        isSelected: selection == group.objectID.description,
-                        isHighlighted: {
-                            if let group = group as? Group {
-                                return dragState.currentDropGroupTarget == .below(.group(group.objectID)) || dragState.currentDropGroupTarget == .exact(.group(group.objectID))
-                            } else if let folder = group as? LocalFolder {
-                                return dragState.currentDropGroupTarget == .below(.localFolder(folder.objectID)) || dragState.currentDropGroupTarget == .exact(.localFolder(folder.objectID))
-                            } else {
-                                return false
-                            }
-                        }(),
-                        name: group.name ?? String(localizable: .generalUntitled),
-                        itemsCount: group.filesCount + group.subgroupsCount,
-                        localFolder: group as? LocalFolder
-                    )
-                    .modifier(FileHomeGroupContextMenuModifier(group: group))
-                    .simultaneousGesture(TapGesture(count: 2).onEnded {
-                        fileState.currentActiveGroup = futureActiveGroup(group)
-                        fileState.expandToGroup(group.objectID)
-                    })
-                    .simultaneousGesture(TapGesture().onEnded {
-                        selection = group.objectID.description
-                        fileState.resetSelections()
-                    })
-                    .modifier(HomeFolderItemDropModifier(group: group))
+                    LocalFolderItemCount(folder: group as? LocalFolder,
+                                         fallbackCount: group is LocalFolder ? 0 : group.filesCount + group.subgroupsCount) { count in
+                        HomeFolderItemView(
+                            isSelected: selection == group.objectID.description,
+                            isHighlighted: {
+                                if let group = group as? Group {
+                                    return dragState.currentDropGroupTarget == .below(.group(group.objectID)) || dragState.currentDropGroupTarget == .exact(.group(group.objectID))
+                                } else if let folder = group as? LocalFolder {
+                                    return dragState.currentDropGroupTarget == .below(.localFolder(folder.objectID)) || dragState.currentDropGroupTarget == .exact(.localFolder(folder.objectID))
+                                } else {
+                                    return false
+                                }
+                            }(),
+                            name: group.name ?? String(localizable: .generalUntitled),
+                            itemsCount: count,
+                            localFolder: group as? LocalFolder
+                        )
+                        .modifier(FileHomeGroupContextMenuModifier(group: group))
+                        .simultaneousGesture(TapGesture(count: 2).onEnded {
+                            fileState.currentActiveGroup = futureActiveGroup(group)
+                            fileState.expandToGroup(group.objectID)
+                        })
+                        .simultaneousGesture(TapGesture().onEnded {
+                            selection = group.objectID.description
+                            fileState.resetSelections()
+                        })
+                        .modifier(HomeFolderItemDropModifier(group: group))
+                    }
                 }
             }
             .watch(value: fileState.selectedFiles.isEmpty) { isEmpty in

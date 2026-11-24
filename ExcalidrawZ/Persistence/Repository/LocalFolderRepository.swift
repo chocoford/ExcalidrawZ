@@ -35,6 +35,9 @@ actor LocalFolderRepository {
                 throw AppError.fileError(.notFound)
             }
 
+            // Browsing no longer materializes the whole tree on launch. Import
+            // explicitly discovers each level before recursing into that level.
+            try folder.refreshChildren(context: context, recursively: false)
             let children = (folder.children ?? []).compactMap { $0 as? LocalFolder }
             return (
                 folderURL,

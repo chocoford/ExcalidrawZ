@@ -15,6 +15,7 @@ class ItemDragState {
         case group(NSManagedObjectID)
         case file(NSManagedObjectID)
         case localFolder(NSManagedObjectID)
+        case cloudStorageLocation(UUID)
         case localFile(URL)
         
         case collaborationFile(NSManagedObjectID)

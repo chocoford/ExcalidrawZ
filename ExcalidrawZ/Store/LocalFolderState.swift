@@ -26,6 +26,9 @@ final class LocalFolderState {
     func publishMovedItems(_ mapping: [URL: URL]) {
         guard !mapping.isEmpty else { return }
         itemsMovedPublisher.send(mapping)
+        Task {
+            await LinkedFolderIndex.shared.invalidate(Array(mapping.keys) + Array(mapping.values), recursively: true)
+        }
     }
 
     // MARK: - File Status Management

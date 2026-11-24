@@ -69,7 +69,7 @@ struct LocalFilesListContentView: View {
     var body: some View {
         LocalFilesProvider(folder: folder, sortField: sortField) { files, updateFlags in
             LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(files, id: \.self) { file in
+                ForEach(files, id: \.sidebarLocalFileScrollTarget) { file in
                     LocalFileRowView(
                         file: file,
                         updateFlag: updateFlags[file],
@@ -79,8 +79,17 @@ struct LocalFilesListContentView: View {
                     .id(SidebarActiveFileScrollTarget.localFile(file))
                 }
             }
+            .reportSidebarFileRevealContents(
+                of: folder.sidebarGroupScrollTarget,
+                fileAvailable: containsActiveFile(in: files)
+            )
             .animation(.default, value: files)
             .modifier(LocalFolderDropModifier(folder: folder) {.below($0)})
         }
+    }
+
+    private func containsActiveFile(in files: [URL]) -> Bool {
+        guard case .localFile(let url) = fileState.currentActiveFile else { return false }
+        return files.contains(url)
     }
 }

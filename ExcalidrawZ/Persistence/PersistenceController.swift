@@ -288,15 +288,23 @@ extension PersistenceController {
 
 
 extension NSManagedObjectContext {
-    /// Executes the given `NSBatchDeleteRequest` and directly merges the changes to bring the given managed object context up to date.
+    /// Batch deletions bypass context saves. Explicitly merge their object IDs
+    /// into every context displaying the deleted objects as well as this one.
     ///
     /// - Parameter batchDeleteRequest: The `NSBatchDeleteRequest` to execute.
+    /// - Parameter contexts: Other contexts that need the deletion notification.
     /// - Throws: An error if anything went wrong executing the batch deletion.
-    public func executeAndMergeChanges(using batchDeleteRequest: NSBatchDeleteRequest) throws {
+    public func executeAndMergeChanges(
+        using batchDeleteRequest: NSBatchDeleteRequest,
+        mergingInto contexts: [NSManagedObjectContext] = []
+    ) throws {
         batchDeleteRequest.resultType = .resultTypeObjectIDs
         let result = try execute(batchDeleteRequest) as? NSBatchDeleteResult
         let changes: [AnyHashable: Any] = [NSDeletedObjectsKey: result?.result as? [NSManagedObjectID] ?? []]
-        NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [self])
+        NSManagedObjectContext.mergeChanges(
+            fromRemoteContextSave: changes,
+            into: [self] + contexts.filter { $0 !== self }
+        )
     }
 }
 

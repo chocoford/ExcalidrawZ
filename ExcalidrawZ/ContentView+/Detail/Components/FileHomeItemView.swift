@@ -568,7 +568,7 @@ private struct FileHomeItemContentView: View {
                         // the same per-file state, without starting another refresh task.
                         FilePreviewLockStateReader(file: file, requestsMetadataIfUnknown: false) { lockState in
                             HStack {
-                                Text(filename)
+                                fileTitle
                                     .lineLimit(1)
                                 if fileType == .excalidrawPNG || fileType == .excalidrawSVG {
                                     Image(systemSymbol: .photo)
@@ -668,6 +668,15 @@ private struct FileHomeItemContentView: View {
 //        }
     }
 
+    @ViewBuilder
+    private var fileTitle: some View {
+        switch file {
+            case .file(let file): FileHomeManagedFileTitle(file: file)
+            case .collaborationFile(let file): FileHomeManagedFileTitle(file: file)
+            default: Text(filename)
+        }
+    }
+
     private func refreshLocalModificationDate() async {
         let date: Date?
         switch file {
@@ -715,6 +724,14 @@ private struct FileHomeItemContentView: View {
             content
                 .clipShape(RoundedRectangle(cornerRadius: FileHomeItemView.roundedCornerRadius))
         }
+    }
+}
+
+private struct FileHomeManagedFileTitle<ManagedFile: ExcalidrawFileRepresentable>: View {
+    @ObservedObject var file: ManagedFile
+
+    var body: some View {
+        Text(file.name ?? String(localizable: .generalUntitled))
     }
 }
 

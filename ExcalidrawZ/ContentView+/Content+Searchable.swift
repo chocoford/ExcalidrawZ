@@ -99,38 +99,25 @@ struct SearchResultsProvider: View {
     
     var body: some View {
         content(searchResults)
+            .onReceive(NotificationCenter.default.publisher(for: .linkedFolderContentsDidChange)) { _ in fetchFiles() }
             .onChange(of: searchText, initial: true, throttle: 0.5, latest: true) { newValue in
-                guard !isSearching else { return }
                 fetchFiles()
             }
     }
     
     private func fetchFiles() {
+        let query = searchText
         Task {
             isSearching = true
             do {
+                let searchLocalFiles = await LinkedFolderIndex.shared.drawingFiles(matching: query).map(\.url)
+                guard query == searchText else { return }
                 try await viewContext.perform {
                     let fileFetchRequest = NSFetchRequest<File>(entityName: "File")
                     if !searchText.isEmpty {
                         fileFetchRequest.predicate = NSPredicate(format: "name contains %@", searchText)
                     }
                     let searchFiles = try viewContext.fetch(fileFetchRequest)
-                    
-                    var searchLocalFiles: [URL] = []
-                    let localFolderFetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                    let localFolders = try viewContext.fetch(localFolderFetchRequest)
-                    for folder in localFolders {
-                        let localFiles = try folder.withSecurityScopedURL { scopedURL in
-                            let contents = try FileManager.default.contentsOfDirectory(at: scopedURL, includingPropertiesForKeys: [])
-                            return contents
-                                .filter({$0.pathExtension == "excalidraw"})
-                                .filter({
-                                    searchText.isEmpty ||
-                                    $0.deletingPathExtension().lastPathComponent.contains(searchText)
-                                })
-                        }
-                        searchLocalFiles.append(contentsOf: localFiles)
-                    }
                     
                     let collaborationFilesFetchRequest = NSFetchRequest<CollaborationFile>(entityName: "CollaborationFile")
                     if !searchText.isEmpty {
@@ -267,8 +254,8 @@ struct SerachContent: View {
                 }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .linkedFolderContentsDidChange)) { _ in fetchFiles() }
         .onChange(of: searchText, initial: true, throttle: 0.5, latest: true) { newValue in
-            guard !isSearching else { return }
             fetchFiles()
         }
 #if canImport(AppKit)
@@ -443,31 +430,18 @@ struct SerachContent: View {
     }
     
     private func fetchFiles() {
+        let query = searchText
         Task {
             isSearching = true
             do {
+                let searchLocalFiles = await LinkedFolderIndex.shared.drawingFiles(matching: query).map(\.url)
+                guard query == searchText else { return }
                 try await viewContext.perform {
                     let fileFetchRequest = NSFetchRequest<File>(entityName: "File")
                     if !searchText.isEmpty {
                         fileFetchRequest.predicate = NSPredicate(format: "name contains %@", searchText)
                     }
                     let searchFiles = try viewContext.fetch(fileFetchRequest)
-                    
-                    var searchLocalFiles: [URL] = []
-                    let localFolderFetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                    let localFolders = try viewContext.fetch(localFolderFetchRequest)
-                    for folder in localFolders {
-                        let localFiles = try folder.withSecurityScopedURL { scopedURL in
-                            let contents = try FileManager.default.contentsOfDirectory(at: scopedURL, includingPropertiesForKeys: [])
-                            return contents
-                                .filter({$0.pathExtension == "excalidraw"})
-                                .filter({
-                                    searchText.isEmpty ||
-                                    $0.deletingPathExtension().lastPathComponent.contains(searchText)
-                                })
-                        }
-                        searchLocalFiles.append(contentsOf: localFiles)
-                    }
                     
                     let collaborationFilesFetchRequest = NSFetchRequest<CollaborationFile>(entityName: "CollaborationFile")
                     if !searchText.isEmpty {

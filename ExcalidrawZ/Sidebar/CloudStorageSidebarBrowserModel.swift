@@ -107,14 +107,8 @@ final class CloudStorageSidebarBrowserModel {
         return documentStore.errorMessage(for: location)
     }
 
-    func isFolder(
-        _ folderID: CloudStorageItemID,
-        inPathTo target: CloudStorageFolderReference
-    ) -> Bool {
-        guard target.location.id == location.id else { return false }
-        return documentStore.folderPath(for: target).contains { folder in
-            folder.itemID == folderID
-        }
+    func folderIDs(inPathTo folder: CloudStorageFolderReference) -> Set<CloudStorageItemID> {
+        Set(documentStore.folderPath(for: folder).map(\.itemID))
     }
 
     func folderSyncState(in folderID: CloudStorageItemID) -> CloudStorageFolderSyncState {

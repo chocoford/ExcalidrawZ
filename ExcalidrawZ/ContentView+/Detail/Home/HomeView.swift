@@ -189,11 +189,7 @@ struct RecentlyFilesProvider: View {
     )
     private var files: FetchedResults<File>
     
-    @FetchRequest(
-        sortDescriptors: [],
-        animation: .default
-    )
-    private var localFolders: FetchedResults<LocalFolder>
+    @State private var linkedFolderIndex = LinkedFolderIndexState.shared
     
     @FetchRequest(
         sortDescriptors: [
@@ -264,8 +260,8 @@ struct RecentlyFilesProvider: View {
     
     var body: some View {
         content(recentlyFiles)
-            .onHover { isHovered in
-                if isHovered { getRecentlyFiles() }
+            .watch(value: linkedFolderIndex.recentFiles) { _ in
+                getRecentlyFiles()
             }
             .watch(value: filesRefreshKey) { _ in
                 getRecentlyFiles()
@@ -323,24 +319,9 @@ struct RecentlyFilesProvider: View {
             allDatedFiles[.file(file)] = file.visitedAt ?? file.updatedAt ?? file.createdAt ?? .distantPast
         }
         
-        // Local files
-        for folder in localFolders {
-            do {
-                let filesAndModificationDates: [(URL, Date)] = try folder.getFiles(
-                    deep: true,
-                    properties: [.contentModificationDateKey, .creationDateKey]
-                ) { url in
-                    let modifiedDate = try url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate ?? .distantPast
-                    let creationDate = try url.resourceValues(forKeys: [.creationDateKey]).creationDate ?? .distantPast
-                    return (url, max(modifiedDate, creationDate))
-                }
-                
-                filesAndModificationDates.forEach { (url, date) in
-                    allDatedFiles[.localFile(url)] = date
-                }
-            } catch {
-                
-            }
+        // Linked-folder disk work is owned by the background index, independent of Home.
+        for entry in linkedFolderIndex.recentFiles {
+            allDatedFiles[.localFile(entry.url)] = entry.modifiedAt
         }
         
         // Collaboration files

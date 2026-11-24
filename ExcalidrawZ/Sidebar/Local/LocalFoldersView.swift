@@ -18,10 +18,12 @@ struct LocalFoldersView: View {
     @Environment(\.alertToast) private var alertToast
     @Environment(FileState.self) private var fileState
     @Environment(ItemDragState.self) private var sidebarDragState
+    @Environment(LocalFolderSidebarExpansionState.self) private var expansion
 
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField
     var showFiles: Bool
+    var reorder: LinkedStorageRootReorderAction?
     var onDeleteSelected: () -> Void
 
     @State private var showFolderNotFoundAlert = false
@@ -33,6 +35,7 @@ struct LocalFoldersView: View {
     init(folder: LocalFolder,
          sortField: ExcalidrawFileSortField,
          showFiles: Bool = true,
+         reorder: LinkedStorageRootReorderAction? = nil,
          onDeleteSelected: @escaping () -> Void
     ) {
         self.folder = folder
@@ -46,6 +49,7 @@ struct LocalFoldersView: View {
             animation: .default
         )
         self.showFiles = showFiles
+        self.reorder = reorder
         self.onDeleteSelected = onDeleteSelected
     }
     
@@ -76,7 +80,16 @@ struct LocalFoldersView: View {
         }
     }
     
-    @State private var isExpanded = false
+    private var isExpanded: Bool { expansion.isExpanded(folder.objectID) }
+    private var isExpandedBinding: Binding<Bool> {
+        Binding {
+            isExpanded
+        } set: {
+            expansion.setExpanded($0, for: folder.objectID)
+        }
+    }
+    @State private var refreshTask: Task<Void, Never>?
+    @State private var isVisible = false
     
     var body: some View {
         ZStack {
@@ -85,6 +98,12 @@ struct LocalFoldersView: View {
             } else {
                 treeView()
             }
+        }
+        .reportSidebarFileRevealContents(
+            of: folder.sidebarGroupScrollTarget,
+            available: folderStructStyle == .tree || isExpanded
+        ) { target in
+            folderChildren.contains { $0.sidebarGroupScrollTarget == target }
         }
         .animation(.smooth, value: folderStructStyle)
         .alert("Folder Not Found", isPresented: $showFolderNotFoundAlert) {
@@ -97,8 +116,22 @@ struct LocalFoldersView: View {
         } message: {
             Text(folderNotFoundMessage)
         }
-        .task(id: folder.objectID) {
+        .task(id: folder.url?.path ?? folder.objectID.uriRepresentation().absoluteString) {
             await refreshImmediateChildren()
+        }
+        .onAppear { isVisible = true }
+        .onReceive(NotificationCenter.default.publisher(for: .linkedFolderContentsDidChange)) { notification in
+            guard isVisible, LinkedFolderIndexState.affects(notification, folderURL: folder.url) else { return }
+            refreshTask?.cancel()
+            refreshTask = Task {
+                try? await Task.sleep(for: .milliseconds(150))
+                guard !Task.isCancelled else { return }
+                await refreshImmediateChildren()
+            }
+        }
+        .onDisappear {
+            isVisible = false
+            refreshTask?.cancel()
         }
     }
     
@@ -143,23 +176,28 @@ struct LocalFoldersView: View {
     private func diclsureGroupView() -> some View {
         SelectableDisclosureGroup(
             isSelected: isSelectedBinding,
-            isExpanded: $isExpanded
+            isExpanded: isExpandedBinding
         ) {
-            ForEach(folderChildren) { folder in
-                LocalFoldersView(folder: folder, sortField: sortField, showFiles: showFiles) {
-                    handleSelectedDeletion()
+            VStack(alignment: .leading, spacing: 0) {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    ForEach(folderChildren, id: \.sidebarGroupScrollTarget) { folder in
+                        LocalFoldersView(folder: folder, sortField: sortField, showFiles: showFiles) {
+                            handleSelectedDeletion()
+                        }
+                    }
                 }
-            }
-            if showFiles {
-                LocalFilesListContentView(folder: folder, sortField: sortField)
+                // The file provider needs to start loading even if the folders
+                // above it fill the viewport. Its file rows are lazy as well.
+                if showFiles {
+                    LocalFilesListContentView(folder: folder, sortField: sortField)
+                }
             }
         } label: {
             LocalFolderRowView(
                 folder: folder,
                 onDelete: onDeleteSelected
             )
-            .id(SidebarGroupScrollTarget.localFolder(folder.objectID))
-            .modifier(LocalFolderDragModifier(folder: folder))
+            .id(folder.sidebarGroupScrollTarget)
             .simultaneousGesture(TapGesture(count: 2).onEnded {
                 fileState.expandToGroup(folder.objectID)
             })
@@ -173,7 +211,11 @@ struct LocalFoldersView: View {
                     )
                 )
                 .modifier(
-                    LocalFolderDropModifier(folder: folder) { .exact($0) }
+                    LocalFolderDropModifier(
+                        folder: folder,
+                        allowsLocalFolder: { reorder?.contains(.localFolder($0)) != true },
+                        dropTarget: { .exact($0) }
+                    )
                 )
                 .foregroundStyle(
                     canDropToFolder || canDropBelowFoler
@@ -196,15 +238,10 @@ struct LocalFoldersView: View {
                         .fill(Color.accentColor)
                     }
                 }
+                .modifier(LocalFolderDragModifier(folder: folder))
+                .modifier(LinkedStorageRootReorderModifier(action: reorder))
         }
         .disclosureGroupIndicatorVisibility(.visible)
-        .onReceive(NotificationCenter.default.publisher(for: .shouldExpandGroup)) { notification in
-            guard let targetGroupID = notification.object as? NSManagedObjectID,
-                  targetGroupID == self.folder.objectID else { return }
-            withAnimation(.smooth(duration: 0.2)) {
-                self.isExpanded = true
-            }
-        }
         .background {
             if canDropBelowFoler {
                 RoundedRectangle(cornerRadius: 12)
@@ -217,13 +254,14 @@ struct LocalFoldersView: View {
     private func treeView() -> some View {
         TreeStructureView(
             children: folderChildren,
+            id: \.sidebarGroupScrollTarget,
             paddingLeading: 6
         ) {
             LocalFolderRowView(
                 folder: folder,
                 onDelete: onDeleteSelected
             )
-            .id(SidebarGroupScrollTarget.localFolder(folder.objectID))
+            .id(folder.sidebarGroupScrollTarget)
             .modifier(LocalFolderDragModifier(folder: folder))
             .modifier(
                 LocalFolderContextMenuModifier(
@@ -231,6 +269,7 @@ struct LocalFoldersView: View {
                     canExpand: true,
                 )
             )
+            .modifier(LinkedStorageRootReorderModifier(action: reorder))
         } childView: { child in
             LocalFoldersView(folder: child, sortField: sortField) {
                 handleSelectedDeletion()
@@ -257,16 +296,8 @@ struct LocalFoldersView: View {
     }
 
     private func refreshImmediateChildren() async {
-        let folderID = folder.objectID
-        let context = PersistenceController.shared.newTaskContext()
-
         do {
-            try await context.perform {
-                guard let folder = try context.existingObject(with: folderID) as? LocalFolder else {
-                    return
-                }
-                try folder.refreshChildren(context: context, recursively: false)
-            }
+            try await LocalFolder.refreshImmediateChildren(of: folder.objectID)
         } catch is CancellationError {
             return
         } catch {

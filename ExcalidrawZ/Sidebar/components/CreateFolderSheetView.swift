@@ -63,7 +63,6 @@ struct CreateFolderModifier: ViewModifier {
             createType: .localFolder
         ) { name in
             do {
-                let context = viewContext
                 guard let parentFolder,
                       let url = parentFolder.url else {
                     struct URLNotFoundError: Error {}
@@ -86,9 +85,13 @@ struct CreateFolderModifier: ViewModifier {
                     )
                 }
                 
-                try parentFolder.refreshChildren(context: context)
-                localFolderState.refreshFilesPublisher.send()
-                localFolderState.refreshFilesPublisher.send()
+                let folderID = parentFolder.objectID
+                Task {
+                    do {
+                        try await LocalFolder.refreshImmediateChildren(of: folderID)
+                        localFolderState.refreshFilesPublisher.send()
+                    } catch { alertToast(error) }
+                }
             } catch {
                 alertToast(error)
             }

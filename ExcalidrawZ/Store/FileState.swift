@@ -772,19 +772,19 @@ final class FileState {
                            let activeFolderPath = activeFolder.filePath,
                            URL(fileURLWithPath: activeFolderPath).standardizedFileURL.path
                             == parentURL.path {
-                            expandToGroup(activeFolder.objectID)
                             return
                         }
 
-                        let folder = try await context.perform {
+                        let navigationContext = PersistenceController.shared.newTaskContext()
+                        let folderID = try await navigationContext.perform {
                             try LocalFolder.deepestFolder(
                                 containingLocalFileAt: url,
-                                in: context
-                            )
+                                in: navigationContext
+                            )?.objectID
                         }
-                        if let folder {
+                        guard shouldApplyNavigationUpdate(fileID: activeFileID, generation: generation) else { return }
+                        if let folderID, let folder = try context.existingObject(with: folderID) as? LocalFolder {
                             setActiveGroupIfNeeded(.localFolder(folder))
-                            expandToGroup(folder.objectID)
                         } else {
                             setActiveGroupIfNeeded(nil)
                         }
@@ -831,9 +831,6 @@ final class FileState {
                         setActiveGroupIfNeeded(.group(trashGroup ?? dbFile.group!))
                     } else {
                         setActiveGroupIfNeeded(.group(dbFile.group!))
-                    }
-                    if let groupID = dbFile.group?.objectID, dbFile.inTrash == false {
-                        expandToGroup(groupID)
                     }
                 }
                 

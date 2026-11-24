@@ -120,6 +120,8 @@ struct GroupRowDropModifier: ViewModifier {
                                         return await self.handleDropCollaborationFile(id: roomID)
                                     case .temporaryFile(let url):
                                         return await self.handleDropTemporaryFile(url: url)
+                                    case .cloudStorageLocation:
+                                        return false
                                 }
                             }()
                             

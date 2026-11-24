@@ -12,16 +12,15 @@ import UniformTypeIdentifiers
 protocol SidebarRowDropable: DropDelegate { }
 extension SidebarRowDropable {
     func handleDrop(info: DropInfo, onDrop: @escaping (ItemDragState.DragItem) -> Void) {
+        let providers = info.itemProviders(for: [
+            .excalidrawFileRow,
+            .excalidrawGroupRow,
+            .excalidrawLocalFolderRow,
+            .excalidrawlibFile,
+            .fileURL
+        ])
         Task {
-            for provider in info.itemProviders(
-                for: [
-                    .excalidrawFileRow,
-                    .excalidrawGroupRow,
-                    .excalidrawLocalFolderRow,
-                    .excalidrawlibFile,
-                    .fileURL
-                ]
-            ) {
+            for provider in providers {
                 // handle drop file
                 if let data = try? await provider.loadItem(
                     forTypeIdentifier: UTType.excalidrawFileRow.identifier
@@ -56,7 +55,7 @@ extension SidebarRowDropable {
                    let draggedObjectID = PersistenceController.shared.container.persistentStoreCoordinator.managedObjectID(forURIRepresentation: url) {
                     onDrop(.localFolder(draggedObjectID))
                 }
-                
+
                 
                 handleDropExcalidrawLibrary(providers: [provider])
                 
@@ -83,6 +82,12 @@ extension SidebarRowDropable {
 struct SidebarRowDropDelegate: SidebarRowDropable {
     var onTargeted: (_ isTargeted: Bool) -> Void
     var onDrop: (ItemDragState.DragItem) -> Void
+    var resolveLocalDrag: (() -> ItemDragState.DragItem?)? = nil
+
+    func validateDrop(info: DropInfo) -> Bool {
+        guard let resolveLocalDrag else { return true }
+        return resolveLocalDrag() != nil
+    }
     
     func dropEntered(info: DropInfo) {
         onTargeted(true)
@@ -97,6 +102,7 @@ struct SidebarRowDropDelegate: SidebarRowDropable {
                 .excalidrawFileRow,
                 .excalidrawGroupRow,
                 .excalidrawLocalFolderRow,
+                .excalidrawLinkedStorageRoot,
             ]
         ) {
             return DropProposal(operation: .move)
@@ -106,6 +112,13 @@ struct SidebarRowDropDelegate: SidebarRowDropable {
     }
     
     func performDrop(info: DropInfo) -> Bool {
+        if let resolveLocalDrag {
+            let item = resolveLocalDrag()
+            onTargeted(false)
+            guard let item else { return false }
+            onDrop(item)
+            return true
+        }
         handleDrop(info: info) { item in
             DispatchQueue.main.async {
                 self.onDrop(item)
