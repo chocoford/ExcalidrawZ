@@ -429,6 +429,7 @@ struct ExcalidrawZApp: App {
 
         Settings {
             SettingsView()
+                .modifier(PaywallModifier())
                 .swiftyAlert(logs: true)
                 .containerSizeClassInjection()
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)

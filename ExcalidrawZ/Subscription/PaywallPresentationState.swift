@@ -5,7 +5,11 @@
 
 import Observation
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
+@MainActor
 @Observable
 final class PaywallPresentationState {
     static let shared = PaywallPresentationState()
@@ -21,6 +25,11 @@ final class PaywallPresentationState {
         if !isPresented {
             isPresented = true
         }
+#if os(macOS)
+        let controller = PaywallPanelController.shared
+        controller.onDismiss = { [weak self] in self?.isPresented = false }
+        controller.present(from: NSApp.keyWindow ?? NSApp.mainWindow)
+#endif
         NotificationCenter.default.post(name: Self.didPresentNotification, object: nil)
     }
 }

@@ -116,7 +116,7 @@ extension Paywall {
         if route == .plans {
             ToolbarItem(placement: .cancellationAction) {
                 Button {
-                    dismiss()
+                    dismissPaywall()
                 } label: {
                     Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
                 }

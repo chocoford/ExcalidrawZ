@@ -16,6 +16,9 @@ import SFSafeSymbols
 struct Paywall: View {
     private static let minimumRegularIOSWidth: CGFloat = 760
 
+    var onDismiss: (@MainActor () -> Void)? = nil
+    var onInteractionChanged: (@MainActor (Bool) -> Void)? = nil
+
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.dismiss) var dismiss
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -206,6 +209,9 @@ struct Paywall: View {
                     maxCreditTier = .standard
                 }
             }
+            .watch(value: presentedMCPFeatureHelpID != nil) { isPresented in
+                onInteractionChanged?(isPresented)
+            }
             .task {
                 if selectedSubscriptionItem == nil {
                     selectedSubscriptionItem = defaultSubscriptionItem()
@@ -213,6 +219,12 @@ struct Paywall: View {
             }
     }
     
+    @MainActor
+    func dismissPaywall() {
+        if let onDismiss { onDismiss() }
+        else { dismiss() }
+    }
+
     @ViewBuilder
     private func content() -> some View {
 #if os(iOS)
@@ -421,8 +433,7 @@ struct Paywall: View {
     @ViewBuilder
     func restorePurchasesButton() -> some View {
         AsyncButton {
-            await store.refreshEntitlements(reason: .restorePurchases, force: true)
-            alertToast(.init(displayMode: .hud, type: .complete(.green), title: String(localizable: .paywallRestorePurchasesDoneAlertTitle)))
+            await restorePurchases()
         } label: {
             Text(localizable: .paywallButtonRestorePurchases)
         }
@@ -432,12 +443,22 @@ struct Paywall: View {
     @MainActor
     func purchaseSelectedPlan() async throws {
         if let product = selectedBillingProduct {
+            onInteractionChanged?(true)
+            defer { onInteractionChanged?(false) }
             if let _ = try await store.purchase(product, handleVerifiedPurchase: { verificationResult in
                 try await llmState.handlePurchase(verificationResult: verificationResult)
             }) {
-                dismiss()
+                dismissPaywall()
             }
         }
+    }
+
+    @MainActor
+    private func restorePurchases() async {
+        onInteractionChanged?(true)
+        defer { onInteractionChanged?(false) }
+        await store.refreshEntitlements(reason: .restorePurchases, force: true)
+        alertToast(.init(displayMode: .hud, type: .complete(.green), title: String(localizable: .paywallRestorePurchasesDoneAlertTitle)))
     }
 #else
     @State private var isSwitchToAppStoreSheetPresented = false
@@ -476,7 +497,7 @@ struct Paywall: View {
 #if os(macOS)
         if #available(macOS 14.0, *) {
             OpenAIUsageSettingsButton {
-                dismiss()
+                dismissPaywall()
             }
         } else {
             fallbackAIUsageSettingsButton
@@ -490,13 +511,13 @@ struct Paywall: View {
     var fallbackAIUsageSettingsButton: some View {
         Button {
 #if os(iOS)
-            dismiss()
+            dismissPaywall()
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: 350_000_000)
                 SettingsRouter.shared.requestOpenAIUsage()
             }
 #else
-            dismiss()
+            dismissPaywall()
             SettingsRouter.shared.requestOpenAIUsage()
 #endif
         } label: {

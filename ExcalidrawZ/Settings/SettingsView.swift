@@ -95,24 +95,31 @@ struct SettingsView: View {
     @ViewBuilder
     private var sidebar: some View {
 #if os(macOS)
-        ScrollView {
-            VStack(spacing: 0) {
-                ForEach(Route.allCases) { route in
-                    Button {
-                        selection = route
-                    } label: {
-                        Label(route.text, systemSymbol: route.iconSymbol)
-                            .labelStyle(.titleAndIcon)
-                    }
-                    .buttonStyle(
-                        .excalidrawSidebarRow(
-                            isSelected: selection == route,
-                            isMultiSelected: false
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(Route.allCases) { route in
+                        Button {
+                            selection = route
+                        } label: {
+                            Label(route.text, systemSymbol: route.iconSymbol)
+                                .labelStyle(.titleAndIcon)
+                        }
+                        .buttonStyle(
+                            .excalidrawSidebarRow(
+                                isSelected: selection == route,
+                                isMultiSelected: false
+                            )
                         )
-                    )
+                    }
                 }
+                .padding(10)
             }
-            .padding(10)
+
+            SettingsPlanButton()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
         }
 #elseif os(iOS)
         List(selection: $selection) {
