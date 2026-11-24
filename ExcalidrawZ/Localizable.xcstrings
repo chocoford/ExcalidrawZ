@@ -9205,6 +9205,29 @@
         }
       }
     },
+    "cloudStorageOneDriveInvalidItemName": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a OneDrive name without spaces at the beginning or end."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请输入 OneDrive 名称，开头和结尾不能有空格。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請輸入 OneDrive 名稱，開頭和結尾不能有空格。"
+          }
+        }
+      }
+    },
     "cloudStorageContextMenuCopyLink": {
       "extractionState": "manual",
       "localizations": {

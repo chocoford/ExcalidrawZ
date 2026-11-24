@@ -64,6 +64,12 @@ extension CloudStorageItemID {
 }
 
 extension CloudStorageMetadataOperation {
+    func canReplay(afterDeferring itemIDs: Set<CloudStorageItemID>) -> Bool {
+        guard !itemIDs.contains(itemID), parentID?.isPendingLocalID != true else { return false }
+        // A child cannot be sent until its queued parent has a provider ID.
+        return !itemID.isPendingLocalID || kind == .createFile || kind == .createFolder
+    }
+
     var cloudOperation: CloudStorageOperation {
         switch kind {
             case .createFile:
@@ -75,5 +81,14 @@ extension CloudStorageMetadataOperation {
             case .deleteItem:
                 .deleteItem
         }
+    }
+}
+
+extension CloudStorageProviderID {
+    func normalizedItemName(_ name: String) throws -> String {
+        guard self == .microsoftOneDrive else { return name }
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw CloudStorageError.invalidOneDriveItemName }
+        return trimmed
     }
 }

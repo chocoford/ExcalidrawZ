@@ -1640,6 +1640,7 @@ final class CloudStorageDocumentStore {
         guard canCreateFolder(in: folder, connections: connections) else {
             throw CloudStorageError.unsupportedOperation(.createFolder)
         }
+        let name = try folder.location.providerID.normalizedItemName(name)
         let item = Self.pendingItem(
             name: name,
             kind: .folder,
@@ -1696,6 +1697,7 @@ final class CloudStorageDocumentStore {
             throw CloudStorageError.itemNotFound(reference.itemID)
         }
         try Self.require(.rename, for: item, operation: .moveItem)
+        let displayName = try location.providerID.normalizedItemName(displayName)
         let name = Self.fileName(displayName, preservingExtensionsFrom: item.name)
         if name == item.name {
             return reference
@@ -1744,6 +1746,7 @@ final class CloudStorageDocumentStore {
             throw CloudStorageError.itemNotFound(folder.itemID)
         }
         try Self.require(.rename, for: item, operation: .moveItem)
+        let name = try folder.location.providerID.normalizedItemName(name)
         if name == item.name {
             return folder
         }
@@ -2315,7 +2318,10 @@ final class CloudStorageDocumentStore {
         }
 
         let session = try await resolvedSession(for: location, connections: connections)
-        while let operation = persistedStates[location.id]?.metadataOperations.first {
+        var deferredItemIDs: Set<CloudStorageItemID> = []
+        while let operation = persistedStates[location.id]?.metadataOperations.first(where: {
+            deferredItemIDs.isEmpty || $0.canReplay(afterDeferring: deferredItemIDs)
+        }) {
             try Task.checkCancellation()
             replayingMetadataOperationIDs.insert(operation.id)
             let localItem = persistedStates[location.id]?.items.first {
@@ -2342,12 +2348,15 @@ final class CloudStorageDocumentStore {
                     .insert(processingFolderID)
             }
 
+            var normalizedName: String?
             do {
+                // Operations saved by older versions may still carry the original input.
+                normalizedName = try operation.name.map(location.providerID.normalizedItemName)
                 switch operation.kind {
                     case .createFile:
                         guard let localItem,
                               let parentID = operation.parentID,
-                              let name = operation.name else {
+                              let name = normalizedName else {
                             throw CloudStorageError.invalidProviderResponse(
                                 "A queued file creation is missing local metadata."
                             )
@@ -2390,7 +2399,7 @@ final class CloudStorageDocumentStore {
                     case .createFolder:
                         guard let localItem,
                               let parentID = operation.parentID,
-                              let name = operation.name else {
+                              let name = normalizedName else {
                             throw CloudStorageError.invalidProviderResponse(
                                 "A queued folder creation is missing local metadata."
                             )
@@ -2413,7 +2422,7 @@ final class CloudStorageDocumentStore {
                         let remoteItem = try await session.moveItem(
                             operation.itemID,
                             to: operation.parentID,
-                            newName: operation.name
+                            newName: normalizedName
                         )
                         try await completeMetadataOperation(
                             operation,
@@ -2452,6 +2461,22 @@ final class CloudStorageDocumentStore {
                     processingFolderID,
                     locationID: location.id
                 )
+                let cloudError = error as? CloudStorageError
+                let repairedNameConflicts = normalizedName != nil && normalizedName != operation.name
+                    && (cloudError == .conflict || cloudError == .itemNameAlreadyExists(nil))
+                if cloudError == .invalidOneDriveItemName || repairedNameConflicts {
+                    // Keep the operation and its cached content available for a user rename.
+                    // Other items in the same linked location can still sync.
+                    deferredItemIDs.insert(operation.itemID)
+                    let failure = repairedNameConflicts
+                        ? CloudStorageError.itemNameAlreadyExists(normalizedName)
+                        : CloudStorageError.invalidOneDriveItemName
+                    if let documentReference {
+                        setFailure(failure, operation: operation.cloudOperation, for: documentReference)
+                    }
+                    errorsByLocationID[location.id] = failure.localizedDescription
+                    continue
+                }
                 if let documentReference {
                     setFailure(error, operation: operation.cloudOperation, for: documentReference)
                 }
