@@ -57733,6 +57733,119 @@
         }
       }
     },
+    "generalUnofficialAppDisclosure": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تطبيق غير رسمي مبني على محرر Excalidraw مفتوح المصدر."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine inoffizielle App auf Basis des quelloffenen Excalidraw-Editors."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An unofficial app built on the open-source Excalidraw editor."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una aplicación no oficial basada en el editor de código abierto Excalidraw."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une application non officielle basée sur l’éditeur open source Excalidraw."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ओपन सोर्स Excalidraw संपादक पर बना एक अनौपचारिक ऐप।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un’app non ufficiale basata sull’editor open source Excalidraw."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オープンソースの Excalidraw エディターを基に開発された非公式アプリです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오픈 소스 Excalidraw 편집기를 기반으로 만든 비공식 앱입니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een onofficiële app gebaseerd op de opensource-editor Excalidraw."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieoficjalna aplikacja oparta na edytorze Excalidraw o otwartym kodzie źródłowym."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um aplicativo não oficial baseado no editor de código aberto Excalidraw."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неофициальное приложение на базе редактора Excalidraw с открытым исходным кодом."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แอปที่ไม่เป็นทางการซึ่งพัฒนาจากตัวแก้ไขแบบโอเพนซอร์ส Excalidraw"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açık kaynaklı Excalidraw düzenleyicisi üzerine geliştirilmiş, resmî olmayan bir uygulama."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ứng dụng không chính thức được xây dựng dựa trên trình chỉnh sửa mã nguồn mở Excalidraw."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基于开源 Excalidraw 编辑器开发的非官方应用。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基於開放原始碼 Excalidraw 編輯器開發的非官方 App。"
+          }
+        }
+      }
+    },
     "generalUntitled": {
       "extractionState": "manual",
       "localizations": {
@@ -159673,6 +159786,232 @@
           "stringUnit": {
             "state": "translated",
             "value": "ExcalidrawZ 的新功能"
+          }
+        }
+      }
+    },
+    "whatsNewUnofficialAppStatement": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتولى Chocoford صيانة ExcalidrawZ. لتجنب الالتباس مع مشروع Excalidraw، استخدم روابط GitHub أو Discord أدناه للحصول على الدعم."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ wird von Chocoford betreut. Um Verwechslungen mit dem Excalidraw-Projekt zu vermeiden, nutze für Hilfe mit der App die GitHub- oder Discord-Links unten."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ is maintained by Chocoford. To avoid confusion with the Excalidraw project, please use the GitHub or Discord links below for app support."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chocoford mantiene ExcalidrawZ. Para evitar confusiones con el proyecto Excalidraw, usa los enlaces de GitHub o Discord de abajo si necesitas ayuda con la app."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chocoford maintient ExcalidrawZ. Pour éviter toute confusion avec le projet Excalidraw, utilisez les liens GitHub ou Discord ci-dessous pour obtenir de l’aide sur l’application."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ का रखरखाव Chocoford करते हैं। Excalidraw प्रोजेक्ट से भ्रम से बचने के लिए, इस ऐप की मदद के लिए नीचे दिए गए GitHub या Discord लिंक का उपयोग करें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ è gestito da Chocoford. Per evitare confusione con il progetto Excalidraw, usa i link a GitHub o Discord qui sotto per ricevere assistenza sull’app."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ は Chocoford が保守しています。Excalidraw プロジェクトとの混同を避けるため、このアプリに関するお問い合わせには下の GitHub または Discord のリンクをご利用ください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ는 Chocoford가 관리합니다. Excalidraw 프로젝트와 혼동하지 않도록 이 앱에 관한 문의는 아래 GitHub 또는 Discord 링크를 이용해 주세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ wordt onderhouden door Chocoford. Gebruik voor hulp met deze app de GitHub- of Discord-links hieronder om verwarring met het Excalidraw-project te voorkomen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ jest utrzymywany przez Chocoford. Aby uniknąć pomyłek z projektem Excalidraw, skorzystaj z poniższych linków do GitHuba lub Discorda, jeśli potrzebujesz pomocy z aplikacją."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O ExcalidrawZ é mantido por Chocoford. Para evitar confusão com o projeto Excalidraw, use os links do GitHub ou do Discord abaixo para obter ajuda com o app."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ поддерживает Chocoford. Чтобы не путать это приложение с проектом Excalidraw, обращайтесь за помощью по ссылкам на GitHub или Discord ниже."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ ดูแลโดย Chocoford เพื่อไม่ให้สับสนกับโครงการ Excalidraw โปรดใช้ลิงก์ GitHub หรือ Discord ด้านล่างหากต้องการความช่วยเหลือเกี่ยวกับแอปนี้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ, Chocoford tarafından sürdürülür. Excalidraw projesiyle karışıklığı önlemek için uygulama desteğine aşağıdaki GitHub veya Discord bağlantılarından ulaşın."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ do Chocoford duy trì. Để tránh nhầm lẫn với dự án Excalidraw, hãy dùng liên kết GitHub hoặc Discord bên dưới để được hỗ trợ về ứng dụng này."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 由 Chocoford 维护。为避免与官方项目混淆，使用问题请通过下方的 GitHub 或 Discord 联系开发者。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ExcalidrawZ 由 Chocoford 維護。為避免與官方專案混淆，使用問題請透過下方的 GitHub 或 Discord 聯繫開發者。"
+          }
+        }
+      }
+    },
+    "whatsNewUnofficialAppTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عميل غير رسمي لـ Excalidraw"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inoffizieller Excalidraw-Client"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unofficial Excalidraw client"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cliente no oficial de Excalidraw"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Client Excalidraw non officiel"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excalidraw का अनौपचारिक क्लाइंट"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Client Excalidraw non ufficiale"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "非公式の Excalidraw クライアント"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "비공식 Excalidraw 클라이언트"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onofficiële Excalidraw-client"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieoficjalny klient Excalidraw"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cliente não oficial do Excalidraw"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неофициальный клиент Excalidraw"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไคลเอนต์ Excalidraw ที่ไม่เป็นทางการ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resmî olmayan Excalidraw istemcisi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ứng dụng khách Excalidraw không chính thức"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "非官方 Excalidraw 客户端"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "非官方 Excalidraw 用戶端"
           }
         }
       }

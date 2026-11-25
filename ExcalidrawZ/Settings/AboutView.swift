@@ -86,6 +86,12 @@ struct AboutView: View {
                     Text(Bundle.main.infoDictionary!["CFBundleDisplayName"] as! String)
                         .font(.title3)
                         .fontWeight(.bold)
+                    Text(.localizable(.generalUnofficialAppDisclosure))
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .textCase(nil)
+                        .padding(.top, 4)
                 }
                 Spacer(minLength: 0)
             }

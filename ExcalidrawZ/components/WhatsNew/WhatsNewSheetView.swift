@@ -73,7 +73,6 @@ struct WhatsNewSheetViewModifier: ViewModifier {
 
 struct WhatsNewView: View {
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
     
     var showContinue: Bool
@@ -343,6 +342,8 @@ struct WhatsNewView: View {
 
                     whatsNewCoverImage()
 
+                    unofficialAppNotice()
+
                     featuresContent()
                 }
                 .padding(.vertical)
@@ -464,30 +465,33 @@ struct WhatsNewView: View {
             }
     }
 
-    @ViewBuilder
-    private func warnningSection() -> some View {
-        VStack {
-            Text(.localizable(.whatsNewWarningBody))
-            
-            HStack {
-                Spacer(minLength: 0)
-                
-                communityLinks()
+    private func unofficialAppNotice() -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(.localizable(.whatsNewUnofficialAppTitle))
+                    .fontWeight(.semibold)
+                    .accessibilityAddTraits(.isHeader)
+
+                Text(.localizable(.whatsNewUnofficialAppStatement))
             }
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(.callout)
-        .padding()
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .fixedSize(horizontal: false, vertical: true)
         .background {
-            let roundRect = RoundedRectangle(cornerRadius: 12)
-            ZStack {
-                roundRect
-                    .fill(
-                        colorScheme == .dark ? Color(red: 43/255.0, green: 30/255.0, blue: 0) : Color(red: 1, green: 251.0/255.0, blue: 242.0/255.0)
-                    )
-                roundRect
-                    .stroke(colorScheme == .dark ? Color(red: 1, green: 181/255.0, blue: 15/255.0) : Color(red: 158/255.0, green: 103/255.0, blue: 0))
-            }
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.yellow.opacity(0.15))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(.orange.opacity(0.25))
         }
     }
     
