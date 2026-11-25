@@ -23,7 +23,7 @@ struct LocalFoldersView: View {
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField
     var showFiles: Bool
-    var reorder: LinkedStorageRootReorderAction?
+    var reorder: SidebarRowReorderAction?
     var onDeleteSelected: () -> Void
 
     @State private var showFolderNotFoundAlert = false
@@ -35,7 +35,7 @@ struct LocalFoldersView: View {
     init(folder: LocalFolder,
          sortField: ExcalidrawFileSortField,
          showFiles: Bool = true,
-         reorder: LinkedStorageRootReorderAction? = nil,
+         reorder: SidebarRowReorderAction? = nil,
          onDeleteSelected: @escaping () -> Void
     ) {
         self.folder = folder
@@ -226,7 +226,7 @@ struct LocalFoldersView: View {
                     }
                 }
                 .modifier(LocalFolderDragModifier(folder: folder))
-                .modifier(LinkedStorageRootReorderModifier(action: reorder))
+                .modifier(SidebarRowReorderModifier(action: reorder))
         }
         .disclosureGroupIndicatorVisibility(.visible)
         .background {
@@ -256,7 +256,7 @@ struct LocalFoldersView: View {
                     canExpand: true,
                 )
             )
-            .modifier(LinkedStorageRootReorderModifier(action: reorder))
+            .modifier(SidebarRowReorderModifier(action: reorder))
         } childView: { child in
             LocalFoldersView(folder: child, sortField: sortField) {
                 handleSelectedDeletion()

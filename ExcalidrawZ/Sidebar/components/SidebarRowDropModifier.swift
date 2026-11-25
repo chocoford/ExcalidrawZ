@@ -81,8 +81,9 @@ extension SidebarRowDropable {
 
 struct SidebarRowDropDelegate: SidebarRowDropable {
     var onTargeted: (_ isTargeted: Bool) -> Void
-    var onDrop: (ItemDragState.DragItem) -> Void
+    var onDrop: (ItemDragState.DragItem, CGPoint) -> Void
     var resolveLocalDrag: (() -> ItemDragState.DragItem?)? = nil
+    var onDragUpdated: ((DropInfo) -> Void)? = nil
 
     func validateDrop(info: DropInfo) -> Bool {
         guard let resolveLocalDrag else { return true }
@@ -91,12 +92,14 @@ struct SidebarRowDropDelegate: SidebarRowDropable {
     
     func dropEntered(info: DropInfo) {
         onTargeted(true)
+        onDragUpdated?(info)
     }
     func dropExited(info: DropInfo) {
         onTargeted(false)
     }
     
     func dropUpdated(info: DropInfo) -> DropProposal? {
+        onDragUpdated?(info)
         if info.hasItemsConforming(
             to: [
                 .excalidrawFileRow,
@@ -112,16 +115,17 @@ struct SidebarRowDropDelegate: SidebarRowDropable {
     }
     
     func performDrop(info: DropInfo) -> Bool {
+        let location = info.location
         if let resolveLocalDrag {
             let item = resolveLocalDrag()
             onTargeted(false)
             guard let item else { return false }
-            onDrop(item)
+            onDrop(item, location)
             return true
         }
         handleDrop(info: info) { item in
             DispatchQueue.main.async {
-                self.onDrop(item)
+                self.onDrop(item, location)
             }
         }
         
@@ -137,7 +141,8 @@ struct SidebarRowDropModifier: ViewModifier {
     
     var allow: [UTType]
     var onTargeted: (_ isTargeted: Bool) -> Void
-    var onDrop: (ItemDragState.DragItem) -> Void
+    var onDrop: (ItemDragState.DragItem, CGPoint) -> Void
+    var onDragUpdated: ((DropInfo) -> Void)? = nil
     
     @FetchRequest(sortDescriptors: [], predicate: NSPredicate(format: "parent == nil"))
     private var topLevelFolders: FetchedResults<LocalFolder>
@@ -148,7 +153,7 @@ struct SidebarRowDropModifier: ViewModifier {
                 of: allow,
                 delegate: SidebarRowDropDelegate(
                     onTargeted: onTargeted,
-                    onDrop: { item in
+                    onDrop: { item, location in
                         sidebarDragState.reset()
                         
                         switch item {
@@ -160,14 +165,15 @@ struct SidebarRowDropModifier: ViewModifier {
                                         return false
                                     }
                                 }) {
-                                    self.onDrop(.localFile(url))
+                                    self.onDrop(.localFile(url), location)
                                 } else {
-                                    self.onDrop(.temporaryFile(url))
+                                    self.onDrop(.temporaryFile(url), location)
                                 }
                             default:
-                                self.onDrop(item)
+                                self.onDrop(item, location)
                         }
-                    }
+                    },
+                    onDragUpdated: onDragUpdated
                 )
             )
     }

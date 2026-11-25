@@ -45,6 +45,7 @@ struct GroupRowDragModifier: ViewModifier {
     func body(content: Content) -> some View {
         if group.groupType == .normal {
             content
+                .contentShape(Rectangle())
                 .onDrag {
                     let url = group.objectID.uriRepresentation()
                     sidebarDragState.currentDragItem = .group(group.objectID)
@@ -73,6 +74,7 @@ struct GroupRowDropModifier: ViewModifier {
         .excalidrawlibFile,
         .fileURL
     ]
+    var reorder: SidebarRowReorderAction? = nil
     var dropTarget: (ItemDragState.DragItem) -> ItemDragState.GroupDropTarget
 
     var ancestors: Set<Group> {
@@ -93,18 +95,34 @@ struct GroupRowDropModifier: ViewModifier {
     @State private var importLocalFileSuccessCallback: ((Bool) -> Void)?
     @State private var importCollaborationFileSuccessCallback: ((Bool) -> Void)?
     
+    @State private var rowHeight: CGFloat = 0
+
+    private var groupItem: ItemDragState.DragItem { .group(group.objectID) }
+
     func body(content: Content) -> some View {
+        let reorderTarget = sidebarDragState.currentRowReorderTarget
+        let highlightedEdge = reorder != nil && reorderTarget?.item == groupItem ? reorderTarget?.edge : nil
         content
-            .opacity(sidebarDragState.currentDragItem == .group(group.objectID) ? 0.3 : 1)
+            .opacity(sidebarDragState.currentDragItem == groupItem ? 0.3 : 1)
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                reorder == nil ? 0 : proxy.size.height
+            } action: { height in
+                rowHeight = height
+            }
             .modifier(
                 SidebarRowDropModifier(
                     allow: allow,
-                    onTargeted: { val in
-                        sidebarDragState.currentDropGroupTarget = val
-                        ? dropTarget(.group(group.objectID))
-                        : nil
+                    onTargeted: { isTargeted in
+                        if !isTargeted || reorder == nil {
+                            updateDropHighlight(isTargeted)
+                        }
                     },
-                    onDrop: { item in
+                    onDrop: { item, location in
+                        if let reorder, let source = reorder.source(for: item),
+                           let edge = reorderEdge(at: location.y) {
+                            reorder.move(source, edge)
+                            return
+                        }
                         Task {
                             let success: Bool = await {
                                 switch item {
@@ -136,9 +154,16 @@ struct GroupRowDropModifier: ViewModifier {
                             }
                         }
                         
-                    }
+                    },
+                    onDragUpdated: reorder == nil ? nil : updateDropLocation
                 )
             )
+            .overlay(alignment: highlightedEdge == .bottom ? .bottom : .top) {
+                if highlightedEdge != nil {
+                    DropTargetPlaceholder()
+                        .allowsHitTesting(false)
+                }
+            }
             .sheet(
                 isPresented: Binding {
                     folderWillBeImported != nil
@@ -186,9 +211,37 @@ struct GroupRowDropModifier: ViewModifier {
                 }
             }
     }
-    
-    
-    
+
+    private func reorderEdge(at y: CGFloat) -> VerticalEdge? {
+        guard rowHeight > 0, y >= 0, y <= rowHeight else { return nil }
+        let edgeHeight = min(3, rowHeight / 3)
+        if y < edgeHeight { return .top }
+        if y > rowHeight - edgeHeight { return .bottom }
+        return nil
+    }
+
+    private func updateDropLocation(_ info: DropInfo) {
+        guard let reorder else { return }
+        let canReorder = info.hasItemsConforming(to: reorder.dropTypes)
+            && (sidebarDragState.currentDragItem == nil || reorder.source(for: sidebarDragState.currentDragItem) != nil)
+        updateDropHighlight(true, reorderEdge: canReorder ? reorderEdge(at: info.location.y) : nil)
+    }
+
+    private func updateDropHighlight(_ isTargeted: Bool, reorderEdge: VerticalEdge? = nil) {
+        let target = dropTarget(groupItem)
+        if isTargeted, reorderEdge == nil {
+            sidebarDragState.currentDropGroupTarget = target
+        } else if sidebarDragState.currentDropGroupTarget == target {
+            sidebarDragState.currentDropGroupTarget = nil
+        }
+
+        if let reorderEdge {
+            sidebarDragState.currentRowReorderTarget = .init(item: groupItem, edge: reorderEdge)
+        } else if reorder != nil, sidebarDragState.currentRowReorderTarget?.item == groupItem {
+            sidebarDragState.currentRowReorderTarget = nil
+        }
+    }
+
     private func handleDropFile(id fileID: NSManagedObjectID, context: NSManagedObjectContext) async -> Bool {
         // add files to Group
         // or move files to trash

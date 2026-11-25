@@ -98,7 +98,7 @@ struct LocalFolderDropModifier: ViewModifier {
                         ? dropTarget(.localFolder(folder.objectID))
                         : nil
                     },
-                    onDrop: { item in
+                    onDrop: { item, _ in
                         Task {
                             let success: Bool = await {
                                 switch item {

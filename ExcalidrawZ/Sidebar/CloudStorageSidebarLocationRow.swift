@@ -13,7 +13,7 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
     let location: CloudStorageLocation
     @Bindable var connections: CloudStorageConnectionStore
     let icon: Icon
-    let reorder: LinkedStorageRootReorderAction
+    let reorder: SidebarRowReorderAction
     let onReconnect: () -> Void
 
     @State private var browser: CloudStorageSidebarBrowserModel
@@ -22,7 +22,7 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
     init(
         location: CloudStorageLocation,
         connections: CloudStorageConnectionStore,
-        reorder: LinkedStorageRootReorderAction,
+        reorder: SidebarRowReorderAction,
         @ViewBuilder icon: () -> Icon,
         onReconnect: @escaping () -> Void
     ) {
@@ -90,7 +90,7 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
         .extraLabelStyle { content in
             content
                 .modifier(CloudStorageLocationDragModifier(locationID: location.id))
-                .modifier(LinkedStorageRootReorderModifier(action: reorder))
+                .modifier(SidebarRowReorderModifier(action: reorder))
         }
         .disclosureGroupIndicatorVisibility(.visible)
         .expandForSidebarFileReveal(scrollTarget, isExpanded: $isExpanded, selectedFolderID: selectedFolderID)

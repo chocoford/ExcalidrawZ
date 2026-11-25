@@ -36,17 +36,25 @@ class ItemDragState {
     }
     
     var currentDropGroupTarget: GroupDropTarget?
+
+    struct RowReorderTarget: Equatable {
+        let item: DragItem
+        let edge: VerticalEdge
+    }
+    var currentRowReorderTarget: RowReorderTarget?
     
     var hasAnyDragState: Bool {
         currentDragItem != nil ||
         currentDropFileRowTarget != nil ||
-        currentDropGroupTarget != nil
+        currentDropGroupTarget != nil ||
+        currentRowReorderTarget != nil
     }
     
     func reset() {
         self.currentDragItem = nil
         self.currentDropGroupTarget = nil
         self.currentDropFileRowTarget = nil
+        self.currentRowReorderTarget = nil
     }
 }
 

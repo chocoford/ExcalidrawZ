@@ -27,9 +27,10 @@ struct LinkedStorageRootOrder {
     }
 }
 
-struct LinkedStorageRootReorderAction {
+struct SidebarRowReorderAction {
     let item: ItemDragState.DragItem
     let contains: (ItemDragState.DragItem) -> Bool
+    let dropTypes: [UTType]
     let move: @MainActor (_ source: ItemDragState.DragItem, _ edge: VerticalEdge) -> Void
 
     func source(for draggedItem: ItemDragState.DragItem?) -> ItemDragState.DragItem? {
@@ -38,16 +39,16 @@ struct LinkedStorageRootReorderAction {
     }
 }
 
-struct LinkedStorageRootReorderModifier: ViewModifier {
+struct SidebarRowReorderModifier: ViewModifier {
     @Environment(ItemDragState.self) private var dragState
-    let action: LinkedStorageRootReorderAction?
+    let action: SidebarRowReorderAction?
 
     func body(content: Content) -> some View {
         content.overlay {
             if let action {
                 VStack(spacing: 0) {
-                    dropZone(edge: .top, target: .startOfGroup(action.item), action: action)
-                    dropZone(edge: .bottom, target: .after(action.item), action: action)
+                    dropZone(edge: .top, action: action)
+                    dropZone(edge: .bottom, action: action)
                 }
                 .allowsHitTesting(action.source(for: dragState.currentDragItem) != nil)
             }
@@ -56,22 +57,22 @@ struct LinkedStorageRootReorderModifier: ViewModifier {
 
     private func dropZone(
         edge: VerticalEdge,
-        target: ItemDragState.FileRowDropTarget,
-        action: LinkedStorageRootReorderAction
+        action: SidebarRowReorderAction
     ) -> some View {
-        Color.clear
+        let target = ItemDragState.RowReorderTarget(item: action.item, edge: edge)
+        return Color.clear
             .contentShape(Rectangle())
             .onDrop(
-                of: [.excalidrawLocalFolderRow, .excalidrawLinkedStorageRoot],
+                of: action.dropTypes,
                 delegate: SidebarRowDropDelegate(
                     onTargeted: { isTargeted in
                         if isTargeted {
-                            dragState.currentDropFileRowTarget = target
-                        } else if dragState.currentDropFileRowTarget == target {
-                            dragState.currentDropFileRowTarget = nil
+                            dragState.currentRowReorderTarget = target
+                        } else if dragState.currentRowReorderTarget == target {
+                            dragState.currentRowReorderTarget = nil
                         }
                     },
-                    onDrop: { source in
+                    onDrop: { source, _ in
                         dragState.reset()
                         // Apply the new order after SwiftUI has finished the drop callback.
                         DispatchQueue.main.async {
@@ -82,7 +83,7 @@ struct LinkedStorageRootReorderModifier: ViewModifier {
                 )
             )
             .overlay(alignment: edge == .top ? .top : .bottom) {
-                if dragState.currentDropFileRowTarget == target {
+                if dragState.currentRowReorderTarget == target {
                     DropTargetPlaceholder()
                         .allowsHitTesting(false)
                 }

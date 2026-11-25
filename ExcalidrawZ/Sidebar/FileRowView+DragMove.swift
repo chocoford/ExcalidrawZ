@@ -140,7 +140,7 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
                                             sidebarDragState.currentDropFileRowTarget = nil
                                         }
                                     },
-                                    onDrop: { item in
+                                    onDrop: { item, _ in
                                         if let index = files.firstIndex(of: file) {
                                             let dropTarget: ItemDragState.FileRowDropTarget = {
                                                 if index > 0 {
@@ -195,7 +195,7 @@ struct FileRowDragDropModifier<DraggableFile: DragMovableFile>: ViewModifier {
                                             sidebarDragState.currentDropFileRowTarget = nil
                                         }
                                     },
-                                    onDrop: { item in
+                                    onDrop: { item, _ in
                                         let dropTarget: ItemDragState.FileRowDropTarget = .after(.file(file.objectID))
                                         switch item {
                                             case .file(let fileID):

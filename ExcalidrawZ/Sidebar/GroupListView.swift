@@ -284,37 +284,15 @@ private struct DatabaseGroupsListView: View {
     private var fileState: FileState
 
     init(sortField: ExcalidrawFileSortField, fileState: FileState) {
-        /// Put the important things first.
-        let sortDescriptors: [SortDescriptor<Group>] = {
-            switch sortField {
-                case .updatedAt:
-                    [
-                        // SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse)
-                    ]
-                case .name:
-                    [
-                        SortDescriptor(\.name, order: .reverse),
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse),
-                    ]
-                case .rank:
-                    [
-                        SortDescriptor(\.rank, order: .forward),
-                        // SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse),
-                    ]
-            }
-        }()
-
         self.sortField = sortField
         self.fileState = fileState
         self._groups = FetchRequest(
-            sortDescriptors: sortDescriptors,
+            sortDescriptors: SidebarGroupOrder.sortDescriptors(isTopLevel: true),
             predicate: NSPredicate(
                 format: "parent = nil OR type == %@",
                 Group.GroupType.trash.rawValue
-            )
+            ),
+            animation: .smooth(duration: 0.2)
         )
     }
 
@@ -327,21 +305,24 @@ private struct DatabaseGroupsListView: View {
             .filter {
                 $0.groupType != .trash || trashedFilesCount > 0
             }
-            .sorted { a, b in
-                a.groupType == .default && b.groupType != .default ||
-                a.groupType == b.groupType && b.groupType == .normal && a.createdAt ?? .distantPast < b.createdAt ?? .distantPast  ||
-                a.groupType != .trash && b.groupType == .trash
-            }
+            .sorted { $0.groupType < $1.groupType }
     }
 
     var body: some View {
+        let displayedGroups = displayedGroups
+        let reorderableGroupIDs = Set(displayedGroups.lazy.filter { $0.groupType == .normal }.map(\.objectID))
         // ❕❕❕use `LazyVStack` will cause crash with error:
         //        FAULT: NSGenericException: The window has been marked as needing another Update Constraints in Window pass,
         //        but it has already had more Update Constraints in Window passes than there are views in the window.
         VStack(alignment: .leading, spacing: 0) {
             /// ❕❕❕use `id: \.self` can avoid multi-thread access crash when closing create-room-sheet...
             ForEach(displayedGroups, id: \.self) { group in
-                GroupsView(group: group, sortField: sortField, fileState: fileState)
+                GroupsView(
+                    group: group,
+                    sortField: sortField,
+                    fileState: fileState,
+                    reorderableGroupIDs: reorderableGroupIDs
+                )
             }
         }
         .watch(value: trashedFilesCount) { count in

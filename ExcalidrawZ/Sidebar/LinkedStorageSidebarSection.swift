@@ -138,7 +138,11 @@ struct LinkedStorageSidebarSection: View {
 
     @ViewBuilder
     private func rootRow(_ root: Root, folders: FetchedResults<LocalFolder>, rootItems: Set<ItemDragState.DragItem>) -> some View {
-        let reorder = LinkedStorageRootReorderAction(item: root.dragItem, contains: { rootItems.contains($0) }) { source, edge in
+        let reorder = SidebarRowReorderAction(
+            item: root.dragItem,
+            contains: { rootItems.contains($0) },
+            dropTypes: [.excalidrawLocalFolderRow, .excalidrawLinkedStorageRoot]
+        ) { source, edge in
             let roots = defaultRoots(in: folders)
             guard let sourceRoot = roots.first(where: { $0.dragItem == source }) else { return }
             var order = LinkedStorageRootOrder(savedOrder: savedRootOrder, defaultIDs: roots.map(\.orderID))
