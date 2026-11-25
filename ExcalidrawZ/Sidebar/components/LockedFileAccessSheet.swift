@@ -51,7 +51,7 @@ private enum LockSecurityPalette {
 struct LockedFileAccessSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
+    @Environment(LockedContentStateStore.self) private var lockedContentState
 
     private let recoveryKeyControlHeight: CGFloat = 44
 

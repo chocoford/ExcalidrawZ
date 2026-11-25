@@ -30,9 +30,9 @@ struct GeneralSettingsView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
 #if os(macOS) && !APP_STORE
-    @EnvironmentObject var updateChecker: UpdateChecker
+    @Environment(UpdateChecker.self) var updateChecker
 #endif
-    @EnvironmentObject var appPreference: AppPreference
+    @Environment(AppPreference.self) var appPreference
     
     @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
     
@@ -62,8 +62,8 @@ struct GeneralSettingsView: View {
     @ViewBuilder
     private func content() -> some View {
         Section {
-            appearanceSettingCell(.localizable(.settingsAppAppearanceName), selection: $appPreference.appearance)
-            appearanceSettingCell(.localizable(.settingsExcalidrawAppearanceName), selection: $appPreference.excalidrawAppearance)
+            appearanceSettingCell(.localizable(.settingsAppAppearanceName), selection: Bindable(appPreference).appearance)
+            appearanceSettingCell(.localizable(.settingsExcalidrawAppearanceName), selection: Bindable(appPreference).excalidrawAppearance)
         } header: {
             if #available(macOS 14.0, *) {
                 Text(.localizable(.settingsAppAppearanceName))
@@ -109,7 +109,7 @@ struct GeneralSettingsView: View {
             HStack(alignment: .top, spacing: 20) {
                 Text("Sidebar").font(.headline).foregroundStyle(.secondary)
                 Spacer()
-                RadioGroup(selected: $appPreference.sidebarLayout) { option, isOn in
+                RadioGroup(selected: Bindable(appPreference).sidebarLayout) { option, isOn in
                     Image(option.imageName("Sidebar"))
                         .resizable()
                         .scaledToFit()
@@ -130,7 +130,7 @@ struct GeneralSettingsView: View {
             HStack(alignment: .top, spacing: 20) {
                 Text("Inspector").font(.headline).foregroundStyle(.secondary)
                 Spacer()
-                RadioGroup(selected: $appPreference.inspectorLayout) { option, isOn in
+                RadioGroup(selected: Bindable(appPreference).inspectorLayout) { option, isOn in
                     Image(option.imageName("Inspector"))
                         .resizable()
                         .scaledToFit()
@@ -167,7 +167,7 @@ struct GeneralSettingsView: View {
         
 #if os(macOS) && !APP_STORE
         Section {
-            Toggle(.localizable(.settingsUpdatesAutoCheckLabel), isOn: $updateChecker.automaticallyChecksForUpdates)
+            Toggle(.localizable(.settingsUpdatesAutoCheckLabel), isOn: Bindable(updateChecker).automaticallyChecksForUpdates)
                 .disabled(!updateChecker.canCheckForUpdates)
         } header: {
             if #available(macOS 14.0, *) {
@@ -500,9 +500,9 @@ private extension GeneralSettingsView {
 #if DEBUG
 #Preview {
     GeneralSettingsView()
-        .environmentObject(AppPreference())
+        .environment(AppPreference())
 #if os(macOS) && !APP_STORE
-        .environmentObject(UpdateChecker())
+        .environment(UpdateChecker())
 #endif
 }
 
@@ -513,7 +513,7 @@ private extension GeneralSettingsView {
             
         }
         .formStyle(.grouped)
-        .environmentObject(AppPreference())
+        .environment(AppPreference())
     }
 }
 #endif

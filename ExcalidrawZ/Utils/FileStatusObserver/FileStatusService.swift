@@ -5,36 +5,38 @@
 //  Created by Chocoford on 12/31/25.
 //
 
+import Observation
 import Foundation
 import SwiftUI
 import Combine
 
 // MARK: - SyncState
 
-/// ObservableObject that provides reactive UI state for sync operations
+/// observable model that provides reactive UI state for sync operations
 /// This is observed by UI components to display sync progress
 @MainActor
-class SyncState: ObservableObject {
+@Observable
+class SyncState {
     private static let globalSyncStatusBatchThreshold = 3
 
     /// Files currently syncing
-    @Published var syncingFiles: [FileStatusBox] = []
+    var syncingFiles: [FileStatusBox] = []
 
     /// Files queued for sync. Kept separate from `syncingFiles` so DEBUG UI can
     /// show debounce/queue behavior without changing the user-facing popover.
-    @Published var queuedFiles: [FileStatusBox] = []
+    var queuedFiles: [FileStatusBox] = []
 
     /// Files whose last sync operation failed.
-    @Published var failedFiles: [FileStatusBox] = []
+    var failedFiles: [FileStatusBox] = []
 
     /// MediaItems batch download progress
-    @Published var mediaItemsDownloadProgress: (current: Int, total: Int)?
+    var mediaItemsDownloadProgress: (current: Int, total: Int)?
 
     /// Overall sync progress (for all file types: File, MediaItem, Checkpoint, etc.)
-    @Published var overallProgress: (current: Int, total: Int)?
+    var overallProgress: (current: Int, total: Int)?
 
     /// Overall sync progress message
-    @Published var syncProgressMessage: String?
+    var syncProgressMessage: String?
 
     /// Whether there are any active sync operations
     var hasActiveSyncOperations: Bool {
@@ -122,10 +124,10 @@ class FileStatusService {
 
     /// Subscriptions to FileStatusBox changes
     /// When any box's status changes, we update syncState
-    private var subscriptions: [String: AnyCancellable] = [:]
+    private var subscriptions: [String: ObservationSubscription] = [:]
 
     /// Reactive sync state for UI observation
-    /// UI should observe this ObservableObject for sync progress updates
+    /// UI should observe this observable model for sync progress updates
     let syncState = SyncState()
 
     private init() {}
@@ -146,15 +148,10 @@ class FileStatusService {
         let box = FileStatusBox(fileID: fileID, status: defaultStatus)
         statusBoxes[fileID] = box
 
-        // Subscribe to box changes to update syncState
-        subscriptions[fileID] = box.objectWillChange.sink { [weak self] in
-            guard let self = self else { return }
-            // `objectWillChange` fires before the new status is stored. Hop to
-            // the next main-actor turn so aggregate sync debug state is current.
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                self.syncState.updateSyncingFiles(from: Array(self.statusBoxes.values))
-            }
+        subscriptions[fileID] = ObservationSubscription(initial: false) { [weak box] in
+            box?.status
+        } onChange: { [weak self] _ in
+            self?.refreshSyncState()
         }
 
         return box

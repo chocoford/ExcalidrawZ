@@ -13,9 +13,9 @@ import CoreData
 struct CompactCollaborationHomeView: View {
     @Environment(\.alertToast) var alertToast
 
-    @EnvironmentObject private var store: Store
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var collaborationState: CollaborationState
+    @Environment(Store.self) private var store
+    @Environment(FileState.self) private var fileState
+    @Environment(CollaborationState.self) private var collaborationState
 
     @FetchRequest(sortDescriptors: [
         SortDescriptor(\.updatedAt, order: .reverse)
@@ -81,7 +81,7 @@ struct CompactCollaborationHomeView: View {
 
             TextField(
                 .localizable(.collaborationHomeNameFieldPlaceholder),
-                text: $collaborationState.userCollaborationInfo.username
+                text: Bindable(collaborationState).userCollaborationInfo.username
             )
             .textFieldStyle(.roundedBorder)
             .focused($isUsernameFieldFocused)
@@ -156,8 +156,8 @@ struct CompactCollaborationHomeView: View {
 
 #Preview {
     CompactCollaborationHomeView()
-        .environmentObject(Store.shared)
-        .environmentObject(FileState())
-        .environmentObject(CollaborationState())
+        .environment(Store.shared)
+        .environment(FileState())
+        .environment(CollaborationState())
 }
 #endif

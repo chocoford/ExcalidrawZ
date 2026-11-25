@@ -188,9 +188,9 @@ enum PromptImagePasteResult {
 
 @MainActor
 struct PromptDraftInputField: View {
-    @EnvironmentObject private var aiChatState: AIChatState
+    @Environment(AIChatState.self) private var aiChatState
     let draftKey: String
-    @ObservedObject var draftState: AIChatPromptDraftState
+    @Bindable var draftState: AIChatPromptDraftState
 
     let showsAttachments: Bool
     let sendRequestToken: Int

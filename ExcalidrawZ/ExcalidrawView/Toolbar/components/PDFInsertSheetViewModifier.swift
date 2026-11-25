@@ -6,81 +6,24 @@
 //
 
 import SwiftUI
-import SwiftyAlert
 
 struct PDFInsertSheetViewModifier: ViewModifier {
-    @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var toolState: ToolState
+    @Environment(ToolState.self) private var toolState
 
     @Binding var isPresented: Bool
 
-    @State private var sheetItem: PDFDropInfo?
-
     func body(content: Content) -> some View {
         content
-            .sheet(item: $sheetItem) { item in
-                PDFInsertSheet(
-                    pdfInfo: item,
-                    onInsert: { pdfData, mode, direction, itemsPerLine in
-                        try await handlePDFInsert(
-                            pdfData: pdfData,
-                            mode: mode,
-                            direction: direction,
-                            itemsPerLine: itemsPerLine,
-                            sceneX: item.sceneX,
-                            sceneY: item.sceneY
-                        )
-                    }
-                )
-            }
             .sheet(isPresented: $isPresented) {
-                PDFInsertSheet(
-                    onInsert: { pdfData, mode, direction, itemsPerLine in
-                        try await handlePDFInsert(
-                            pdfData: pdfData,
-                            mode: mode,
-                            direction: direction,
-                            itemsPerLine: itemsPerLine,
-                            sceneX: 0,
-                            sceneY: 0
-                        )
+                PDFInsertSheet { pdfData, mode, direction, itemsPerLine in
+                    guard let coordinator = toolState.excalidrawWebCoordinator else {
+                        throw NativeFileDropError.targetChanged
                     }
-                )
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .showPDFInsertSheet)) { notification in
-                if let dropInfo = notification.object as? PDFDropInfo {
-                    self.sheetItem = dropInfo
+                    try await coordinator.insertPDF(
+                        pdfData, mode: mode, direction: direction, itemsPerLine: itemsPerLine,
+                        sceneX: 0, sceneY: 0
+                    )
                 }
             }
-    }
-
-    private func handlePDFInsert(
-        pdfData: Data,
-        mode: PDFInsertMode,
-        direction: String,
-        itemsPerLine: Int?,
-        sceneX: Double?,
-        sceneY: Double?
-    ) async throws {
-        switch mode {
-        case .viewer:
-            // Insert as PDF viewer element
-            _ = try await toolState.excalidrawWebCoordinator?.loadPDF(
-                pdfData: pdfData,
-                x: sceneX ?? 100,
-                y: sceneY ?? 100,
-                width: 600,
-                height: 800
-            )
-
-        case .tiled:
-            // Insert as tiled images with user-configured layout
-            _ = try await toolState.excalidrawWebCoordinator?.loadPDFAsTiledImages(
-                pdfData: pdfData,
-                imageWidth: 400,
-                direction: direction,
-                itemsPerLine: itemsPerLine
-            )
-        }
     }
 }

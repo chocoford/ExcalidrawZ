@@ -12,8 +12,8 @@ import SFSafeSymbols
 #if os(iOS)
 struct CompactFolderItemView: View {
     @Environment(\.editMode) private var editMode
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(FileState.self) private var fileState
+    @Environment(LayoutState.self) private var layoutState
     
     var objectID: NSManagedObjectID
     var name: String
@@ -25,7 +25,7 @@ struct CompactFolderItemView: View {
         self.objectID = group.objectID
         self.name = group.name ?? String(localizable: .generalUntitled)
         self.type = group.groupType
-        self.itemsCount = group.filesCount + group.subgroupsCount
+        self.itemsCount = group is LocalFolder ? 0 : group.filesCount + group.subgroupsCount
         self.localFolder = group as? LocalFolder
     }
 
@@ -47,7 +47,9 @@ struct CompactFolderItemView: View {
     }
     
     var body: some View {
-        CompactFolderItemLabel(name: name, type: type, itemsCount: itemsCount)
+        LocalFolderItemCount(folder: localFolder, fallbackCount: itemsCount) { count in
+            CompactFolderItemLabel(name: name, type: type, itemsCount: count)
+        }
         .opacity(editMode?.wrappedValue.isEditing == true ? 0.7 : 1.0)
         .overlay(alignment: .center) {
             if editMode?.wrappedValue.isEditing == true {
@@ -85,7 +87,7 @@ struct CompactFolderItemView: View {
 }
 
 struct CompactFolderItemLabel: View {
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(LayoutState.self) private var layoutState
 
     let name: String
     let type: Group.GroupType
@@ -186,7 +188,7 @@ private struct CompactFolderItemPreviewView: View {
                 }
             }
         }
-        .environmentObject(FileState())
+        .environment(FileState())
     }
 }
 

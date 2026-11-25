@@ -5,6 +5,7 @@
 //  Created by Dove Zachary on 3/20/25.
 //
 
+import Observation
 import SwiftUI
 import StoreKit
 import Logging
@@ -78,21 +79,23 @@ public enum ServiceEntitlement: Int, Comparable {
 }
 
 @MainActor
-class Store: ObservableObject {
+@Observable
+class Store {
     static let shared = Store()
     
     let plans: [SubscriptionItem] = [.starter, .pro, .max, .max10x]
     
-    @Published private(set) var subscriptions: [Product]
-    @Published private(set) var memberships: [Product]
+    private(set) var subscriptions: [Product]
+    private(set) var memberships: [Product]
     
-    @Published private(set) var purchasedPlans: [Product] = []
-    @Published private(set) var purchasedMemberships: [Product] = []
-    @Published private(set) var subscriptionGroupStatus: Product.SubscriptionInfo.Status?
-    @Published private(set) var activePlanExpirationDate: Date?
+    private(set) var purchasedPlans: [Product] = []
+    private(set) var purchasedMemberships: [Product] = []
+    @ObservationIgnored private(set) var subscriptionGroupStatus: Product.SubscriptionInfo.Status?
+    private(set) var activePlanExpirationDate: Date?
+    private(set) var hasLoadedSubscriptionEntitlements = false
 
 #if DEBUG && !APP_STORE
-    @Published var debugActiveSubscriptionItem: SubscriptionItem? = .pro
+    var debugActiveSubscriptionItem: SubscriptionItem? = .pro
 #endif
 
     var activeSubscriptionItem: SubscriptionItem? {
@@ -105,13 +108,13 @@ class Store: ObservableObject {
         return plans.first { $0.containsProductID(purchasedPlan.id) }
     }
         
-    var updateListenerTask: Task<Void, Error>? = nil
+    @ObservationIgnored var updateListenerTask: Task<Void, Error>? = nil
     private var isRefreshingEntitlements = false
     private var hasPendingEntitlementRefresh = false
     private var pendingEntitlementRefreshForce = false
     private var lastEntitlementRefreshAt: Date = .distantPast
     private let entitlementRefreshThrottleInterval: TimeInterval = 60
-    private var entitlementExpirationRefreshTask: Task<Void, Never>?
+    @ObservationIgnored private var entitlementExpirationRefreshTask: Task<Void, Never>?
     
     private let membershipIdentifiers = [
         "Membership_Lv1_Monthly",
@@ -321,6 +324,7 @@ class Store: ObservableObject {
         var purchasedMemberships: [Product] = []
         var planTransactionsByProductID: [String: StoreKit.Transaction] = [:]
         var entitlementExpirationDates: [Date] = []
+        var hasUnresolvedPlanProducts = false
         // var purchasedNonRenewableSubscriptions: [Product] = []
 
         // Iterate through all of the user's purchased products.
@@ -342,6 +346,9 @@ class Store: ObservableObject {
                             planTransactionsByProductID[subscription.id] = transaction
                         } else if let membership = memberships.first(where: { $0.id == transaction.productID }) {
                             purchasedMemberships.append(membership)
+                        } else if plans.contains(where: { $0.containsProductID(transaction.productID) }) {
+                            // Transactions can arrive before the product catalog finishes loading.
+                            hasUnresolvedPlanProducts = true
                         }
                         if let expirationDate = transaction.expirationDate {
                             entitlementExpirationDates.append(expirationDate)
@@ -359,11 +366,15 @@ class Store: ObservableObject {
         
         // Update the store information with auto-renewable subscription products.
         let sortedPurchasedPlans = sortPurchasedPlansByEntitlement(purchasedSubscriptions)
+        if hasUnresolvedPlanProducts {
+            hasLoadedSubscriptionEntitlements = false
+        }
         self.purchasedPlans = sortedPurchasedPlans
         self.purchasedMemberships = purchasedMemberships
         self.activePlanExpirationDate = sortedPurchasedPlans.first.flatMap { product in
             planTransactionsByProductID[product.id]?.expirationDate
         }
+        hasLoadedSubscriptionEntitlements = !hasUnresolvedPlanProducts
 
         subscriptionGroupStatus = await latestPlanSubscriptionStatus()
         logPlanStatus(subscriptionGroupStatus)

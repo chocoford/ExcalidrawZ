@@ -19,6 +19,7 @@ extension AIChatView {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .inspectorContentPadding()
     }
 
     @ViewBuilder
@@ -39,10 +40,10 @@ extension AIChatView {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
             }
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .inspectorContentPadding()
     }
 }

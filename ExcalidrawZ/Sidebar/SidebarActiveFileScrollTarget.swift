@@ -13,7 +13,7 @@ enum SidebarActiveFileScrollTarget: Hashable {
     case localFile(URL)
     case temporaryFile(URL)
     case collaborationFile(NSManagedObjectID)
-    case cloudStorageFile(CloudStorageItemID)
+    case cloudStorageFile(String)
 
     init?(activeFile: FileState.ActiveFile?) {
         guard let activeFile else { return nil }
@@ -28,7 +28,7 @@ enum SidebarActiveFileScrollTarget: Hashable {
             case .collaborationFile(let file):
                 self = .collaborationFile(file.objectID)
             case .cloudStorageFile(let reference):
-                self = .cloudStorageFile(reference.itemID)
+                self = .cloudStorageFile(reference.id)
         }
     }
 }
@@ -36,4 +36,23 @@ enum SidebarActiveFileScrollTarget: Hashable {
 enum SidebarGroupScrollTarget: Hashable {
     case group(NSManagedObjectID)
     case localFolder(NSManagedObjectID)
+    case cloudStorageFolder(locationID: UUID, itemID: CloudStorageItemID)
+    case temporary
+    case collaboration
+}
+
+extension URL {
+    var sidebarLocalFileScrollTarget: SidebarActiveFileScrollTarget { .localFile(self) }
+}
+
+extension Group {
+    var sidebarGroupScrollTarget: SidebarGroupScrollTarget { .group(objectID) }
+}
+
+extension LocalFolder {
+    /// Match the lazy collection's identity to its navigation target so locating
+    /// an offscreen folder doesn't require building every preceding row.
+    var sidebarGroupScrollTarget: SidebarGroupScrollTarget {
+        .localFolder(objectID)
+    }
 }

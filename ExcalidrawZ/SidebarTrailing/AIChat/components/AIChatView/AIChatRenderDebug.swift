@@ -3,6 +3,7 @@
 //  ExcalidrawZ
 //
 
+import Observation
 import Foundation
 import SwiftUI
 import Logging
@@ -10,13 +11,14 @@ import Logging
 #if DEBUG
 private let aiChatRenderDebugLogger = Logger(label: "AIChatRenderDebug")
 
-final class AIChatRenderDebugState: ObservableObject {
-    @Published var isEnabled = false
-    @Published var hideMessageList = false
-    @Published var useMinimalPromptInput = false
-    @Published var hidePromptActionBar = false
-    @Published var hideGeneratingEffect = false
-    @Published var useStackMessageListHost = true
+@Observable
+final class AIChatRenderDebugState {
+    var isEnabled = false
+    var hideMessageList = false
+    var useMinimalPromptInput = false
+    var hidePromptActionBar = false
+    var hideGeneratingEffect = false
+    var useStackMessageListHost = true
 
     func reset() {
         isEnabled = false

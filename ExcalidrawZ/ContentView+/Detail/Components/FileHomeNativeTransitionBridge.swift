@@ -3,6 +3,7 @@
 //  ExcalidrawZ
 //
 
+import Observation
 #if os(macOS)
 import SwiftUI
 import AppKit
@@ -10,12 +11,13 @@ import AppKit
 /// SwiftUI anchor preferences cannot cross separate hosting roots. Native
 /// cards register their actual cover views instead; AppKit converts between
 /// their coordinate systems only while a hero transition needs a source.
-final class FileHomeNativeTransitionBridge: ObservableObject {
-    @Published private(set) var revision = 0
-    var activeFileID: String?
-    private weak var destination: NSView?
-    private var sources: [String: [WeakView]] = [:]
-    private var notificationPending = false
+@Observable
+final class FileHomeNativeTransitionBridge {
+    private(set) var revision = 0
+    @ObservationIgnored var activeFileID: String?
+    @ObservationIgnored private weak var destination: NSView?
+    @ObservationIgnored private var sources: [String: [WeakView]] = [:]
+    @ObservationIgnored private var notificationPending = false
 
     private final class WeakView {
         weak var view: NSView?

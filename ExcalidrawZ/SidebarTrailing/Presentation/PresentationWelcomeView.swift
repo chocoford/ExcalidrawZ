@@ -18,7 +18,7 @@ struct PresentationWelcomeView: View {
             Spacer(minLength: 28)
 
             hero
-                .padding(.horizontal, 20)
+                .inspectorContentPadding(.horizontal)
                 .padding(.bottom, 24)
 
             Button(action: onUpgrade) {
@@ -30,13 +30,13 @@ struct PresentationWelcomeView: View {
                 size: .extraLarge,
                 shape: .modern
             )
-            .padding(.horizontal, 20)
+            .inspectorContentPadding(.horizontal)
 
             Text(localizable: .presentationWelcomeButtonCaption)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
+                .inspectorContentPadding(.horizontal)
                 .padding(.top, 8)
 
             Spacer(minLength: 28)

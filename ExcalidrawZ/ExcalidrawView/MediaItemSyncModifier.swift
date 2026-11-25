@@ -15,7 +15,7 @@ import Logging
 struct MediaItemSyncModifier: ViewModifier {
     private let logger = Logger(label: "MediaItemSyncModifier")
 
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     @State private var lastKnownMediaItemCount: Int = 0
     @State private var remoteChangeTask: Task<Void, Never>?

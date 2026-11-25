@@ -14,7 +14,7 @@ import UIKit
 #if os(iOS)
 private struct CloudStorageFileHomeSelectionMenuItem: View {
     @Environment(\.editMode) private var editMode
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     var body: some View {
         if editMode?.wrappedValue.isEditing == true {
@@ -40,9 +40,9 @@ private struct CloudStorageFileHomeSelectionMenuItem: View {
 #endif
 
 struct CloudStorageLocationActionsModifier: ViewModifier {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
-    @ObservedObject private var connections = CloudStorageConnectionStore.shared
+    @Bindable private var connections = CloudStorageConnectionStore.shared
 
     let location: CloudStorageLocation
     let presentation: Presentation
@@ -71,6 +71,8 @@ struct CloudStorageLocationActionsModifier: ViewModifier {
         switch presentation {
             case .contextMenu:
                 let menuContent = content.contextMenu {
+                    GoogleDriveAuthorizationMenuItem(location: location)
+                    CloudStorageTrashWebButton(location: location)
                     removeConnectionButton
                 }
 
@@ -85,6 +87,8 @@ struct CloudStorageLocationActionsModifier: ViewModifier {
                 }
             case .fileHomeMenu:
                 Menu {
+                    GoogleDriveAuthorizationMenuItem(location: location)
+                    CloudStorageTrashWebButton(location: location)
                     removeConnectionButton
 #if os(iOS)
                     if showsSelection {
@@ -107,10 +111,7 @@ struct CloudStorageLocationActionsModifier: ViewModifier {
     }
 
     private var removeActionTitle: String {
-        String(
-            localized: "cloudStorageActionUnlink",
-            defaultValue: "Unlink"
-        )
+        String(localizable: .cloudStorageActionUnlink)
     }
 
     private func removeConnection() {
@@ -136,9 +137,9 @@ struct CloudStorageLocationActionsModifier: ViewModifier {
 struct CloudStorageFileActionsModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.openURL) private var openURL
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
-    @ObservedObject private var documentStore = CloudStorageDocumentStore.shared
+    @Bindable private var documentStore = CloudStorageDocumentStore.shared
 
     let reference: CloudStorageDocumentReference
     let presentation: Presentation
@@ -165,6 +166,11 @@ struct CloudStorageFileActionsModifier: ViewModifier {
             return fileState.selectedCloudStorageFiles
         }
         return [reference]
+    }
+
+    private var deletionPrompt: CloudStorageDeletionPrompt {
+        let providers = Set(selectedReferences.map(\.providerID))
+        return CloudStorageDeletionPrompt(providerID: providers.count == 1 ? providers.first : nil)
     }
 
     private func selectedReferencesAllow(
@@ -210,10 +216,7 @@ struct CloudStorageFileActionsModifier: ViewModifier {
                 isConflictResolutionPresented = true
             } label: {
                 Label(
-                    String(
-                        localized: "cloudStorageConflictResolveAction",
-                        defaultValue: "Resolve Conflict…"
-                    ),
+                    String(localizable: .cloudStorageConflictResolveAction),
                     systemImage: "exclamationmark.triangle"
                 )
             }
@@ -275,7 +278,7 @@ struct CloudStorageFileActionsModifier: ViewModifier {
             Button(role: .destructive) {
                 isDeletePresented = true
             } label: {
-                Label(.localizable(.sidebarFileRowContextMenuDelete), systemSymbol: .trash)
+                Label(.localizable(deletionPrompt.actionTitle), systemSymbol: .trash)
             }
         }
     }
@@ -305,7 +308,8 @@ struct CloudStorageFileActionsModifier: ViewModifier {
             }
             .confirmationDialog(
                 String(
-                    localizable: .sidebarFileRowDeletePermanentlyAlertTitle(
+                    localizable: deletionPrompt.title(
+                        itemCount: selectedReferences.count,
                         FileState.ActiveFile.cloudStorageFile(reference).name
                             ?? reference.lastKnownName
                     )
@@ -315,10 +319,10 @@ struct CloudStorageFileActionsModifier: ViewModifier {
                 Button(role: .destructive) {
                     deleteSelectedFiles()
                 } label: {
-                    Text(.localizable(.sidebarFileRowDeletePermanentlyAlertButtonConfirm))
+                    Text(localizable: deletionPrompt.actionTitle)
                 }
             } message: {
-                Text(.localizable(.generalCannotUndoMessage))
+                Text(localizable: deletionPrompt.message)
             }
     }
 
@@ -406,10 +410,10 @@ struct CloudStorageFileActionsModifier: ViewModifier {
 struct CloudStorageFolderActionsModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.openURL) private var openURL
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
-    @ObservedObject private var documentStore = CloudStorageDocumentStore.shared
-    @ObservedObject private var connections = CloudStorageConnectionStore.shared
+    @Bindable private var documentStore = CloudStorageDocumentStore.shared
+    @Bindable private var connections = CloudStorageConnectionStore.shared
 
     let folder: CloudStorageFolderReference
     let presentation: Presentation
@@ -469,6 +473,8 @@ struct CloudStorageFolderActionsModifier: ViewModifier {
             Label(.localizable(.generalButtonOpen), systemSymbol: .arrowUpRightSquare)
         }
 
+        GoogleDriveAuthorizationMenuItem(location: folder.location, parentID: folder.itemID)
+
         if capabilities.contains(.rename) {
             Button {
                 isRenamePresented = true
@@ -507,19 +513,25 @@ struct CloudStorageFolderActionsModifier: ViewModifier {
             Label(.localizable(.cloudStorageContextMenuCopyLink), systemImage: "link")
         }
 
+        CloudStorageTrashWebButton(location: folder.location)
+
         if capabilities.contains(.delete) {
             Divider()
 
             Button(role: .destructive) {
                 isDeletePresented = true
             } label: {
-                Label(.localizable(.sidebarGroupRowContextMenuDelete), systemSymbol: .trash)
+                Label(.localizable(deletionPrompt.actionTitle), systemSymbol: .trash)
             }
         }
     }
 
     private var capabilities: CloudStorageItemCapabilities {
         documentStore.capabilities(for: folder)
+    }
+
+    private var deletionPrompt: CloudStorageDeletionPrompt {
+        CloudStorageDeletionPrompt(providerID: folder.location.providerID)
     }
 
     private func withPresentations<PresentedContent: View>(
@@ -547,16 +559,16 @@ struct CloudStorageFolderActionsModifier: ViewModifier {
 #endif
             }
             .confirmationDialog(
-                String(localizable: .sidebarGroupRowDeleteConfirmTitle(folder.name)),
+                String(localizable: deletionPrompt.title(itemCount: 1, folder.name)),
                 isPresented: $isDeletePresented
             ) {
                 Button(role: .destructive) {
                     deleteFolder()
                 } label: {
-                    Text(.localizable(.sidebarGroupRowDeleteButton))
+                    Text(localizable: deletionPrompt.actionTitle)
                 }
             } message: {
-                Text(.localizable(.sidebarGroupRowDeleteMessage))
+                Text("\(Text(localizable: deletionPrompt.message))\n\n\(Text(localizable: .cloudStorageDeleteFolderContentsMessage))")
             }
     }
 
@@ -660,6 +672,106 @@ struct CloudStorageFolderActionsModifier: ViewModifier {
         }
         return documentStore.folderPath(for: activeFolder).contains {
             $0.itemID == folder.itemID
+        }
+    }
+}
+
+/// Describes the remote operation without promising an App-level undo or
+/// assuming that every provider has a recycle bin (including mixed selections).
+private struct CloudStorageTrashWebButton: View {
+    @Environment(\.alertToast) private var alertToast
+    @Environment(\.openURL) private var openURL
+
+    @Bindable private var connections = CloudStorageConnectionStore.shared
+    @State private var isOpening = false
+
+    let location: CloudStorageLocation
+
+    var body: some View {
+        if let destination = CloudStorageTrashWebDestination.destination(
+            for: location,
+            accountDisplayName: connections.account(for: location)?.displayName
+        ) {
+            Button {
+                open(destination)
+            } label: {
+                Label(
+                    .localizable(location.providerID == .dropbox
+                        ? .cloudStorageOpenDeletedFilesInBrowser
+                        : .cloudStorageOpenTrashInBrowser),
+                    systemImage: "trash"
+                )
+            }
+            .disabled(isOpening)
+        }
+    }
+
+    private func open(_ destination: CloudStorageTrashWebDestination) {
+        guard !isOpening else { return }
+        isOpening = true
+        Task { @MainActor in
+            defer { isOpening = false }
+            do {
+                let url: URL
+                switch destination {
+                    case .website(let websiteURL):
+                        url = websiteURL
+                    case .oneDrive:
+                        let rootURL = try await CloudStorageDocumentStore.shared.remoteURL(
+                            for: .root(of: location)
+                        )
+                        guard let trashURL = CloudStorageTrashWebDestination.oneDriveURL(for: rootURL) else {
+                            throw NSError(
+                                domain: "CloudStorageTrashWebLink",
+                                code: 1,
+                                userInfo: [NSLocalizedDescriptionKey: String(localizable: .cloudStorageTrashWebUnavailable)]
+                            )
+                        }
+                        url = trashURL
+                }
+                openURL(url)
+            } catch {
+                alertToast(error)
+            }
+        }
+    }
+}
+
+private struct CloudStorageDeletionPrompt {
+    let providerID: CloudStorageProviderID?
+
+    private var movesToTrash: Bool {
+        providerID == .microsoftOneDrive || providerID == .googleDrive
+    }
+
+    var actionTitle: String.Localizable {
+        movesToTrash ? .cloudStorageDeleteTrashAction : .sidebarFileRowContextMenuDelete
+    }
+
+    func title(itemCount: Int, _ itemName: String) -> String.Localizable {
+        if movesToTrash {
+            return itemCount > 1
+                ? .cloudStorageDeleteTrashItemsTitle(itemCount)
+                : .cloudStorageDeleteTrashItemTitle(itemName)
+        }
+        return itemCount > 1
+            ? .cloudStorageDeleteItemsTitle(itemCount)
+            : .cloudStorageDeleteItemTitle(itemName)
+    }
+
+    var message: String.Localizable {
+        guard let providerID else { return .cloudStorageDeleteProviderMessage }
+        switch providerID {
+            case .microsoftOneDrive, .googleDrive:
+                return .cloudStorageDeleteTrashMessage(providerID.displayName)
+            case .dropbox:
+                return .cloudStorageDeleteDropboxMessage
+            case .box:
+                return .cloudStorageDeleteBoxMessage
+            case .webDAV:
+                return .cloudStorageDeleteWebDAVMessage
+            default:
+                return .cloudStorageDeleteProviderMessage
         }
     }
 }

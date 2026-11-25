@@ -20,7 +20,7 @@ struct UserActivityHandlerModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     let logger = Logger(label: "UserActivityHandlerModifier")
     

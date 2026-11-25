@@ -5,6 +5,7 @@
 //  Created by Chocoford on 5/4/26.
 //
 
+import Observation
 import SwiftUI
 
 import ChocofordUI
@@ -14,7 +15,7 @@ struct SmoothStreamingText: View {
     let target: String
     var isStreaming: Bool = false
     
-    @StateObject private var flusher = StreamFlusher()
+    @State private var flusher = StreamFlusher()
     @State private var revealHeight: CGFloat = 0
     @State private var didMount: Bool = false
     
@@ -141,11 +142,12 @@ private struct RevealHeightModifier: ViewModifier, Animatable {
 // MARK: - Flusher
 
 @MainActor
-private final class StreamFlusher: ObservableObject {
-    @Published private(set) var displayText: String = ""
+@Observable
+private final class StreamFlusher {
+    private(set) var displayText: String = ""
     
     private var latestTarget: String = ""
-    private var flushTask: Task<Void, Never>?
+    @ObservationIgnored private var flushTask: Task<Void, Never>?
     
     private let flushDelayNanos: UInt64 = 500_000_000
     

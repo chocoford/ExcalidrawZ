@@ -22,13 +22,13 @@ struct PresentationInspectorContent: View {
 #if os(macOS)
     @Environment(\.openWindow) private var openWindow
 #endif
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var layoutState: LayoutState
-    @EnvironmentObject private var appPreference: AppPreference
+    @Environment(FileState.self) private var fileState
+    @Environment(LayoutState.self) private var layoutState
+    @Environment(AppPreference.self) private var appPreference
 
-    @ObservedObject private var model: ExcalidrawPresentationModel
-    @ObservedObject private var store = Store.shared
-    @ObservedObject private var presentationController = ExcalidrawPresentationController.shared
+    @Bindable private var model: ExcalidrawPresentationModel
+    @Bindable private var store = Store.shared
+    @Bindable private var presentationController = ExcalidrawPresentationController.shared
     @State private var pendingReloadTask: Task<Void, Never>?
     // File switches can outlive the debounce window, so saves stay isolated by file.
     @State private var pendingConfigurationSaveTasks: [String: Task<Void, Never>] = [:]
@@ -36,7 +36,7 @@ struct PresentationInspectorContent: View {
     @State private var draggingSlideID: String?
 
     init(model: ExcalidrawPresentationModel) {
-        _model = ObservedObject(wrappedValue: model)
+        _model = Bindable(wrappedValue: model)
     }
 
     private var activeFileID: String? {
@@ -354,7 +354,7 @@ struct PresentationInspectorContent: View {
 }
 
 private struct PresentationCanvasChangeObserver: View {
-    @ObservedObject var coordinator: ExcalidrawCore
+    @Bindable var coordinator: ExcalidrawCore
     let onContentChange: () -> Void
 
     var body: some View {

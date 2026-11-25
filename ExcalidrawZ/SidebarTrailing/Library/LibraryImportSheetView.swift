@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftyAlert
 import UniformTypeIdentifiers
 import Logging
+import ChocofordUI
 
 private let libraryImportLogger = Logger(label: "LibraryImport")
 
@@ -123,14 +124,24 @@ struct ExcalidrawLibraryImportSheetView: View {
     @Environment(\.alertToast) var alertToast
     
     var libraries: [ExcalidrawLibrary]
+    var validateBeforeImport: (() throws -> Void)? = nil
+    var onCancel: (() -> Void)? = nil
     
     @State private var selectedItems = Set<ExcalidrawLibrary.Item>()
+    @State private var isImporting = false
     
     var body: some View {
         VStack(spacing: 10) {
             HStack(alignment: .lastTextBaseline) {
-                Toggle("", isOn: .constant(false))
-                    .opacity(0)
+                Button(role: .cancel) {
+                    onCancel?()
+                    dismiss()
+                } label: {
+                    Label(.localizable(.generalButtonCancel), systemImage: "xmark")
+                        .labelStyle(.iconOnly)
+                }
+                .modernButtonStyle(style: .glass, size: .large, shape: .circle)
+                .keyboardShortcut(.cancelAction)
                 Spacer()
                 Text(.localizable(.librariesImportTitle))
                     .font(.largeTitle)
@@ -287,13 +298,9 @@ struct ExcalidrawLibraryImportSheetView: View {
                 
                 Spacer()
                 
-                Button {
-                    dismiss()
-                } label: {
-                    Text(.localizable(.librariesImportButtonCancel))
-                        .frame(width: 80)
+                if isImporting {
+                    ProgressView().controlSize(.small)
                 }
-                .buttonStyle(.borderless)
                 
                 Button {
                     importSelectedLibraries()
@@ -308,6 +315,8 @@ struct ExcalidrawLibraryImportSheetView: View {
         }
         .padding(.vertical, 20)
         .padding(.horizontal, 40)
+        .disabled(isImporting)
+        .interactiveDismissDisabled(isImporting)
         .onAppear {
             selectedItems = Set(
                 libraries.flatMap {
@@ -318,49 +327,49 @@ struct ExcalidrawLibraryImportSheetView: View {
     }
     
     func importSelectedLibraries() {
+        guard !isImporting, !selectedItems.isEmpty else { return }
+        do {
+            try validateBeforeImport?()
+        } catch {
+            alertToast(error)
+            return
+        }
+        isImporting = true
+        let selectedItems = selectedItems
+        let libraries = libraries
         let context = PersistenceController.shared.container.newBackgroundContext()
-        
-        context.perform {
-            let selection: [ExcalidrawLibrary : [ExcalidrawLibrary.Item]] = {
-                var results: [ExcalidrawLibrary : [ExcalidrawLibrary.Item]] = libraries.filter({
-                    $0.libraryItems.contains(where: {selectedItems.contains($0)})
-                }).map {
-                    [$0 : []]
-                }.merged()
-                
-                for selectedItem in selectedItems {
-                    if let library = results.first(where: {$0.key.libraryItems.contains(selectedItem)})?.key {
-                        results[library]?.append(selectedItem)
-                    }
-                }
-                
-                return results
-            }()
+        Task {
+            defer { isImporting = false }
             do {
-                for libraryData in selection.keys {
-                    let library = Library(context: context)
-                    library.id = UUID()
-                    library.createdAt = Date()
-                    library.name = libraryData.name
-                    library.source = libraryData.source
-                    library.version = Int32(libraryData.version)
-                    library.items = []
-                    
-                    for item in selection[libraryData] ?? [] {
-                        let libraryItem = LibraryItem(context: context)
-                        libraryItem.id = item.id
-                        libraryItem.name = item.name
-                        libraryItem.createdAt = item.createdAt
-                        libraryItem.elements = try JSONEncoder().encode(item.elements)
-                        libraryItem.library = library
+                try await context.perform {
+                    var unassignedItems = selectedItems
+                    for libraryData in libraries {
+                        let items = libraryData.libraryItems.filter { unassignedItems.remove($0) != nil }
+                        guard !items.isEmpty else { continue }
+                        let library = Library(context: context)
+                        library.id = UUID()
+                        library.createdAt = Date()
+                        library.name = libraryData.name
+                        library.source = libraryData.source
+                        library.version = Int32(libraryData.version)
+                        library.items = []
+
+                        for item in items {
+                            let libraryItem = LibraryItem(context: context)
+                            libraryItem.id = item.id
+                            libraryItem.name = item.name
+                            libraryItem.createdAt = item.createdAt
+                            libraryItem.elements = try JSONEncoder().encode(item.elements)
+                            libraryItem.library = library
+                        }
                     }
+                    try context.save()
                 }
-                try context.save()
+                dismiss()
             } catch {
                 alertToast(error)
             }
         }
-        dismiss()
     }
 }
 
@@ -368,6 +377,6 @@ struct ExcalidrawLibraryImportSheetView: View {
 #Preview {
     ExcalidrawLibraryImportSheetView(libraries: [.preview])
         .frame(width: 600)
-        .environmentObject(ExportState())
+        .environment(ExportState())
 }
 #endif

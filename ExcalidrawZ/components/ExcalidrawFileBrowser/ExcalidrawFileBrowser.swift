@@ -14,7 +14,7 @@ struct ExcalidrawFileBrowser: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.dismiss) private var dismiss
     
-    @StateObject private var fileState = FileState()
+    @State private var fileState = FileState()
     
     enum ActionPayload {
         case file(File)
@@ -40,7 +40,7 @@ struct ExcalidrawFileBrowser: View {
 #elseif os(iOS)
         .ignoresSafeArea()
 #endif
-        .environmentObject(fileState)
+        .environment(fileState)
         .onAppear {
             Task {
                 try? await fileState.setToDefaultGroup()
@@ -123,7 +123,7 @@ struct ExcalidrawFileBrowser: View {
 }
 
 struct ExcalidrawFileBrowserContentView: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     @FetchRequest
     private var files: FetchedResults<File>
@@ -177,7 +177,7 @@ struct ExcalidrawFileBrowserContentView: View {
 
 
 struct ExcalidrawLocalFileBrowserContentView: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     var folder: LocalFolder
     var onDoubleClick: (() async -> Void)?
@@ -190,7 +190,7 @@ struct ExcalidrawLocalFileBrowserContentView: View {
     @State private var contents: [URL] = []
     @State private var isPerformingAction = false
     
-    @StateObject private var localFolderState = LocalFolderState()
+    @State private var localFolderState = LocalFolderState()
     var body: some View {
         LocalFilesProvider(folder: folder, sortField: .name) { files, updateFlags in
             ForEach(files, id: \.self) { url in
@@ -223,7 +223,7 @@ struct ExcalidrawLocalFileBrowserContentView: View {
                 .disabled(isPerformingAction)
             }
         }
-        .environmentObject(localFolderState)
+        .environment(localFolderState)
     }
     
     

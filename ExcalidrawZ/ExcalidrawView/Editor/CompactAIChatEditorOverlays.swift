@@ -27,11 +27,11 @@ struct CompactAIChatEditorOverlays: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerSize) private var containerSize
 
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(FileState.self) private var fileState
+    @Environment(LayoutState.self) private var layoutState
     @EnvironmentObject private var llmState: LLMStateObject
-    @EnvironmentObject private var aiChatState: AIChatState
-    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
+    @Environment(AIChatState.self) private var aiChatState
+    @Bindable private var aiChatPreferences = AIChatPreferences.shared
 
     private var isCompactIOS: Bool {
         ExcalidrawToolbarLayoutPolicy.usesCompactIOSBottomToolbar(
@@ -138,7 +138,7 @@ private struct CompactAIChatAccessoryStack<Content: View>: View {
 }
 
 private struct CompactAIChatPendingQueue: View {
-    @EnvironmentObject private var aiChatState: AIChatState
+    @Environment(AIChatState.self) private var aiChatState
 
     var body: some View {
         PendingQueueView(
@@ -154,7 +154,7 @@ private struct CompactAIChatPendingQueue: View {
 }
 
 private struct CompactAIChatApprovalPrompt: View {
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(LayoutState.self) private var layoutState
     @EnvironmentObject private var llmState: LLMStateObject
 
     var body: some View {
@@ -167,9 +167,9 @@ private struct CompactAIChatApprovalPrompt: View {
 }
 
 private struct CompactAIChatDraftAttachmentBar: View {
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(LayoutState.self) private var layoutState
 
-    @ObservedObject var draftState: AIChatPromptDraftState
+    @Bindable var draftState: AIChatPromptDraftState
     let replyTickerIsActive: Bool
     let onTap: () -> Void
 
@@ -192,9 +192,9 @@ private struct CompactAIChatDraftAttachmentBar: View {
 }
 
 private struct CompactAIChatProposalAnchor: View {
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(LayoutState.self) private var layoutState
 
-    @ObservedObject var draftState: AIChatPromptDraftState
+    @Bindable var draftState: AIChatPromptDraftState
     let replyTickerIsActive: Bool
 
     var body: some View {
@@ -209,7 +209,7 @@ private struct CompactAIChatProposalAnchor: View {
 }
 
 private struct CompactAIChatDraftAttachmentStrip: View {
-    @ObservedObject var draftState: AIChatPromptDraftState
+    @Bindable var draftState: AIChatPromptDraftState
 
     let onTap: () -> Void
 

@@ -22,12 +22,12 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
     @Environment(\.containerSize) private var containerSize
     @Environment(\.alertToast) private var alertToast
     
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject var layoutState: LayoutState
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var toolState: ToolState
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
-    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
+    @Environment(AppPreference.self) var appPreference
+    @Environment(LayoutState.self) var layoutState
+    @Environment(FileState.self) var fileState
+    @Environment(ToolState.self) var toolState
+    @Environment(LockedContentStateStore.self) private var lockedContentState
+    @Bindable private var aiChatPreferences = AIChatPreferences.shared
 
     @State private var isCollaboratorPopoverPresented = false
     @State private var lockedFileAccessRequest: LockedFileAccessRequest?
@@ -200,6 +200,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
         ToolbarItemGroup(placement: .topBarLeading) {
             sharedNavigationToolbarContent()
         }
+        groupHomeTitleToolbarContent(placement: .topBarLeading)
 
         if lockedContentState.activeFileLockState != .locked {
             if usesCompactIOSBottomToolbar {
@@ -227,6 +228,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
         ToolbarItemGroup(placement: .navigation) {
             sharedNavigationToolbarContent()
         }
+        groupHomeTitleToolbarContent(placement: .navigation)
         if isMacOSToolPickerToolbarContentPresented {
             macOSToolPickerToolbarContent()
         }
@@ -258,6 +260,55 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
         if #available(macOS 13.0, iOS 16.0, *) { } else {
             NewFileButton()
         }
+    }
+
+    @ToolbarContentBuilder
+    private func groupHomeTitleToolbarContent(placement: ToolbarItemPlacement) -> some ToolbarContent {
+        if fileState.currentActiveFile == nil, let groupTitle {
+            if #available(macOS 26.0, iOS 26.0, *) {
+                ToolbarItem(placement: placement) {
+                    groupHomeTitle(groupTitle)
+                }
+                .sharedBackgroundVisibility(.hidden)
+            } else {
+                ToolbarItem(placement: placement) {
+                    groupHomeTitle(groupTitle)
+                }
+            }
+        }
+    }
+
+    private func groupHomeTitle(_ title: String) -> some View {
+        let path = groupPath
+        return VStack(alignment: .leading, spacing: 1) {
+            Text(title)
+                .font(.headline)
+
+            if let path {
+                Text(groupPathForDisplay(path))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .lineLimit(1)
+        .truncationMode(.middle)
+        .frame(maxWidth: 240, alignment: .leading)
+        .help(path ?? title)
+    }
+
+    private func groupPathForDisplay(_ path: String) -> String {
+#if os(macOS)
+        if case .localFolder = fileState.currentActiveGroup,
+           let homePath = FileManager.default.homeDirectory(forUser: NSUserName())?.path(percentEncoded: false) {
+            if path == homePath {
+                return "~"
+            }
+            if path.hasPrefix(homePath + "/") {
+                return "~" + path.dropFirst(homePath.count)
+            }
+        }
+#endif
+        return path
     }
 
 
@@ -339,7 +390,33 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                     .help(String(localizable: .lockedContentLockFilesHelp))
                 }
 
-                if aiChatPreferences.isAIEnabled && AIChatAvailability.isAvailable {
+#if os(macOS)
+                switch fileState.currentActiveGroup {
+                    case .group(let group):
+                        if group.groupType != .trash {
+                            NewGroupButton(parentID: group.objectID)
+                        }
+                        FileHomeGroupActionsMenu(group: group)
+                            .id(group.objectID)
+                    case .localFolder(let folder):
+                        NewGroupButton(parentID: folder.objectID)
+                        FileHomeGroupActionsMenu(group: folder)
+                            .id(folder.objectID)
+                    case .cloudStorageFolder(let folder):
+                        NewGroupButton(
+                            type: .cloudStorageFolder,
+                            parentID: nil,
+                            cloudStorageParent: folder
+                        )
+                        CloudStorageFileHomeActionsMenu(folder: folder)
+                            .id(folder.id)
+                    default:
+                        EmptyView()
+                }
+#endif
+
+                if fileState.currentActiveGroup == nil,
+                   aiChatPreferences.isAIEnabled && AIChatAvailability.isAvailable {
                     AICreditsToolbarButton()
                 }
             }
@@ -639,6 +716,39 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
             .frame(width: 120, alignment: .leading)
         }
     }
+
+    private var groupTitle: String? {
+        switch fileState.currentActiveGroup {
+            case .group(let group):
+                group.name ?? String(localizable: .generalUntitled)
+            case .localFolder(let folder):
+                folder.name ?? String(localizable: .generalUntitled)
+            case .cloudStorageFolder(let folder):
+                folder.name
+            default:
+                nil
+        }
+    }
+
+    private var groupPath: String? {
+        switch fileState.currentActiveGroup {
+            case .group(let group):
+                var components: [String] = []
+                var current: Group? = group
+                while let ancestor = current {
+                    components.append(ancestor.name ?? String(localizable: .generalUntitled))
+                    current = ancestor.parent
+                }
+                return "/" + components.reversed().joined(separator: "/")
+            case .localFolder(let folder):
+                return folder.url?.filePath
+            case .cloudStorageFolder(let folder):
+                let path = CloudStorageDocumentStore.shared.folderPath(for: folder)
+                return "/" + path.map(\.name).joined(separator: "/")
+            default:
+                return nil
+        }
+    }
     
     @ViewBuilder
     private func titleBarActionsMenu() -> some View {
@@ -719,7 +829,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
 
 #if os(iOS)
 struct HideToolbarModifier: ViewModifier {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     var isPresented: Bool
     var placement: ToolbarPlacement
@@ -743,7 +853,7 @@ struct HideToolbarModifier: ViewModifier {
 
 
 struct NavigationBackButton: View {
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
 
     var body: some View {
         Button {
@@ -773,7 +883,7 @@ struct NavigationBackButton: View {
 }
 
 struct CollaborationMembersPopoverButton: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     @State private var isCollaboratorPopoverPresented = false
     

@@ -7,29 +7,32 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct CloudStorageSidebarLocationRow<Icon: View>: View {
-    @EnvironmentObject private var fileState: FileState
-    @ObservedObject private var connectivity = CloudStorageConnectivityMonitor.shared
+    @Environment(FileState.self) private var fileState
+    @Bindable private var connectivity = CloudStorageConnectivityMonitor.shared
 
     let location: CloudStorageLocation
-    @ObservedObject var connections: CloudStorageConnectionStore
+    @Bindable var connections: CloudStorageConnectionStore
     let icon: Icon
+    let reorder: SidebarRowReorderAction
     let onReconnect: () -> Void
 
-    @StateObject private var browser: CloudStorageSidebarBrowserModel
+    @State private var browser: CloudStorageSidebarBrowserModel
     @State private var isExpanded = false
 
     init(
         location: CloudStorageLocation,
         connections: CloudStorageConnectionStore,
+        reorder: SidebarRowReorderAction,
         @ViewBuilder icon: () -> Icon,
         onReconnect: @escaping () -> Void
     ) {
         self.location = location
         self.connections = connections
         self.icon = icon()
+        self.reorder = reorder
         self.onReconnect = onReconnect
-        self._browser = StateObject(
-            wrappedValue: CloudStorageSidebarBrowserModel(location: location)
+        self._browser = State(
+            initialValue: CloudStorageSidebarBrowserModel(location: location)
         )
     }
 
@@ -63,23 +66,14 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
                             .frame(width: 12, height: 12)
                     }
                     .buttonStyle(.borderless)
-                    .help(String(
-                        format: String(
-                            localized: "cloudStorageSignInReconnectFormat",
-                            defaultValue: "Sign in to reconnect %@"
-                        ),
-                        location.displayName
-                    ))
+                    .help(.localizable(.cloudStorageSignInReconnectFormat(location.displayName)))
                 } else if connectivity.status == .unavailable {
                     Image(systemName: "wifi.slash")
                         .imageScale(.small)
                         .foregroundStyle(.secondary)
                         .frame(width: 12, height: 12)
                         .help(
-                            String(
-                                localized: "cloudStorageStatusWaitingForConnection",
-                                defaultValue: "Waiting for connection…"
-                            )
+                            String(localizable: .cloudStorageStatusWaitingForConnection)
                         )
                 } else if isLoadingMetadata {
                     ProgressView()
@@ -91,14 +85,26 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
             }
             .contentShape(Rectangle())
             .modifier(CloudStorageLocationActionsModifier(location: location))
+            .id(scrollTarget)
+        }
+        .extraLabelStyle { content in
+            content
+                .modifier(CloudStorageLocationDragModifier(locationID: location.id))
+                .modifier(SidebarRowReorderModifier(action: reorder))
         }
         .disclosureGroupIndicatorVisibility(.visible)
-        .onAppear {
-            expandForActiveFolder(fileState.currentActiveGroup)
-        }
-        .watch(value: fileState.currentActiveGroup) { activeGroup in
-            expandForActiveFolder(activeGroup)
-        }
+        .expandForSidebarFileReveal(scrollTarget, isExpanded: $isExpanded, selectedFolderID: selectedFolderID)
+    }
+
+    private var scrollTarget: SidebarGroupScrollTarget {
+        .cloudStorageFolder(locationID: location.id, itemID: location.rootItemID)
+    }
+
+    private var selectedFolderID: String? {
+        guard fileState.currentActiveFile == nil,
+              case .cloudStorageFolder(let folder) = fileState.currentActiveGroup,
+              folder.location.id == location.id else { return nil }
+        return folder.id
     }
 
     private var selectionBinding: Binding<Bool> {
@@ -141,35 +147,25 @@ struct CloudStorageSidebarLocationRow<Icon: View>: View {
         browser.folderSyncState(in: location.rootItemID)
     }
 
-    private func expandForActiveFolder(_ activeGroup: FileState.ActiveGroup?) {
-        guard case .cloudStorageFolder(let folder) = activeGroup,
-              folder.location.id == location.id,
-              !isExpanded else { return }
-        withAnimation(.smooth(duration: 0.2)) {
-            isExpanded = true
-        }
-    }
 }
 
 private struct CloudStorageSidebarFolderContents: View {
-    @EnvironmentObject private var fileState: FileState
-    @ObservedObject private var connectivity = CloudStorageConnectivityMonitor.shared
+    @Environment(FileState.self) private var fileState
+    @Bindable private var connectivity = CloudStorageConnectivityMonitor.shared
 
     let folderID: CloudStorageItemID
-    @ObservedObject var browser: CloudStorageSidebarBrowserModel
-    @ObservedObject var connections: CloudStorageConnectionStore
+    @Bindable var browser: CloudStorageSidebarBrowserModel
+    @Bindable var connections: CloudStorageConnectionStore
 
     var body: some View {
+        let items = items
         VStack(alignment: .leading, spacing: 0) {
             if items == nil {
                 if connectivity.status == .unavailable {
                     statusRow {
                         Image(systemName: "wifi.slash")
                         Text(
-                            String(
-                                localized: "cloudStorageStatusOffline",
-                                defaultValue: "Offline"
-                            )
+                            String(localizable: .cloudStorageStatusOffline)
                         )
                     }
                 } else if let errorMessage = browser.errorMessage,
@@ -198,10 +194,7 @@ private struct CloudStorageSidebarFolderContents: View {
             } else if let items {
                 if items.isEmpty {
                     statusRow {
-                        Text(String(
-                            localized: "cloudStorageNoExcalidrawFiles",
-                            defaultValue: "No Excalidraw Files"
-                        ))
+                        Text(.localizable(.cloudStorageNoExcalidrawFiles))
                     }
                 } else {
                     ForEach(items) { item in
@@ -221,6 +214,15 @@ private struct CloudStorageSidebarFolderContents: View {
                 }
             }
         }
+        .reportSidebarFileRevealContents(
+            of: .cloudStorageFolder(locationID: browser.location.id, itemID: folderID),
+            available: items != nil,
+            fileAvailable: containsActiveFile(in: items)
+        ) { target in
+            guard case .cloudStorageFolder(let locationID, let itemID) = target,
+                  locationID == browser.location.id else { return false }
+            return items?.contains { $0.kind == .folder && $0.id == itemID } == true
+        }
         .task(id: folderID) {
             await CloudStorageSyncService.shared.prioritizeDocuments(
                 in: browser.location,
@@ -232,6 +234,12 @@ private struct CloudStorageSidebarFolderContents: View {
 
     private var items: [CloudStorageItem]? {
         browser.items(in: folderID, sortedBy: fileState.sortField)
+    }
+
+    private func containsActiveFile(in items: [CloudStorageItem]?) -> Bool {
+        guard case .cloudStorageFile(let file) = fileState.currentActiveFile,
+              file.locationID == browser.location.id else { return false }
+        return items?.contains { $0.kind == .file && $0.id == file.itemID } == true
     }
 
     private func statusRow<Content: View>(
@@ -249,11 +257,11 @@ private struct CloudStorageSidebarFolderContents: View {
 }
 
 private struct CloudStorageSidebarFolderRow: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     let folder: CloudStorageItem
-    @ObservedObject var browser: CloudStorageSidebarBrowserModel
-    @ObservedObject var connections: CloudStorageConnectionStore
+    @Bindable var browser: CloudStorageSidebarBrowserModel
+    @Bindable var connections: CloudStorageConnectionStore
 
     @State private var isExpanded = false
 
@@ -283,14 +291,22 @@ private struct CloudStorageSidebarFolderRow: View {
             .truncationMode(.middle)
             .contentShape(Rectangle())
             .modifier(CloudStorageFolderActionsModifier(folder: reference))
+            .id(scrollTarget)
         }
         .disclosureGroupIndicatorVisibility(.visible)
-        .onAppear {
-            expandForActiveFolder(fileState.currentActiveGroup)
-        }
-        .watch(value: fileState.currentActiveGroup) { activeGroup in
-            expandForActiveFolder(activeGroup)
-        }
+        .expandForSidebarFileReveal(scrollTarget, isExpanded: $isExpanded, selectedFolderID: selectedFolderID)
+    }
+
+    private var scrollTarget: SidebarGroupScrollTarget {
+        .cloudStorageFolder(locationID: browser.location.id, itemID: folder.id)
+    }
+
+    private var selectedFolderID: String? {
+        guard fileState.currentActiveFile == nil,
+              case .cloudStorageFolder(let selectedFolder) = fileState.currentActiveGroup,
+              selectedFolder.location.id == browser.location.id,
+              browser.folderIDs(inPathTo: selectedFolder).contains(folder.id) else { return nil }
+        return selectedFolder.id
     }
 
     private var reference: CloudStorageFolderReference {
@@ -321,25 +337,19 @@ private struct CloudStorageSidebarFolderRow: View {
         )
     }
 
-    private func expandForActiveFolder(_ activeGroup: FileState.ActiveGroup?) {
-        guard case .cloudStorageFolder(let activeFolder) = activeGroup,
-              browser.isFolder(folder.id, inPathTo: activeFolder),
-              !isExpanded else { return }
-        withAnimation(.smooth(duration: 0.2)) {
-            isExpanded = true
-        }
-    }
 }
 
 private struct CloudStorageSidebarFileRow: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     let item: CloudStorageItem
-    @ObservedObject var browser: CloudStorageSidebarBrowserModel
+    @Bindable var browser: CloudStorageSidebarBrowserModel
 
     var body: some View {
+        let isActive = fileState.currentActiveFile == .cloudStorageFile(reference)
+        let scrollTarget = SidebarActiveFileScrollTarget.cloudStorageFile(reference.id)
         FileRowButton(
-            isSelected: fileState.currentActiveFile == .cloudStorageFile(reference),
+            isSelected: isActive,
             isMultiSelected: false,
             onTap: open
         ) {
@@ -355,7 +365,7 @@ private struct CloudStorageSidebarFileRow: View {
             }
         }
         .modifier(CloudStorageFileActionsModifier(reference: reference))
-        .id(SidebarActiveFileScrollTarget.cloudStorageFile(item.id))
+        .id(scrollTarget)
     }
 
     private var reference: CloudStorageDocumentReference {
@@ -390,7 +400,7 @@ private struct CloudStorageSidebarFileRow: View {
 }
 
 private struct CloudStorageFolderSyncIndicator: View {
-    @ObservedObject private var connectivity = CloudStorageConnectivityMonitor.shared
+    @Bindable private var connectivity = CloudStorageConnectivityMonitor.shared
 
     let state: CloudStorageFolderSyncState
 

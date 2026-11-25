@@ -5,6 +5,7 @@
 //  Created by Dove Zachary on 8/8/25.
 //
 
+import Observation
 import SwiftUI
 import ChocofordUI
 import CoreData
@@ -14,14 +15,16 @@ import UIKit
 import AppKit
 #endif
 
-final class FileHomeItemTransitionState: ObservableObject {
-    @Published var canShowExcalidrawCanvas: Bool = false
-    @Published var canShowItemContainerView: Bool = true
+@Observable
+final class FileHomeItemTransitionState {
+    var canShowExcalidrawCanvas: Bool = false
+    var canShowItemContainerView: Bool = true
 }
 
-final class FileHomeItemTransitionItemState: ObservableObject {
-    @Published private(set) var shouldHideItem: String?
-    @Published private(set) var sourceFileID: String?
+@Observable
+final class FileHomeItemTransitionItemState {
+    private(set) var shouldHideItem: String?
+    private(set) var sourceFileID: String?
 
     func setShouldHideItem(_ value: String?) {
         guard shouldHideItem != value else { return }
@@ -121,7 +124,7 @@ struct FileHomeItemTransitionModifier: ViewModifier {
 
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.scenePhase) private var scenePhase
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
     
     var openDuration: Double = 0.5
     var dismissDuration: Double = 0.3
@@ -134,10 +137,10 @@ struct FileHomeItemTransitionModifier: ViewModifier {
     
     @State private var file: FileState.ActiveFile?
     
-    @StateObject private var state = FileHomeItemTransitionState()
-    @StateObject private var itemState = FileHomeItemTransitionItemState()
+    @State private var state = FileHomeItemTransitionState()
+    @State private var itemState = FileHomeItemTransitionItemState()
 #if os(macOS)
-    @StateObject private var nativeBridge = FileHomeNativeTransitionBridge()
+    @State private var nativeBridge = FileHomeNativeTransitionBridge()
 #endif
     
     func body(content: Content) -> some View {
@@ -180,8 +183,8 @@ struct FileHomeItemTransitionModifier: ViewModifier {
                     }
                 }
             }
-            .environmentObject(state)
-            .environmentObject(itemState)
+            .environment(state)
+            .environment(itemState)
 #if os(macOS)
             .environment(\.fileHomeNativeTransitionBridge, nativeBridge)
 #endif
@@ -431,8 +434,8 @@ struct FileHomeItemTransitionModifier: ViewModifier {
 struct FileHomeItemHeroLayer: View {
     @Environment(\.colorScheme) var colorScheme
 
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
+    @Environment(AppPreference.self) var appPreference
+    @Environment(LockedContentStateStore.self) private var lockedContentState
     
     var file: FileState.ActiveFile
     var show: Bool

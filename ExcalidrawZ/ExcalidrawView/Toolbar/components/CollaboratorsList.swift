@@ -14,7 +14,7 @@ struct CollaboratorsList: View {
     
     @Environment(\.dismiss) private var dismiss
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     var body: some View {
         ScrollView {
@@ -55,11 +55,11 @@ struct CollaboratorsList: View {
 
 #if DEBUG
 struct CollaboratorsListPreview: View {
-    @StateObject private var fileState = FileState()
+    @State private var fileState = FileState()
     
     var body: some View {
         CollaboratorsList()
-            .environmentObject(fileState)
+            .environment(fileState)
 //            .onAppear {
 //                fileState.collaborators = [
 //                    .init(

@@ -45,7 +45,7 @@ struct DebugButton: View {
 struct DebugInfoView: View {
     @Environment(\.managedObjectContext) private var viewContext
 
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     enum Tabs {
         case fileContent

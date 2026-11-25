@@ -15,9 +15,9 @@ import SFSafeSymbols
 struct SearchInspectorContent: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
 
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var layoutState: LayoutState
-    @EnvironmentObject var appPreference: AppPreference
+    @Environment(FileState.self) var fileState
+    @Environment(LayoutState.self) var layoutState
+    @Environment(AppPreference.self) var appPreference
 
     @State private var query: String = ""
     @State private var results: [SearchResult] = []
@@ -37,18 +37,6 @@ struct SearchInspectorContent: View {
 
     private var contentSpacing: CGFloat {
         isCompactIOS ? 16 : 12
-    }
-
-    private var horizontalPadding: CGFloat {
-        isCompactIOS ? 20 : 16
-    }
-
-    private var verticalPadding: CGFloat {
-        isCompactIOS ? 14 : 16
-    }
-
-    private var searchFieldVerticalPadding: CGFloat {
-        isCompactIOS ? 10 : 8
     }
 
     private var navigationSpacing: CGFloat {
@@ -100,8 +88,7 @@ struct SearchInspectorContent: View {
             navigationRow
             resultsList
         }
-        .padding(.horizontal, horizontalPadding)
-        .padding(.vertical, verticalPadding)
+        .inspectorContentPadding()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .watch(value: query) { newValue in
             scheduleSearch(for: newValue)
@@ -114,31 +101,13 @@ struct SearchInspectorContent: View {
 
     // MARK: - Search field
 
-    @ViewBuilder
     private var searchField: some View {
-        HStack(spacing: 8) {
-            Image(systemSymbol: .magnifyingglass)
-                .foregroundStyle(.secondary)
-            TextField("", text: $query, prompt: Text(localizable: .canvasSearchFieldPrompt))
-                .textFieldStyle(.plain)
-                .onSubmit {
-                    advanceSelection()
-                }
-            if !query.isEmpty {
-                Button {
-                    query = ""
-                } label: {
-                    Image(systemSymbol: .xmarkCircleFill)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, searchFieldVerticalPadding)
-        .background {
-            Capsule()
-                .fill(.regularMaterial)
+        InspectorSearchField(
+            text: $query,
+            prompt: Text(localizable: .canvasSearchFieldPrompt)
+        )
+        .onSubmit {
+            advanceSelection()
         }
     }
 

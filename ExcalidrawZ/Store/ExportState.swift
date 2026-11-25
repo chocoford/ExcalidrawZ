@@ -5,6 +5,7 @@
 //  Created by Dove Zachary on 2023/7/25.
 //
 
+import Observation
 import SwiftUI
 import WebKit
 import Combine
@@ -25,7 +26,8 @@ struct ExportedImageData {
     }
 }
 
-final class ExportState: ObservableObject {
+@Observable
+final class ExportState {
     let logger = Logger(label: "ExportState")
     enum Status {
         case notRequested
@@ -36,7 +38,7 @@ final class ExportState: ObservableObject {
     var excalidrawWebCoordinator: ExcalidrawCanvasView.Coordinator?
     var excalidrawCollaborationWebCoordinator: ExcalidrawCanvasView.Coordinator?
     
-    @Published var status: Status = .notRequested
+    var status: Status = .notRequested
     var download: WKDownload?
     var url: URL?
     

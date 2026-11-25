@@ -18,9 +18,9 @@ struct CollaborationEditorStack: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.alertToast) var alertToast
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject var layoutState: LayoutState
-    @EnvironmentObject var fileState: FileState
+    @Environment(AppPreference.self) var appPreference
+    @Environment(LayoutState.self) var layoutState
+    @Environment(FileState.self) var fileState
 
 //    var fileBinding: Binding<ExcalidrawFile?> {
 //        Binding {
@@ -71,8 +71,8 @@ struct CollaborationEditorStack: View {
 
 #Preview {
     CollaborationEditorStack()
-        .environmentObject(AppPreference())
-        .environmentObject(LayoutState())
-        .environmentObject(FileState())
+        .environment(AppPreference())
+        .environment(LayoutState())
+        .environment(FileState())
         .frame(width: 500)
 }

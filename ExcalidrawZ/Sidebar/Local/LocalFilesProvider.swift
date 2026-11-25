@@ -19,8 +19,8 @@ struct LocalFilesProvider<Content: View>: View {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var localFolderState: LocalFolderState
+    @Environment(FileState.self) private var fileState
+    @Environment(LocalFolderState.self) private var localFolderState
     
     var folder: LocalFolder
     var sortField: ExcalidrawFileSortField
@@ -61,6 +61,8 @@ struct LocalFilesProvider<Content: View>: View {
     @State private var updateFlags: [URL : Date] = [:]
     @State private var sortValues: [URL: ExcalidrawFileSortProvider.Values] = [:]
     @State private var didLoadInitialCache = false
+    @State private var loadTask: Task<Void, Never>?
+    @State private var loadGeneration = UUID()
     
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -126,6 +128,10 @@ struct LocalFilesProvider<Content: View>: View {
             .onReceive(localFolderState.refreshFilesPublisher) { _ in
                 getFolderContents()
             }
+            .onReceive(NotificationCenter.default.publisher(for: .linkedFolderContentsDidChange)) { notification in
+                if LinkedFolderIndexState.affects(notification, folderURL: folder.url) { getFolderContents() }
+            }
+            .onDisappear { loadTask?.cancel() }
             .onReceive(
                 NotificationCenter.default.publisher(for: .localFolderAvailabilityDidChange)
             ) { notification in
@@ -158,80 +164,35 @@ struct LocalFilesProvider<Content: View>: View {
     }
     
     private func getFolderContents() {
-        // wait a liitle
-        DispatchQueue.main.async {
+        loadTask?.cancel()
+        let generation = UUID()
+        loadGeneration = generation
+        let folderID = folder.objectID
+        let key = folderCacheKey
+        loadTask = Task {
             do {
-                try folder.withSecurityScopedURL { folderURL in
-                    guard let contents = try LocalFolder.materializedDirectoryContents(
-                        at: folderURL,
-                        includingPropertiesForKeys: [
-                            .nameKey,
-                            .contentModificationDateKey,
-                            .creationDateKey,
-                            .ubiquitousItemDownloadingStatusKey,
-                            .isUbiquitousItemKey
-                        ],
-                        options: [.skipsSubdirectoryDescendants]
-                    ) else { return }
-                    var files = contents
-                        .filter({
-                            $0.pathExtension == "excalidraw"
-                            || ($0.pathExtension == "svg" && $0.deletingPathExtension().pathExtension == "excalidraw")
-                            || ($0.pathExtension == "png" && $0.deletingPathExtension().pathExtension == "excalidraw")
-                        })
-                        // Include files even if they are not downloaded (iCloud Drive files)
-                        .filter({ url in
-                            // Check if file exists locally or if it's an iCloud file (even if not downloaded)
-                            if FileManager.default.fileExists(at: url) {
-                                return true
-                            }
-                            
-                            // For iCloud files that are not downloaded, we still want to include them
-                            let resourceValues = try? url.resourceValues(forKeys: [.isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey])
-                            if let isUbiquitous = resourceValues?.isUbiquitousItem, isUbiquitous {
-                                return true // Include iCloud files regardless of download status
-                            }
-                            
-                            return false
-                        })
-
-                    // File Provider-backed folders may return a URL instance
-                    // that differs from the one used to create and open the
-                    // file even though both identify the same path. Keep the
-                    // active URL as the list identity so sidebar selection,
-                    // cover keys, and editor saves stay attached to one file.
-                    if case .localFile(let activeURL) = fileState.currentActiveFile {
-                        files = files.map { listedURL in
-                            listedURL.hasSameFileSystemPath(as: activeURL)
-                                ? activeURL
-                                : listedURL
-                        }
-                    }
-                    self.sortValues = Dictionary(
-                        uniqueKeysWithValues: files.map { file in
-                            let values = try? file.resourceValues(
-                                forKeys: [.contentModificationDateKey, .creationDateKey]
-                            )
-                            return (
-                                file,
-                                ExcalidrawFileSortProvider.Values(
-                                    name: file.deletingPathExtension().lastPathComponent,
-                                    updatedAt: values?.contentModificationDate,
-                                    createdAt: values?.creationDate
-                                )
-                            )
-                        }
-                    )
-                    withAnimation {
-                        self.files = files
-                        self.sortFiles(field: self.sortField)
-                        LocalFilesProviderCache.setFiles(self.files, for: folderCacheKey)
-                    }
-                    self.updateFlags = files.map {
-                        [$0 : Date()]
-                    }.merged()
+                let entries = try await LinkedFolderDirectoryLoader.shared.files(in: folderID)
+                guard !Task.isCancelled, loadGeneration == generation, folderCacheKey == key,
+                      let entries else { return }
+                var listed = entries.map(\.url)
+                // Preserve the active provider URL as the sidebar/editor identity.
+                if case .localFile(let activeURL) = fileState.currentActiveFile {
+                    listed = listed.map { $0.hasSameFileSystemPath(as: activeURL) ? activeURL : $0 }
                 }
+                sortValues = Dictionary(zip(listed, entries).map { url, entry in
+                    return (url, ExcalidrawFileSortProvider.Values(
+                        name: url.deletingPathExtension().lastPathComponent,
+                        updatedAt: entry.updatedAt, createdAt: entry.createdAt
+                    ))
+                }, uniquingKeysWith: { first, _ in first })
+                withAnimation {
+                    files = listed
+                    sortFiles(field: sortField)
+                    LocalFilesProviderCache.setFiles(files, for: key)
+                }
+                updateFlags = Dictionary(listed.map { ($0, Date()) }, uniquingKeysWith: { first, _ in first })
             } catch {
+                guard !Task.isCancelled, loadGeneration == generation else { return }
                 alertToast(error)
             }
         }

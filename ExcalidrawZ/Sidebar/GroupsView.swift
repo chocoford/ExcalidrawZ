@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreData
+import SwiftyAlert
 
 extension Notification.Name {
     static let shouldExpandGroup = Notification.Name("ShouldExpandGroup")
@@ -16,12 +17,14 @@ struct GroupsView: View {
     @AppStorage("FolderStructureStyle") var folderStructStyle: FolderStructureStyle = .disclosureGroup
 
     @Environment(\.managedObjectContext) private var viewContext
-    @EnvironmentObject var sidebarDragState: ItemDragState
+    @Environment(\.alertToast) private var alertToast
+    @Environment(ItemDragState.self) var sidebarDragState
 
     var group: Group
     var sortField: ExcalidrawFileSortField
     var showFiles: Bool
     var fileState: FileState
+    private let reorderableGroupIDs: Set<NSManagedObjectID>?
     
     @FetchRequest
     private var children: FetchedResults<Group>
@@ -30,24 +33,31 @@ struct GroupsView: View {
     private var files: FetchedResults<File>
     
     @State private var refreshKey = UUID()
-    @StateObject private var selectionState = SidebarGroupRowSelectionState()
+    @State private var selectionState = SidebarGroupRowSelectionState()
     
     init(
         group: Group,
         sortField: ExcalidrawFileSortField,
         showFiles: Bool = true,
-        fileState: FileState
+        fileState: FileState,
+        reorderableGroupIDs: Set<NSManagedObjectID>? = nil
     ) {
         self.group = group
         self.fileState = fileState
+        self.reorderableGroupIDs = reorderableGroupIDs
         let fetchRequest = NSFetchRequest<Group>(entityName: "Group")
         fetchRequest.predicate = NSPredicate(
             format: "parent = %@ AND type != %@",
             group,
             Group.GroupType.trash.rawValue
         )
-        fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \Group.name, ascending: true)]
-        self._children = FetchRequest(fetchRequest: fetchRequest)
+        fetchRequest.sortDescriptors = reorderableGroupIDs == nil
+            ? [NSSortDescriptor(keyPath: \Group.name, ascending: true)]
+            : SidebarGroupOrder.sortDescriptors(isTopLevel: false)
+        self._children = FetchRequest(
+            fetchRequest: fetchRequest,
+            animation: reorderableGroupIDs == nil ? nil : .smooth(duration: 0.2)
+        )
         
         self.sortField = sortField
 
@@ -63,13 +73,10 @@ struct GroupsView: View {
     var isSelectedBinding: Binding<Bool> {
         Binding {
             selectionState.isSelected || isBeingDropped
-        } set: { val in
-            DispatchQueue.main.async {
-                if val {
-                    fileState.setActiveGroupIfNeeded(.group(group))
-                    fileState.setActiveFile(nil)
-                }
-            }
+        } set: { selected in
+            guard selected else { return }
+            fileState.setActiveGroupIfNeeded(.group(group))
+            fileState.setActiveFile(nil)
         }
     }
     
@@ -79,6 +86,13 @@ struct GroupsView: View {
 
     var body: some View {
         content()
+            .reportSidebarFileRevealContents(
+                of: group.sidebarGroupScrollTarget,
+                available: folderStructStyle == .tree || isExpanded,
+                fileAvailable: showFiles && isExpanded && containsActiveFile
+            ) { target in
+                children.contains { $0.sidebarGroupScrollTarget == target }
+            }
             .animation(.smooth, value: folderStructStyle)
             .onAppear {
                 selectionState.bind(group: group, fileState: fileState)
@@ -89,6 +103,11 @@ struct GroupsView: View {
                     fileState.setActiveFile(.file(file))
                 }
             }
+    }
+
+    private var containsActiveFile: Bool {
+        guard case .file(let file) = fileState.currentActiveFile else { return false }
+        return files.contains(file)
     }
     
     @ViewBuilder
@@ -144,17 +163,55 @@ struct GroupsView: View {
     var canDropBelowGroup: Bool {
         sidebarDragState.currentDropGroupTarget == .below(.group(group.objectID)) && canDrop
     }
+
+    private var reorderableChildGroupIDs: Set<NSManagedObjectID>? {
+        guard reorderableGroupIDs != nil else { return nil }
+        return Set(children.lazy.filter { $0.groupType == .normal }.map(\.objectID))
+    }
+
+    private var reorderAction: SidebarRowReorderAction? {
+        let destinationID = group.objectID
+        guard let reorderableGroupIDs, reorderableGroupIDs.count > 1,
+              reorderableGroupIDs.contains(destinationID) else { return nil }
+        return SidebarRowReorderAction(
+            item: .group(destinationID),
+            contains: { item in
+                guard case .group(let id) = item else { return false }
+                return reorderableGroupIDs.contains(id)
+            },
+            dropTypes: [.excalidrawGroupRow]
+        ) { source, edge in
+            guard case .group(let sourceID) = source else { return }
+            do {
+                try SidebarGroupOrder.move(
+                    sourceID,
+                    relativeTo: destinationID,
+                    insertAfter: edge == .bottom,
+                    in: viewContext
+                )
+            } catch {
+                alertToast(error)
+            }
+        }
+    }
     
     
     @available(macOS 13.0, *)
     @ViewBuilder
     private func diclsureGroupView() -> some View {
+        let childGroupIDs = reorderableChildGroupIDs
         SelectableDisclosureGroup(
             isSelected: isSelectedBinding,
             isExpanded: $isExpanded
         ) {
-            ForEach(children) { group in
-                GroupsView(group: group, sortField: sortField, showFiles: showFiles, fileState: fileState)
+            ForEach(children, id: \.sidebarGroupScrollTarget) { group in
+                GroupsView(
+                    group: group,
+                    sortField: sortField,
+                    showFiles: showFiles,
+                    fileState: fileState,
+                    reorderableGroupIDs: childGroupIDs
+                )
             }
             
             if showFiles {
@@ -199,10 +256,6 @@ struct GroupsView: View {
                 fileState: fileState
             )
             .id(SidebarGroupScrollTarget.group(group.objectID))
-            .modifier(GroupRowDragModifier(group: group))
-            .simultaneousGesture(TapGesture(count: 2).onEnded {
-                fileState.expandToGroup(group.objectID)
-            })
         }
         .extraLabelStyle { content in
             content
@@ -212,7 +265,8 @@ struct GroupsView: View {
                         canExpand: true,
                     )
                 )
-                .modifier(GroupRowDropModifier(group: group) { .exact($0) })
+                .modifier(GroupRowDragModifier(group: group))
+                .modifier(GroupRowDropModifier(group: group, reorder: reorderAction) { .exact($0) })
                 .foregroundStyle(
                     canDropToGroup || canDropBelowGroup
                     ? AnyShapeStyle(Color.white)
@@ -236,6 +290,7 @@ struct GroupsView: View {
                 }
         }
         .disclosureGroupIndicatorVisibility(children.isEmpty && (files.isEmpty || !showFiles) ? .hidden : .visible)
+        .expandForSidebarFileReveal(group.sidebarGroupScrollTarget, isExpanded: $isExpanded)
         .onReceive(NotificationCenter.default.publisher(for: .shouldExpandGroup)) { notification in
             guard let targetGroupID = notification.object as? NSManagedObjectID,
                   targetGroupID == self.group.objectID else { return }
@@ -253,7 +308,8 @@ struct GroupsView: View {
     
     @ViewBuilder
     private func treeView() -> some View {
-        TreeStructureView(children: children, paddingLeading: 6) {
+        let childGroupIDs = reorderableChildGroupIDs
+        TreeStructureView(children: children, id: \.sidebarGroupScrollTarget, paddingLeading: 6) {
             GroupRowView(
                 group: group,
                 isSelected: isSelectedBinding.wrappedValue,
@@ -268,7 +324,8 @@ struct GroupsView: View {
                     canExpand: false,
                 )
             )
-            .modifier(GroupRowDropModifier(group: group) { .exact($0) })
+            .modifier(GroupRowDragModifier(group: group))
+            .modifier(GroupRowDropModifier(group: group, reorder: reorderAction) { .exact($0) })
             .foregroundStyle(
                 canDropToGroup || canDropBelowGroup
                 ? AnyShapeStyle(Color.white)
@@ -281,7 +338,12 @@ struct GroupsView: View {
                 }
             }
         } childView: { child in
-            GroupsView(group: child, sortField: sortField, fileState: fileState)
+            GroupsView(
+                group: child,
+                sortField: sortField,
+                fileState: fileState,
+                reorderableGroupIDs: childGroupIDs
+            )
             // No need to show files in tree view, it is too crowded.
         }
     }

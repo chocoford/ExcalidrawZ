@@ -308,7 +308,7 @@ extension Notification.Name {
 
 /// Minimal wrapper to bridge WKWebView to SwiftUI
 struct ExcalidrawViewRepresentable {
-    @EnvironmentObject private var core: ExcalidrawCore
+    @Environment(ExcalidrawCore.self) private var core
     var nativeInteractionEnabled: Bool = true
     
     func makeExcalidrawWebView(context: Context) -> ExcalidrawWebView {

@@ -5,8 +5,35 @@
 
 import SwiftUI
 import SwiftyAlert
+import CoreData
 
 struct LinkedStorageSidebarSection: View {
+    private enum Root: Identifiable {
+        case local(LocalFolder)
+        case cloud(CloudStorageLocation)
+
+        var id: SidebarGroupScrollTarget {
+            switch self {
+                case .local(let folder): folder.sidebarGroupScrollTarget
+                case .cloud(let location): .cloudStorageFolder(locationID: location.id, itemID: location.rootItemID)
+            }
+        }
+
+        var orderID: String {
+            switch self {
+                case .local(let folder): "local:\(folder.objectID.uriRepresentation().absoluteString)"
+                case .cloud(let location): "cloud:\(location.id.uuidString)"
+            }
+        }
+
+        var dragItem: ItemDragState.DragItem {
+            switch self {
+                case .local(let folder): .localFolder(folder.objectID)
+                case .cloud(let location): .cloudStorageLocation(location.id)
+            }
+        }
+    }
+
     private enum SheetRoute: Identifiable {
         case serverCredentials(
             CloudStorageProviderDescriptor,
@@ -25,8 +52,10 @@ struct LinkedStorageSidebarSection: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.sidebarHoverSuppressed) private var hoverSuppressed
     @Environment(\.sidebarHoverAnimationsEnabled) private var hoverAnimationsEnabled
+    @Environment(FileState.self) private var fileState
     @AppStorage("ShowLinkedStorageEmptyPlaceholder") private var showEmptyPlaceholder = true
-    @StateObject private var connections = CloudStorageConnectionStore.shared
+    @AppStorage("LinkedStorageSidebarRootOrder") private var savedRootOrder = ""
+    @State private var connections = CloudStorageConnectionStore.shared
     @State private var sheetRoute: SheetRoute?
     @State private var preparingProviderID: CloudStorageProviderID?
     @State private var isHovered = false
@@ -46,31 +75,12 @@ struct LinkedStorageSidebarSection: View {
 
     var body: some View {
         LocalFoldersProvider { folders in
+            let roots = orderedRoots(in: folders)
+            let rootItems = Set(roots.map(\.dragItem))
             VStack(alignment: .leading, spacing: 0) {
                 header
 
-                LocalFoldersListContent(
-                    folders: folders,
-                    showFiles: true,
-                    showsEmptyPlaceholder: false
-                )
-
-                ForEach(locations) { location in
-                    CloudStorageSidebarLocationRow(
-                        location: location,
-                        connections: connections
-                    ) {
-                        CloudStorageProviderIcon(
-                            providerID: location.providerID,
-                            size: 18,
-                            accountDisplayName: connections.account(for: location)?.displayName
-                        )
-                    } onReconnect: {
-                        reconnect(location)
-                    }
-                }
-
-                if folders.isEmpty, locations.isEmpty, showEmptyPlaceholder {
+                if roots.isEmpty, showEmptyPlaceholder {
                     emptyPlaceholder
                         .background {
                             ZStack {
@@ -82,6 +92,16 @@ struct LinkedStorageSidebarSection: View {
                         }
                         .padding(.vertical, 10)
                         .transition(.scale(scale: 0, anchor: .topTrailing).combined(with: .opacity))
+                } else {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(roots) { root in
+                            Section {
+                                rootRow(root, folders: folders, rootItems: rootItems)
+                            }
+                        }
+                    }
+                    .animation(.smooth(duration: 0.2), value: savedRootOrder)
+                    .modifier(LocalFolderSidebarExpansionModifier())
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -105,12 +125,53 @@ struct LinkedStorageSidebarSection: View {
         }
     }
 
+    private func defaultRoots(in folders: FetchedResults<LocalFolder>) -> [Root] {
+        folders.map(Root.local) + locations.map(Root.cloud)
+    }
+
+    private func orderedRoots(in folders: FetchedResults<LocalFolder>) -> [Root] {
+        let roots = defaultRoots(in: folders)
+        let order = LinkedStorageRootOrder(savedOrder: savedRootOrder, defaultIDs: roots.map(\.orderID))
+        let rootsByID = Dictionary(uniqueKeysWithValues: roots.map { ($0.orderID, $0) })
+        return order.ids.compactMap { rootsByID[$0] }
+    }
+
+    @ViewBuilder
+    private func rootRow(_ root: Root, folders: FetchedResults<LocalFolder>, rootItems: Set<ItemDragState.DragItem>) -> some View {
+        let reorder = SidebarRowReorderAction(
+            item: root.dragItem,
+            contains: { rootItems.contains($0) },
+            dropTypes: [.excalidrawLocalFolderRow, .excalidrawLinkedStorageRoot]
+        ) { source, edge in
+            let roots = defaultRoots(in: folders)
+            guard let sourceRoot = roots.first(where: { $0.dragItem == source }) else { return }
+            var order = LinkedStorageRootOrder(savedOrder: savedRootOrder, defaultIDs: roots.map(\.orderID))
+            if order.move(sourceRoot.orderID, relativeTo: root.orderID, edge: edge) {
+                savedRootOrder = order.savedOrder
+            }
+        }
+
+        switch root {
+            case .local(let folder):
+                LocalFoldersView(folder: folder, sortField: fileState.sortField, reorder: reorder) {
+                    fileState.selectNeighborAfterRemovingLocalFolder(folder, from: folders)
+                }
+            case .cloud(let location):
+                CloudStorageSidebarLocationRow(location: location, connections: connections, reorder: reorder) {
+                    CloudStorageProviderIcon(
+                        providerID: location.providerID,
+                        size: 18,
+                        accountDisplayName: connections.account(for: location)?.displayName
+                    )
+                } onReconnect: {
+                    reconnect(location)
+                }
+        }
+    }
+
     private var header: some View {
         HStack {
-            Text(String(
-                localized: "linkedStorageTitle",
-                defaultValue: "Linked Storage"
-            ))
+            Text(.localizable(.linkedStorageTitle))
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -121,10 +182,7 @@ struct LinkedStorageSidebarSection: View {
                         .controlSize(.mini)
                 } else {
                     SidebarSectionAddIcon(
-                        accessibilityLabel: Text(String(
-                            localized: "linkedStorageAddStorage",
-                            defaultValue: "Add Storage"
-                        ))
+                        accessibilityLabel: Text(.localizable(.linkedStorageAddStorage))
                     )
                 }
             }
@@ -161,10 +219,7 @@ struct LinkedStorageSidebarSection: View {
                 }
             }
 
-            Text(String(
-                localized: "linkedStorageEmptyDescription",
-                defaultValue: "Link a local folder or cloud storage to browse drawings from one place."
-            ))
+            Text(.localizable(.linkedStorageEmptyDescription))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -177,10 +232,7 @@ struct LinkedStorageSidebarSection: View {
                             .controlSize(.small)
                     } else {
                         Label(
-                            String(
-                                localized: "linkedStorageAddStorage",
-                                defaultValue: "Add Storage"
-                            ),
+                            String(localizable: .linkedStorageAddStorage),
                             systemImage: "link.badge.plus"
                         )
                     }

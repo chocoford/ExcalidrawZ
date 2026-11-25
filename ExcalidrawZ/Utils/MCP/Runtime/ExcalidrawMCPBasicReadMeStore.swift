@@ -15,10 +15,15 @@ enum ExcalidrawMCPBasicReadMeStore {
     }
 
     static var currentReadMe: String {
-        UserDefaults.standard.string(forKey: overrideDefaultsKey) ?? defaultReadMe
+        guard let readMe = UserDefaults.standard.string(forKey: overrideDefaultsKey),
+              !readMe.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return defaultReadMe
+        }
+        return readMe
     }
 
     static func save(_ readMe: String) {
+        guard !readMe.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         guard readMe != defaultReadMe else {
             restoreDefault()
             return

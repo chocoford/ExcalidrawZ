@@ -25,7 +25,7 @@ struct ExportImageView: View {
     @Environment(\.containerHorizontalSizeClass) var containerHorizontalSizeClass
     @Environment(\.alertToast) var alertToast
     
-    @EnvironmentObject var exportState: ExportState
+    @Environment(ExportState.self) var exportState
     
     private let allContent: ExportImageContent
     private let selectedContent: ExportImageContent
@@ -600,42 +600,29 @@ struct ExportImageView: View {
     @ViewBuilder
     private func actionItems(_ url: URL) -> some View {
         Button {
+            guard isExportReady, let data = exportedImageData?.data, !data.isEmpty else { return }
+            switch imageType {
+                case 0:
+                    // Keep the original PNG, including any embedded drawing.
 #if canImport(AppKit)
-            NSPasteboard.general.clearContents()
-            switch self.imageType {
-                case 0:
-                    if let image = PlatformImage(contentsOf: url) {
-                        NSPasteboard.general.writeObjects([image])
-                    } else {
-                        return
-                    }
-                case 1:
-                    if let string = String(data: (try? Data(contentsOf: url)) ?? Data(), encoding: .utf8) {
-                        NSPasteboard.general.writeObjects([string as NSString])
-                    } else {
-                        return
-                    }
-                default:
-                    break
-            }
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.clearContents()
+                    guard pasteboard.setData(data, forType: .png) else { return }
 #elseif canImport(UIKit)
-            switch self.imageType {
-                case 0:
-                    if let image = PlatformImage(contentsOf: url) {
-                        UIPasteboard.general.setObjects([image])
-                    } else {
-                        return
-                    }
-                case 1:
-                    if let string = String(data: (try? Data(contentsOf: url)) ?? Data(), encoding: .utf8) {
-                        UIPasteboard.general.setObjects([string as NSString])
-                    } else {
-                        return
-                    }
-                default:
-                    break
-            }
+                    UIPasteboard.general.setData(data, forPasteboardType: UTType.png.identifier)
 #endif
+                case 1:
+                    guard let string = String(data: data, encoding: .utf8) else { return }
+#if canImport(AppKit)
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.clearContents()
+                    guard pasteboard.writeObjects([string as NSString]) else { return }
+#elseif canImport(UIKit)
+                    UIPasteboard.general.setObjects([string as NSString])
+#endif
+                default:
+                    return
+            }
             
             withAnimation {
                 copied = true
@@ -864,7 +851,7 @@ private struct ExportImagePreviewView: View {
             if #available(macOS 13.0, *) {
                 NavigationStack {
                     ExportImageView(file: .preview)
-                        .environmentObject(ExportState())
+                        .environment(ExportState())
                 }
             }
         }

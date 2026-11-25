@@ -1,15 +1,20 @@
 <div align="center" style="display:flex;flex-direction:column;">
-  <a href="https://excalidraw.com">
+  <a href="https://excalidrawz.chocoford.com/">
     <img src="./ExcalidrawZ/Assets.xcassets/AppIcon-macOS.imageset/ExcalidrawZ Icon 26-iOS-Default-83.5x83.5@3x.png?raw=true" alt="ExcalidrawZ logo" />
   </a>
-  <h3>A native Excalidraw client for macOS, iPadOS, and iOS. Powered by SwiftUI.</h3>
+  <h1>ExcalidrawZ</h1>
+  <p>An unofficial native Excalidraw client for macOS, iPadOS, and iOS.</p>
+  <p><a href="#support">Get support</a></p>
 </div>
 
 ![GitHub](https://img.shields.io/github/license/chocoford/ExcalidrawZ) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40Chocoford)](https://x.com/Chocoford_) [![Discord](https://img.shields.io/discord/944160092914319361)](https://discord.gg/aCv6w4HxDg)
 
 <a href="https://www.chocoford.com/donation" target="_blank"><img src="https://github.com/chocoford/chocoford/blob/main/public/Donation%20Button.png?raw=true" alt="Donation to Chocoford" style="height: 60px !important;"></a>
 
-[Excalidraw](https://github.com/excalidraw/excalidraw) is an excellent drawing tool. ExcalidrawZ keeps the familiar Excalidraw canvas, then adds native file management, iCloud sync, history, export, AI assistance, MCP integration, and Apple-platform interaction details around it.
+> [!WARNING]
+> ExcalidrawZ is an **unofficial** client maintained by Chocoford. For help with the app, please use [ExcalidrawZ support](#support).
+
+ExcalidrawZ keeps the familiar [Excalidraw](https://github.com/excalidraw/excalidraw) canvas, then adds native file management, iCloud sync, history, export, AI assistance, MCP integration, and Apple-platform interaction details around it.
 
 ## Download
 
@@ -123,9 +128,9 @@ ExcalidrawZ can open, import, edit, or export common Excalidraw-related formats:
 - PDF import and export
 - image export
 
-## Contact
+## Support
 
-Welcome to my [Discord server](https://discord.gg/aCv6w4HxDg) to share suggestions or report issues for ExcalidrawZ.
+For ExcalidrawZ questions, feedback, or bug reports, join my [Discord server](https://discord.gg/aCv6w4HxDg) or [open a GitHub issue](https://github.com/chocoford/ExcalidrawZ/issues).
 
 ## Development Guide
 

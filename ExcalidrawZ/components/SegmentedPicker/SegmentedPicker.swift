@@ -5,11 +5,13 @@
 //  Created by Dove Zachary on 2024/8/10.
 //
 
+import Observation
 import SwiftUI
 import ChocofordUI
 
-class SegmentedPickerModel<Selection>: ObservableObject where Selection : Hashable {
-    @Published private(set) var selection: Selection?
+@Observable
+class SegmentedPickerModel<Selection> where Selection : Hashable {
+    private(set) var selection: Selection?
 
     var onSelectionChanged: ((Selection?) -> Void)?
 
@@ -39,7 +41,7 @@ struct SegmentedPicker<Selection, Content>: View where Selection : Hashable, Con
         self.content = content
     }
     
-    @StateObject private var viewModel = SegmentedPickerModel<Selection>()
+    @State private var viewModel = SegmentedPickerModel<Selection>()
     @State private var canAnimateSelectionBackground = false
     
     var body: some View {
@@ -82,7 +84,7 @@ struct SegmentedPicker<Selection, Content>: View where Selection : Hashable, Con
                 }
             }
         }
-        .environmentObject(viewModel)
+        .environment(viewModel)
         .apply { content in
             if #available(iOS 17.0, macOS 14.0, *) {
                 content
@@ -140,7 +142,7 @@ fileprivate struct SegmentedPickerContent: _VariadicView_MultiViewRoot {
 
 
 struct SegmentedPickerItem<Value>: View where Value : Hashable {
-    @EnvironmentObject var viewModel: SegmentedPickerModel<Value>
+    @Environment(SegmentedPickerModel<Value>.self) var viewModel
     
     var value: Value
     var content: AnyView

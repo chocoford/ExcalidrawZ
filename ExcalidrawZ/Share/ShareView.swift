@@ -16,11 +16,11 @@ import SFSafeSymbols
 struct ShareFileModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @EnvironmentObject private var shareFileState: ShareFileState
+    @Environment(ShareFileState.self) private var shareFileState
     
     func body(content: Content) -> some View {
         content
-            .sheet(item: $shareFileState.currentSharedFile) { file in
+            .sheet(item: Bindable(shareFileState).currentSharedFile) { file in
 #if os(macOS)
                 self.content(file)
 #else
@@ -62,7 +62,7 @@ struct ShareView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.alertToast) var alertToast
     
-    @EnvironmentObject var exportState: ExportState
+    @Environment(ExportState.self) var exportState
     
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -322,7 +322,7 @@ struct ShareViewLagacy: View {
     @Environment(\.dismiss) var dismiss
     
     @Environment(\.alertToast) var alertToast
-    @EnvironmentObject var exportState: ExportState
+    @Environment(ExportState.self) var exportState
     
     var sharedFile: ExcalidrawFile
     var imageExportContext = ImageExportContext()
@@ -502,8 +502,8 @@ fileprivate struct SquareButton: View {
 
 #if DEBUG
 struct SharePreviewView: View {
-    @StateObject private var fileState = FileState()
-    @StateObject private var shareFileState = ShareFileState()
+    @State private var fileState = FileState()
+    @State private var shareFileState = ShareFileState()
     
     var body: some View {
         VStack {
@@ -522,9 +522,9 @@ struct SharePreviewView: View {
             }
         }
         .modifier(ShareFileModifier())
-        .environmentObject(ExportState())
-        .environmentObject(shareFileState)
-        .environmentObject(fileState)
+        .environment(ExportState())
+        .environment(shareFileState)
+        .environment(fileState)
     }
 }
 

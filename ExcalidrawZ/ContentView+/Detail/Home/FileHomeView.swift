@@ -54,11 +54,10 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
 
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var dragState: ItemDragState
+    @Environment(FileState.self) private var fileState
+    @Environment(ItemDragState.self) private var dragState
 
     var group: HomeGroup
-    var parentGroups: [HomeGroup]
     var files: [FileState.ActiveFile]
     
     enum GroupType {
@@ -73,15 +72,6 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     
     init(group: Group, files: [File]) where HomeGroup == Group {
         self.group = group
-        self.parentGroups = {
-            var parents: [Group] = []
-            var currentGroup: Group? = group
-            while let parent = currentGroup?.parent {
-                parents.append(parent)
-                currentGroup = parent
-            }
-            return parents.reversed()
-        }()
         self.files = files.map {.file($0)}
 
         self._childGroups = FetchRequest<Group>(
@@ -97,15 +87,6 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     
     init(folder: LocalFolder, files: [URL]) where HomeGroup == LocalFolder {
         self.group = folder
-        self.parentGroups = {
-            var parents: [LocalFolder] = []
-            var currentGroup: LocalFolder? = folder
-            while let parent = currentGroup?.parent {
-                parents.append(parent)
-                currentGroup = parent
-            }
-            return parents.reversed()
-        }()
         self.files = files.map{ .localFile($0) }
 
         self._childGroups = FetchRequest<LocalFolder>(
@@ -117,9 +98,8 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     }
     
     @State private var selection: String?
+    @State private var folderRefreshRevision = 0
     
-    @State private var isCreateGroupDialogPresented: Bool = false
-    @State private var isImportFilesDialogPresented = false
     
 #if os(iOS)
     @State private var editMode: EditMode = .inactive
@@ -133,6 +113,16 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
             } else {
                 content()
             }
+        }
+        .task(id: "\(group.objectID.uriRepresentation().absoluteString):\((group as? LocalFolder)?.filePath ?? ""):\(folderRefreshRevision)") {
+            guard let folder = group as? LocalFolder else { return }
+            do { try await LocalFolder.refreshImmediateChildren(of: folder.objectID) }
+            catch is CancellationError {} catch { alertToast(error) }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .linkedFolderContentsDidChange)) { notification in
+            guard let folder = group as? LocalFolder,
+                  LinkedFolderIndexState.affects(notification, folderURL: folder.url) else { return }
+            folderRefreshRevision += 1
         }
         .background {
             // Not working
@@ -150,7 +140,8 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
         FileHomeGridContainer(
             files: files,
             itemWidth: fileItemWidth,
-            showsPlaceholder: files.isEmpty
+            showsPlaceholder: files.isEmpty,
+            headerSpacing: fileGridHeaderSpacing
         ) {
             containerHeader()
         } background: {
@@ -203,192 +194,79 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
     }
     
     @ViewBuilder
-    private func header() -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 2) {
-                ForEach(parentGroups) { group in
-                    Button {
-                        fileState.setActiveFile(nil)
-                        fileState.currentActiveGroup = futureActiveGroup(group)
-                    } label: {
-                        Text(group.name ?? String(localizable: .generalUntitled))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    .buttonStyle(.text(size: .small))
-                    // .hoverCursor(.link)
-
-                    if group != parentGroups.last {
-                        Image(systemSymbol: .chevronRight)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Spacer()
-            }
-            .font(.caption)
-            
-            HStack {
-                Text(group.name ?? String(localizable: .generalUntitled))
-                    .font(.title)
-                
-                Spacer()
-                
-                // Toolbar
-                HStack {
-#if os(iOS)
-                    if editMode == .active {
-                        Button {
-                            withAnimation(.smooth) {
-                                editMode = .inactive
-                            }
-                            fileState.resetSelections()
-                        } label: {
-                            Image(systemSymbol: .checkmark)
-                        }
-                        .modernButtonStyle(style: .glassProminent, shape: .circle)
-                    } else {
-                        actionsMenu()
-                    }
-#else
-                    if #available(macOS 14.0, iOS 17.0, *) {
-                        actionsMenu()
-                            .buttonStyle(.accessoryBar)
-                    } else {
-                        actionsMenu()
-                    }
-#endif
-                }
-            }
-            .padding(.horizontal, 10)
-        }
-    }
-    
-    @ViewBuilder
     private func containerHeader() -> some View {
         VStack(spacing: 30) {
-            header()
-                .padding(.horizontal, 20)
+#if os(iOS)
             quickActions()
                 .padding(.horizontal, 30)
-            childFolderGrid()
-                .padding(.horizontal, 30)
-        }
-        .padding(.top, parentGroups.isEmpty ? 36 : 15)
-    }
-    
-    @ViewBuilder
-    private func actionsMenu() -> some View {
-        SwiftUI.Group {
-            if let group = group as? Group {
-                GroupMenuProvider(group: group) { triggers in
-                    Menu {
-#if os(iOS)
-                        if editMode == .inactive {
-                            Button {
-                                withAnimation(.smooth) {
-                                    editMode = .active
-                                }
-                            } label: {
-                                Label(.localizable(.librariesButtonSelect), systemSymbol: .checkmarkCircle)
-                            }
-                        }
 #endif
-
-                        GroupMenuItems(
-                            group: group,
-                            canExpand: false,
-                            onToggleRename: triggers.onToggleRename,
-                            onToogleCreateSubfolder: triggers.onToogleCreateSubfolder,
-                            onToggleDelete: triggers.onToggleDelete,
-                            onImportFiles: group.groupType == .trash
-                                ? nil
-                                : { isImportFilesDialogPresented.toggle() }
-                        )
-                    } label: {
-#if os(iOS)
-                        Label(
-                            .localizable(.generalButtonMore),
-                            systemSymbol: .ellipsis
-                        )
-                        .padding(6)
-#else
-                        Image(systemSymbol: .ellipsisCircle)
-#endif
-                    }
-                }
-                .modifier(ImportFilesModifier(isPresented: $isImportFilesDialogPresented))
-            } else if let folder = group as? LocalFolder {
-                LocalFolderMenuProvider(folder: folder) { triggers in
-                    Menu {
-#if os(iOS)
-                        if editMode == .inactive {
-                            Button {
-                                editMode = .active
-                            } label: {
-                                Label(.localizable(.librariesButtonSelect), systemSymbol: .checkmarkCircle)
-                            }
-                        }
-#endif
-                        
-                        LocalFolderMenuItems(
-                            folder: folder,
-                            canExpand: false
-                        ) {
-                            triggers.onToogleCreateSubfolder()
-                        } onToggleRemoveObservation: {
-                            triggers.onToggleRemoveObservation()
-                        }
-                    } label: {
-#if os(iOS)
-                        Label(
-                            .localizable(.generalButtonMore),
-                            systemSymbol: .ellipsis
-                        )
-                        .padding(6)
-#else
-                        Image(systemSymbol: .ellipsisCircle)
-#endif
-                    }
-                }
+            if !childGroups.isEmpty {
+                childFolderGrid()
+                    .padding(.horizontal, 30)
             }
         }
-#if os(iOS)
-        .modernButtonStyle(style: .glass, shape: .circle)
-        .labelStyle(.iconOnly)
-        .frame(minWidth: 12, minHeight: 12)
-#elseif os(macOS)
-        .fixedSize()
-#endif
-        .menuIndicator(.hidden)
+        .padding(.top, 36)
     }
     
-    
+    private var fileGridHeaderSpacing: CGFloat {
+#if os(macOS)
+        childGroups.isEmpty ? 0 : 30
+#else
+        30
+#endif
+    }
+
+#if os(iOS)
+    private func actionsMenu() -> some View {
+        FileHomeGroupActionsMenu(group: group) {
+            withAnimation(.smooth) {
+                editMode = .active
+            }
+        }
+        .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
+        .labelStyle(.iconOnly)
+        .fixedSize()
+    }
+
     @ViewBuilder
     private func quickActions() -> some View {
-        
-        if let group = self.group as? Group, group.groupType == .trash {
-            // Trash group actions
-            HStack(spacing: 10) {
-                Spacer()
+        if #available(iOS 26.0, *) {
+            GlassEffectContainer(spacing: 10) {
+                quickActionsContent()
             }
-            .controlSize(.large)
         } else {
-            // Quick Actions
-            HStack(spacing: 10) {
-                NewFileButton(usesFileHomeOpenTransition: true)
-                
-                NewGroupButton(parentID: group.objectID)
-                
-                Spacer()
-            }
-#if os(iOS)
-            .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
-#else
-            .modifier(FileHomeQuickActionButtonStyleModifier())
-#endif
+            quickActionsContent()
         }
     }
-    
+
+    private func quickActionsContent() -> some View {
+        HStack(spacing: 10) {
+            if (group as? Group)?.groupType != .trash {
+                NewFileButton(usesFileHomeOpenTransition: true)
+                NewGroupButton(parentID: group.objectID)
+            }
+
+            if editMode == .active {
+                Button {
+                    withAnimation(.smooth) {
+                        editMode = .inactive
+                    }
+                    fileState.resetSelections()
+                } label: {
+                    Image(systemSymbol: .checkmark)
+                        .padding(6)
+                }
+                .modernButtonStyle(style: .glassProminent, size: .regular, shape: .circle)
+            } else {
+                actionsMenu()
+            }
+
+            Spacer()
+        }
+        .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
+    }
+#endif
+
     @ViewBuilder
     private func childFolderGrid() -> some View {
         if let group = self.group as? Group, group.groupType == .trash {} else {
@@ -403,31 +281,34 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 spacing: 20
             ) {
                 ForEach(childGroups) { group in
-                    HomeFolderItemView(
-                        isSelected: selection == group.objectID.description,
-                        isHighlighted: {
-                            if let group = group as? Group {
-                                return dragState.currentDropGroupTarget == .below(.group(group.objectID)) || dragState.currentDropGroupTarget == .exact(.group(group.objectID))
-                            } else if let folder = group as? LocalFolder {
-                                return dragState.currentDropGroupTarget == .below(.localFolder(folder.objectID)) || dragState.currentDropGroupTarget == .exact(.localFolder(folder.objectID))
-                            } else {
-                                return false
-                            }
-                        }(),
-                        name: group.name ?? String(localizable: .generalUntitled),
-                        itemsCount: group.filesCount + group.subgroupsCount,
-                        localFolder: group as? LocalFolder
-                    )
-                    .modifier(FileHomeGroupContextMenuModifier(group: group))
-                    .simultaneousGesture(TapGesture(count: 2).onEnded {
-                        fileState.currentActiveGroup = futureActiveGroup(group)
-                        fileState.expandToGroup(group.objectID)
-                    })
-                    .simultaneousGesture(TapGesture().onEnded {
-                        selection = group.objectID.description
-                        fileState.resetSelections()
-                    })
-                    .modifier(HomeFolderItemDropModifier(group: group))
+                    LocalFolderItemCount(folder: group as? LocalFolder,
+                                         fallbackCount: group is LocalFolder ? 0 : group.filesCount + group.subgroupsCount) { count in
+                        HomeFolderItemView(
+                            isSelected: selection == group.objectID.description,
+                            isHighlighted: {
+                                if let group = group as? Group {
+                                    return dragState.currentDropGroupTarget == .below(.group(group.objectID)) || dragState.currentDropGroupTarget == .exact(.group(group.objectID))
+                                } else if let folder = group as? LocalFolder {
+                                    return dragState.currentDropGroupTarget == .below(.localFolder(folder.objectID)) || dragState.currentDropGroupTarget == .exact(.localFolder(folder.objectID))
+                                } else {
+                                    return false
+                                }
+                            }(),
+                            name: group.name ?? String(localizable: .generalUntitled),
+                            itemsCount: count,
+                            localFolder: group as? LocalFolder
+                        )
+                        .modifier(FileHomeGroupContextMenuModifier(group: group))
+                        .simultaneousGesture(TapGesture(count: 2).onEnded {
+                            fileState.currentActiveGroup = futureActiveGroup(group)
+                            fileState.expandToGroup(group.objectID)
+                        })
+                        .simultaneousGesture(TapGesture().onEnded {
+                            selection = group.objectID.description
+                            fileState.resetSelections()
+                        })
+                        .modifier(HomeFolderItemDropModifier(group: group))
+                    }
                 }
             }
             .watch(value: fileState.selectedFiles.isEmpty) { isEmpty in
@@ -444,6 +325,71 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
             .animation(.smooth, value: Array(childGroups))
 #endif
         }
+    }
+}
+
+/// Shared by the macOS toolbar and the iOS file-home action row.
+struct FileHomeGroupActionsMenu<HomeGroup: ExcalidrawGroup>: View {
+    let group: HomeGroup
+    var onSelect: (() -> Void)? = nil
+
+    @State private var isImportFilesDialogPresented = false
+
+    var body: some View {
+        SwiftUI.Group {
+            if let group = group as? Group {
+                GroupMenuProvider(group: group) { triggers in
+                    Menu {
+                        selectionMenuItem
+                        GroupMenuItems(
+                            group: group,
+                            canExpand: false,
+                            onToggleRename: triggers.onToggleRename,
+                            onToogleCreateSubfolder: triggers.onToogleCreateSubfolder,
+                            onToggleDelete: triggers.onToggleDelete,
+                            onImportFiles: group.groupType == .trash
+                                ? nil
+                                : { isImportFilesDialogPresented.toggle() }
+                        )
+                    } label: {
+                        menuLabel
+                    }
+                }
+                .modifier(ImportFilesModifier(isPresented: $isImportFilesDialogPresented))
+            } else if let folder = group as? LocalFolder {
+                LocalFolderMenuProvider(folder: folder) { triggers in
+                    Menu {
+                        selectionMenuItem
+                        LocalFolderMenuItems(
+                            folder: folder,
+                            canExpand: false,
+                            onToggleCreateSubfolder: triggers.onToogleCreateSubfolder,
+                            onToggleRemoveObservation: triggers.onToggleRemoveObservation
+                        )
+                    } label: {
+                        menuLabel
+                    }
+                }
+            }
+        }
+        .menuIndicator(.hidden)
+        .labelStyle(.iconOnly)
+    }
+
+    @ViewBuilder
+    private var selectionMenuItem: some View {
+        if let onSelect {
+            Button(action: onSelect) {
+                Label(.localizable(.librariesButtonSelect), systemSymbol: .checkmarkCircle)
+            }
+        }
+    }
+
+    private var menuLabel: some View {
+        Label(.localizable(.generalButtonMore), systemSymbol: .ellipsis)
+#if os(iOS)
+            .padding(6)
+#endif
     }
 }
 

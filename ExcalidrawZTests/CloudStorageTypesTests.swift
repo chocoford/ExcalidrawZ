@@ -83,6 +83,32 @@ final class CloudStorageTypesTests: XCTestCase {
         XCTAssertEqual(decoded, operation)
     }
 
+    func testOneDriveNamesTrimOuterWhitespaceWithoutChangingOtherProviders() throws {
+        let name = "  Organic Chemistry\t"
+        XCTAssertEqual(try CloudStorageProviderID.microsoftOneDrive.normalizedItemName(name), "Organic Chemistry")
+        XCTAssertEqual(try CloudStorageProviderID.dropbox.normalizedItemName(name), name)
+        XCTAssertThrowsError(try CloudStorageProviderID.microsoftOneDrive.normalizedItemName(" \n\t")) {
+            XCTAssertEqual($0 as? CloudStorageError, .invalidOneDriveItemName)
+        }
+    }
+
+    func testDeferringInvalidFolderStillAllowsIndependentMetadataOperations() {
+        let pendingFolder = CloudStorageItemID.pendingLocalID()
+        let pendingFile = CloudStorageItemID.pendingLocalID()
+        let remoteFolder = CloudStorageItemID(rawValue: "remote-folder")
+        let deferred: Set<CloudStorageItemID> = [pendingFolder]
+        let invalid = CloudStorageMetadataOperation(kind: .createFolder, itemID: pendingFolder, parentID: remoteFolder)
+        let child = CloudStorageMetadataOperation(kind: .createFile, itemID: pendingFile, parentID: pendingFolder)
+        let followUp = CloudStorageMetadataOperation(kind: .moveItem, itemID: pendingFile)
+        let independent = CloudStorageMetadataOperation(kind: .moveItem, itemID: remoteFolder)
+
+        XCTAssertFalse(invalid.canReplay(afterDeferring: deferred))
+        XCTAssertFalse(child.canReplay(afterDeferring: deferred))
+        XCTAssertFalse(followUp.canReplay(afterDeferring: deferred))
+        XCTAssertTrue(independent.canReplay(afterDeferring: deferred))
+        XCTAssertTrue(child.replacingItemIDs(using: [pendingFolder: remoteFolder]).canReplay(afterDeferring: []))
+    }
+
     func testMetadataOperationReplacesProvisionalItemAndParentIdentities() {
         let operation = CloudStorageMetadataOperation(
             kind: .moveItem,

@@ -38,7 +38,7 @@ extension PromptInputView {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "doc.text.magnifyingglass")
                     .font(.title2)
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(Color.accentColor)
                     .frame(width: 40, height: 40)
                     .background(.thinMaterial, in: Circle())
 
@@ -147,9 +147,9 @@ extension PromptInputView {
         let prompt = promptDraftState.text.trimmingCharacters(in: .whitespacesAndNewlines)
         let files = PastedImageHelpers.buildFiles(from: promptDraftState.images)
 
-        await loadAgentConfigIfNeeded()
+        await loadSchemeIfNeeded()
 
-        guard let modelOption = modelProfileOptionForSend(files: files) else {
+        guard let modelOption = modelSelectionForSend(files: files) else {
             throw AIChatModelProfileUnavailableError()
         }
         let model = modelOption.model

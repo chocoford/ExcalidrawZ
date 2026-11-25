@@ -16,7 +16,7 @@ struct FileRowView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
+    @Environment(LockedContentStateStore.self) private var lockedContentState
     
     @ObservedObject var file: File
     var files: FetchedResults<File>
@@ -40,7 +40,7 @@ struct FileRowView: View {
     
     @State private var showPermanentlyDeleteAlert: Bool = false
     @State private var fileStatus: FileStatus?
-    @StateObject private var selectionState = SidebarFileRowSelectionState()
+    @State private var selectionState = SidebarFileRowSelectionState()
     @FocusState private var isFocused: Bool
 
     private var currentFileStatus: FileStatus {

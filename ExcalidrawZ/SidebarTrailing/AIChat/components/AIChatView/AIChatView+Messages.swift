@@ -19,6 +19,7 @@ extension AIChatView {
 
         let transientError = currentTransientError
         let displayMessages = messagesForCurrentEditSession(messages)
+        let usageSignature = AIChatUsagePresentation.signature(for: conversation)
         let allGroups = groupMessages(displayMessages)
         let scrollConfiguration = isCompactIOS
             ? ChatScrollConfiguration.compactIOS
@@ -102,7 +103,7 @@ extension AIChatView {
                         streamingMessageIDs: streamingMessageIDs,
                         isGenerationCancelled: isGenerationCancelled,
                         suppressedUserActionMessageID: suppressedUserActionMessageID
-                    )
+                    ) + ":byok:\(usesBYOKForUsage):usage:\(usageSignature)"
                 },
                 onReachTop: {
                     guard scrollConfiguration.usesMessageWindowing else { return }
@@ -122,6 +123,8 @@ extension AIChatView {
                     isGenerationCancelled: isGenerationCancelled,
                     suppressedUserActionMessageID: suppressedUserActionMessageID
                 )
+                .environment(\.aiChatUsesBYOK, usesBYOKForUsage)
+                .environment(\.aiChatUsageConversation, conversation)
                 .environment(\.chatScrollToBottom) { animated in
                     await scrollToBottomAsync(animated: animated)
                 }

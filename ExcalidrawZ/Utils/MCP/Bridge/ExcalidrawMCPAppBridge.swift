@@ -835,8 +835,19 @@ final class ExcalidrawMCPAppBridge {
             return folder.objectID.uriRepresentation().absoluteString
         }()
 
+        let indexedFiles = await LinkedFolderIndex.shared.drawingFiles()
         let context = PersistenceController.shared.newTaskContext()
         let folders = try await context.perform {
+            let rootsRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+            rootsRequest.predicate = NSPredicate(format: "parent == nil")
+            for root in try context.fetch(rootsRequest) {
+                try? root.refreshChildren(context: context, recursively: false)
+            }
+            // Include drawing destinations even if the user has never expanded
+            // their ancestors. Avoid materializing unrelated build directories.
+            for entry in indexedFiles {
+                _ = try? LocalFolder.deepestFolder(containingLocalFileAt: entry.url, in: context)
+            }
             let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
             request.sortDescriptors = [
                 NSSortDescriptor(key: "rank", ascending: true),
@@ -874,7 +885,7 @@ final class ExcalidrawMCPAppBridge {
         return .object([
             "local_folders": .array(folders),
             "returned": .number(Double(folders.count)),
-            "id_policy": .string("Pass local_folder_id to list_local_files or create_local_file.")
+            "id_policy": .string("Pass local_folder_id to list_local_files or create_local_file. Folders are discovered lazily; list_local_files with deep=true also finds drawings in unexpanded folders.")
         ])
     }
 
@@ -896,6 +907,7 @@ final class ExcalidrawMCPAppBridge {
                 folders = [try Self.localFolder(from: rawFolderID, context: context)]
             } else {
                 let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                request.predicate = NSPredicate(format: "parent == nil")
                 request.sortDescriptors = [
                     NSSortDescriptor(key: "rank", ascending: true),
                     NSSortDescriptor(key: "filePath", ascending: true)
@@ -908,7 +920,7 @@ final class ExcalidrawMCPAppBridge {
             for folder in folders where entries.count < cappedLimit {
                 let folderID = folder.objectID.uriRepresentation().absoluteString
                 let folderPathComponents = Self.localFolderPathComponents(folder)
-                let urls = (try? folder.getFiles(deep: deep)) ?? []
+                let urls = (try? folder.getFiles(deep: deep, limit: cappedLimit - entries.count)) ?? []
                 for url in urls where entries.count < cappedLimit {
                     let standardizedURL = url.standardizedFileURL
                     let path = standardizedURL.path

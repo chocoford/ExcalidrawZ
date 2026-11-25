@@ -35,17 +35,20 @@ struct AssistantRoundTableItemView: View {
         switch item.kind {
             case .assistantContent(let content):
                 let text = AssistantRoundTableRows.displayText(of: content)
-                if !text.isEmpty {
-                    SmoothStreamingText(
-                        target: text,
-                        isStreaming: streamingMessageIDs.contains(content.id)
-                    )
-                    .padding(.bottom, 6)
-                    .assistantContentStableHeight(
-                        cacheKey: "\(item.signature):text:\(text.hashValue)",
-                        isStreaming: streamingMessageIDs.contains(content.id)
-                    )
+                VStack(alignment: .leading, spacing: 8) {
+                    if !text.isEmpty {
+                        SmoothStreamingText(
+                            target: text,
+                            isStreaming: streamingMessageIDs.contains(content.id)
+                        )
+                        .assistantContentStableHeight(
+                            cacheKey: "\(item.signature):text:\(text.hashValue)",
+                            isStreaming: streamingMessageIDs.contains(content.id)
+                        )
+                    }
+                    AssistantSourceLinks(citations: content.citations ?? [])
                 }
+                .padding(.bottom, 6)
             case .toolCall(let messageID, let call, let isDenied):
                 ToolCallCard(
                     call: call,
@@ -193,16 +196,7 @@ struct AssistantRoundTableActionRow: View {
                 .help("Regenerate response")
             }
             Spacer()
-            HStack(spacing: 4) {
-                Image(systemSymbol: .boltCircle)
-                Text(action.usage.formatted(.number.precision(.fractionLength(2))))
-            }
-            .font(.footnote)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 2)
-            .background {
-                Capsule().fill(.regularMaterial)
-            }
+            AssistantUsageBadge(credits: action.usage, sourceID: action.sourceID)
         }
         .labelStyle(.iconOnly)
         .buttonStyle(.text(size: .normal, square: true))
@@ -234,12 +228,12 @@ enum AssistantRoundTableRows {
                     let contentIsStable = !isStreaming
                         || (!hasFinalCall && hasToolCallsStarted && !text.isEmpty)
 
-                    if !text.isEmpty {
+                    if !text.isEmpty || content.citations?.isEmpty == false {
                         guard contentIsStable else { return result }
                         result.append(
                             AssistantRoundTableItem(
                                 id: "\(content.id):content",
-                                signature: "assistantContent:\(content.id):c\(text.count):streaming:\(isStreaming ? "1" : "0")",
+                                signature: "assistantContent:\(content.id):c\(text.count):sources:\(AISourceCitationStorage.signature(content.citations)):streaming:\(isStreaming ? "1" : "0")",
                                 kind: .assistantContent(content)
                             )
                         )

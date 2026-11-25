@@ -12,8 +12,8 @@ import CoreData
 struct LocalFolderMenuProvider: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var localFolderState: LocalFolderState
+    @Environment(FileState.self) private var fileState
+    @Environment(LocalFolderState.self) private var localFolderState
 
     struct Triggers {
         var onToggleRename: () -> Void
@@ -36,6 +36,7 @@ struct LocalFolderMenuProvider: View {
     @State private var isRenameSheetPresented = false
     @State private var isCreateSubfolderSheetPresented = false
     @State private var isDeleteConfirmPresented = false
+    @State private var isRemovingObservation = false
 
     var triggers: Triggers {
         Triggers {
@@ -92,9 +93,8 @@ struct LocalFolderMenuProvider: View {
                         withIntermediateDirectories: false
                     )
                 }
-                try await MainActor.run {
-                    try folder.refreshChildren(context: viewContext)
-                    localFolderState.objectWillChange.send()
+                try await LocalFolder.refreshImmediateChildren(of: folder.objectID)
+                await MainActor.run {
                     localFolderState.refreshFilesPublisher.send()
                 }
             } catch {
@@ -106,12 +106,21 @@ struct LocalFolderMenuProvider: View {
     }
     
     private func removeObservation() {
+        guard !isRemovingObservation else { return }
+        isRemovingObservation = true
         let context = PersistenceController.shared.container.newBackgroundContext()
+        let displayContext = viewContext
         let folderID = folder.objectID
-        Task.detached {
+        Task {
+            defer { isRemovingObservation = false }
             do {
-                try await context.perform {
-                    guard case let folder as LocalFolder = context.object(with: folderID) else { return }
+                let folderIDs = try await context.perform { () throws -> [NSManagedObjectID] in
+                    // A second request may refer to an object already removed
+                    // by another row or window. Fetching treats that as a no-op.
+                    let request = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
+                    request.predicate = NSPredicate(format: "SELF == %@", folderID)
+                    request.fetchLimit = 1
+                    guard let folder = try context.fetch(request).first else { return [] }
                     // also should delete the subfolders...
                     var allSubfolders: [LocalFolder] = []
                     var fetchIndex = -1
@@ -125,26 +134,30 @@ struct LocalFolderMenuProvider: View {
                         try allSubfolders.append(contentsOf: context.fetch(fetchRequest))
                         fetchIndex += 1
                     }
-                    let batchDeletion = NSBatchDeleteRequest(objectIDs: allSubfolders.map{$0.objectID} + [folder.objectID])
-                    
-                    try context.executeAndMergeChanges(using: batchDeletion)
-                    try context.save()
+                    return allSubfolders.map(\.objectID) + [folder.objectID]
                 }
+                guard !folderIDs.isEmpty else { return }
+                await LinkedFolderDirectoryLoader.shared.cancel(folderIDs)
+                try await context.perform {
+                    let batchDeletion = NSBatchDeleteRequest(objectIDs: folderIDs)
+                    try context.executeAndMergeChanges(using: batchDeletion, mergingInto: [displayContext])
+                }
+                if case .localFolder(let activeFolder) = fileState.currentActiveGroup,
+                   folderIDs.contains(activeFolder.objectID) {
+                    fileState.setActiveFile(nil)
+                    fileState.currentActiveGroup = nil
+                }
+                await LinkedFolderIndexState.configureFromPersistence()
             } catch {
-                await alertToast(error)
+                alertToast(error)
             }
-        }
-        
-        if case .localFolder(let localFoder) = fileState.currentActiveGroup, localFoder == folder {
-            fileState.setActiveFile(nil)
-            fileState.currentActiveGroup = nil
         }
     }
 
 }
 
 struct LocalFolderContextMenuModifier: ViewModifier {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     var folder: LocalFolder
     var canExpand: Bool
@@ -203,8 +216,8 @@ struct LocalFolderMenuItems: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var localFolderState: LocalFolderState
+    @Environment(FileState.self) private var fileState
+    @Environment(LocalFolderState.self) private var localFolderState
 
     var folder: LocalFolder
     var canExpand: Bool
@@ -319,7 +332,7 @@ struct LocalFolderMenuItems: View {
                         }
                         try await MainActor.run {
                             try deleteLocalFolder(folder, context: viewContext)
-                            localFolderState.objectWillChange.send()
+                            localFolderState.refreshFilesPublisher.send()
                             localFolderState.refreshFilesPublisher.send()
                         }
                     } catch {
@@ -360,6 +373,7 @@ struct LocalFolderMenuItems: View {
             do {
                 try await context.perform {
                     guard let folder = context.object(with: folderID) as? LocalFolder else { return }
+                    try folder.refreshChildren(context: context, recursively: false)
                     let fetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
                     fetchRequest.predicate = NSPredicate(format: "parent = %@", folder)
                     let subFolders = try context.fetch(fetchRequest)

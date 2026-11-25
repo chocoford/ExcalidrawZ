@@ -79,8 +79,9 @@ actor OneDriveGraphClient {
     ) async throws -> OneDriveDriveItem {
         let parentComponent = encodedPathComponent(parentID.rawValue)
         let nameComponent = encodedPathComponent(name)
+        let conflictQuery = condition == .ifAbsent ? "?@microsoft.graph.conflictBehavior=fail" : ""
         guard let url = URL(
-            string: "\(baseURL.absoluteString)/me/drive/items/\(parentComponent):/\(nameComponent):/content"
+            string: "\(baseURL.absoluteString)/me/drive/items/\(parentComponent):/\(nameComponent):/content\(conflictQuery)"
         ) else {
             throw CloudStorageError.invalidProviderResponse("Unable to construct upload URL.")
         }
@@ -260,6 +261,11 @@ actor OneDriveGraphClient {
                 throw CloudStorageError.changeTrackingResetRequired
             }
             switch response.statusCode {
+                case 400 where graphError?.code == "invalidRequest":
+                    if let message = graphError?.message.lowercased(),
+                       message.contains("leading"), message.contains("trailing"), message.contains("spaces") {
+                        throw CloudStorageError.invalidOneDriveItemName
+                    }
                 case 401:
                     throw CloudStorageError.authenticationRequired
                 case 404:

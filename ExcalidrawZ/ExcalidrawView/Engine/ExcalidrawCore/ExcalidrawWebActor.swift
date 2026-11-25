@@ -142,18 +142,18 @@ actor ExcalidrawWebActor {
     ) async throws -> LoadFileResult {
         let webView = webView
         let targetSummary = loadFileDataSummary(data)
+        let json = String(decoding: data, as: UTF8.self)
 
-        var buffer = [UInt8].init(repeating: 0, count: data.count)
-        data.copyBytes(to: &buffer, count: data.count)
-        let buf = buffer
-        // `loadFileBuffer` is async on the JS side. `callAsyncJavaScript` wraps the
-        // body in an async function, awaits the inner Promise, and only then resolves
-        // the Swift `await` — so the caller knows Excalidraw has actually applied the
-        // new scene by the time this returns.
+        // Keep the script source independent of file size and await the existing
+        // helper's acknowledgement that the scene was applied.
         do {
             let raw = try await webView.callAsyncJavaScript(
-                "return await window.excalidrawZHelper.loadFileBuffer(\(buf), id, requestID);",
-                arguments: ["id": id, "requestID": requestID],
+                """
+                return await window.excalidrawZHelper.loadFileBuffer(
+                    new TextEncoder().encode(json), id, requestID
+                );
+                """,
+                arguments: ["json": json, "id": id, "requestID": requestID],
                 contentWorld: .page
             )
             guard let result = LoadFileResult(fromJS: raw),

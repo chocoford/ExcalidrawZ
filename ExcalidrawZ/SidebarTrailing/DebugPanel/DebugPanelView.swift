@@ -11,8 +11,8 @@ import SwiftUI
 import LLMCore
 
 struct DebugPanelView: View {
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject var toolState: ToolState
+    @Environment(FileState.self) private var fileState
+    @Environment(ToolState.self) var toolState
 
     private let actionColumns = [
         GridItem(.flexible(minimum: 100), spacing: 8),
@@ -59,7 +59,7 @@ struct DebugPanelView: View {
                 adjustSection
                 logsSection
             }
-            .padding(12)
+            .inspectorContentPadding()
         }
         .scrollIndicators(.hidden)
     }

@@ -16,11 +16,11 @@ struct SettingsView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
+    @Bindable private var aiChatPreferences = AIChatPreferences.shared
 
     /// App-level deep-link bus — see `SettingsRouter` for the rationale on
     /// why this isn't `LayoutState`.
-    @ObservedObject private var router = SettingsRouter.shared
+    @Bindable private var router = SettingsRouter.shared
 
     @State private var selection: Route?
 
@@ -95,24 +95,31 @@ struct SettingsView: View {
     @ViewBuilder
     private var sidebar: some View {
 #if os(macOS)
-        ScrollView {
-            VStack(spacing: 0) {
-                ForEach(Route.allCases) { route in
-                    Button {
-                        selection = route
-                    } label: {
-                        Label(route.text, systemSymbol: route.iconSymbol)
-                            .labelStyle(.titleAndIcon)
-                    }
-                    .buttonStyle(
-                        .excalidrawSidebarRow(
-                            isSelected: selection == route,
-                            isMultiSelected: false
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(Route.allCases) { route in
+                        Button {
+                            selection = route
+                        } label: {
+                            Label(route.text, systemSymbol: route.iconSymbol)
+                                .labelStyle(.titleAndIcon)
+                        }
+                        .buttonStyle(
+                            .excalidrawSidebarRow(
+                                isSelected: selection == route,
+                                isMultiSelected: false
+                            )
                         )
-                    )
+                    }
                 }
+                .padding(10)
             }
-            .padding(10)
+
+            SettingsPlanButton()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
         }
 #elseif os(iOS)
         List(selection: $selection) {
@@ -321,8 +328,8 @@ extension SettingsView {
 //struct SettingsView_Previews: PreviewProvider {
 //    static var previews: some View {
 //        SettingsView()
-//            .environmentObject(AppSettingsStore())
-//            .environmentObject(UpdateChecker())
+//            .environment(AppSettingsStore())
+//            .environment(UpdateChecker())
 //    }
 //}
 #endif

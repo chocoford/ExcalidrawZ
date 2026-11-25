@@ -20,13 +20,13 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerSize) private var containerSize
 
-    @EnvironmentObject private var appPreference: AppPreference
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var toolState: ToolState
-    @EnvironmentObject private var layoutState: LayoutState
-    @EnvironmentObject private var aiChatState: AIChatState
+    @Environment(AppPreference.self) private var appPreference
+    @Environment(FileState.self) private var fileState
+    @Environment(ToolState.self) private var toolState
+    @Environment(LayoutState.self) private var layoutState
+    @Environment(AIChatState.self) private var aiChatState
     @EnvironmentObject private var llmState: LLMStateObject
-    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
+    @Bindable private var aiChatPreferences = AIChatPreferences.shared
 
     var body: some ToolbarContent {
         ToolbarItemGroup(placement: .bottomBar) {
@@ -547,7 +547,7 @@ struct CompactExcalidrawBottomToolbarContent: ToolbarContent {
 }
 
 private struct CompactAIChatToolbarPlaceholderButton: View {
-    @ObservedObject var draftState: AIChatPromptDraftState
+    @Bindable var draftState: AIChatPromptDraftState
 
     let onBeginEditing: () -> Void
 
@@ -585,11 +585,11 @@ struct CompactExcalidrawBottomToolbarStateModifier: ViewModifier {
     @Environment(\.containerSize) private var containerSize
     @Environment(\.alertToast) private var alertToast
 
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var toolState: ToolState
-    @EnvironmentObject private var layoutState: LayoutState
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
-    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
+    @Environment(FileState.self) private var fileState
+    @Environment(ToolState.self) private var toolState
+    @Environment(LayoutState.self) private var layoutState
+    @Environment(LockedContentStateStore.self) private var lockedContentState
+    @Bindable private var aiChatPreferences = AIChatPreferences.shared
 
     private var canPresentCompactAIChatToolbarInput: Bool {
         usesCompactIOSBottomToolbar &&
@@ -678,9 +678,9 @@ struct CompactExcalidrawBottomToolbarStateModifier: ViewModifier {
 }
 
 private struct CompactAIChatToolbarAttachmentMenu: View {
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var layoutState: LayoutState
-    @EnvironmentObject private var aiChatState: AIChatState
+    @Environment(FileState.self) private var fileState
+    @Environment(LayoutState.self) private var layoutState
+    @Environment(AIChatState.self) private var aiChatState
 
     @State private var isImagePickerPresented = false
     @State private var isPhotoLibraryPickerPresented = false

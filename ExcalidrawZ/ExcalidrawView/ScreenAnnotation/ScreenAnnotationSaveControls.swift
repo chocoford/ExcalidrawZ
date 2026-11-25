@@ -3,7 +3,7 @@ import ChocofordUI
 import SwiftUI
 
 struct ScreenAnnotationSaveControls: View {
-    @ObservedObject var configuration: ScreenAnnotationSaveConfiguration
+    @Bindable var configuration: ScreenAnnotationSaveConfiguration
     @Binding var isFilePickerPresented: Bool
     @Binding var captureScope: ScreenAnnotationCaptureScope
 

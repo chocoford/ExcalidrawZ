@@ -3,14 +3,20 @@
 //  ExcalidrawZ
 //
 
+import Observation
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
-final class PaywallPresentationState: ObservableObject {
+@MainActor
+@Observable
+final class PaywallPresentationState {
     static let shared = PaywallPresentationState()
     static let didPresentNotification = Notification.Name("PaywallPresentationState.didPresent")
 
-    @Published var isPresented = false
-    @Published var reachReason: Store.ReachPaywallReason?
+    var isPresented = false
+    var reachReason: Store.ReachPaywallReason?
 
     private init() {}
 
@@ -19,6 +25,11 @@ final class PaywallPresentationState: ObservableObject {
         if !isPresented {
             isPresented = true
         }
+#if os(macOS)
+        let controller = PaywallPanelController.shared
+        controller.onDismiss = { [weak self] in self?.isPresented = false }
+        controller.present(from: NSApp.keyWindow ?? NSApp.mainWindow)
+#endif
         NotificationCenter.default.post(name: Self.didPresentNotification, object: nil)
     }
 }

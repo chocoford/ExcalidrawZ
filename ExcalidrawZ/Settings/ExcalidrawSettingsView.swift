@@ -13,7 +13,7 @@ import UniformTypeIdentifiers
 private let toolbarToolOrderApplyDebounceNanoseconds: UInt64 = 700_000_000
 
 struct ExcalidrawSettingsView: View {
-    @EnvironmentObject private var appPreference: AppPreference
+    @Environment(AppPreference.self) private var appPreference
     @State private var editingSettings: UserDrawingSettings = UserDrawingSettings()
     @State private var editingToolbarToolOrder = ExcalidrawToolbarToolOrder()
     @State private var draggingToolbarTool: ExcalidrawTool?
@@ -230,7 +230,7 @@ struct ExcalidrawSettingsView: View {
 
 #Preview {
     ExcalidrawSettingsView()
-        .environmentObject(AppPreference())
+        .environment(AppPreference())
 }
 
 private struct ToolbarToolOrderRow: View {

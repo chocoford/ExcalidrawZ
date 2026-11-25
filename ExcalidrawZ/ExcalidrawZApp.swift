@@ -41,13 +41,15 @@ extension LLMClient {
         authProvider: .xcode(bundleID: "com.chocoford.excalidraw-Debug"),
         uploadProvider: .none,
         uploadPolicy: .automatic,
-        baseURL: URL(string: "http://192.168.31.133:8080")!
+        baseURL: URL(string: "http://192.168.31.133:8080")!,
+        byokModelCredentialsProvider: { try await AIInferenceBilling.credentialsForRequest(for: $0) }
     )
 #else
     static let shared = LLMClient(
         authProvider: .xcode(bundleID: "com.chocoford.excalidraw-Debug"),
         uploadProvider: .none,
         uploadPolicy: .automatic,
+        byokModelCredentialsProvider: { try await AIInferenceBilling.credentialsForRequest(for: $0) }
     )
 #endif
 #else
@@ -58,7 +60,8 @@ extension LLMClient {
             subscriptionGroupID: "21660497"
         ),
         uploadProvider: .none,
-        uploadPolicy: .automatic
+        uploadPolicy: .automatic,
+        byokModelCredentialsProvider: { try await AIInferenceBilling.credentialsForRequest(for: $0) }
     )
 #endif
 }
@@ -157,6 +160,7 @@ struct ExcalidrawZApp: App {
             WebFetchTool(),
             CalculatorTool(),
             DateTimeTool(),
+            ReadBasicDrawingGuideTool(),
             FileAccessStatusTool(),
             GetCurrentFileTool(),
             ReadFileTool(),
@@ -184,12 +188,18 @@ struct ExcalidrawZApp: App {
             await toolRegistry.register(tools)
         }
 
-        self._llmState = StateObject(wrappedValue: LLMStateObject(
+        let llmState = LLMStateObject(
             llmClient: .shared,
             toolRegistry: toolRegistry,
             persistenceProvider: llmPersistenceProvider,
-            streamPublishStrategy: .throttled(0.33)
-        ))
+            streamPublishStrategy: .throttled(0.33),
+            schemeCredentialsProvider: { connectionID, model in
+                try await AIInferenceBillingState.shared.credentials(connectionID: connectionID, model: model)
+            }
+        )
+        self._llmState = StateObject(wrappedValue: llmState)
+        AIChatInferenceSessions.shared.configure(serverState: llmState)
+        AIChatSchemeCatalog.shared.observeAuthentication(in: llmState)
 
         if AIChatPreferences.shared.isAIEnabled {
             Task {
@@ -237,14 +247,16 @@ struct ExcalidrawZApp: App {
     // Can not run agent in a sandboxed app.
     // let service = SMAppService.agent(plistName: "com.chocoford.excalidraw.ExcalidrawServer.agent.plist")
     
-    @StateObject private var appPrefernece = AppPreference()
-    @StateObject private var store = Store.shared
+    @State private var appPrefernece = AppPreference()
+    @State private var store = Store.shared
 #if os(macOS) && !APP_STORE
-    @StateObject private var updateChecker = UpdateChecker()
+    @State private var updateChecker = UpdateChecker()
 #endif
     @StateObject private var llmState: LLMStateObject
-    @StateObject private var aiChatState = AIChatState()
-    @StateObject private var lockedContentState = LockedContentStateStore()
+    @Bindable private var inferenceBilling = AIInferenceBillingState.shared
+    private var defaultAISession: AIChatInferenceSessions.Session { AIChatInferenceSessions.shared.session(for: nil) }
+    @State private var aiChatState = AIChatState()
+    @State private var lockedContentState = LockedContentStateStore()
 
     @State private var isArchiveFilesExporterPresented = false
     @State private var didScheduleAIConversationCacheWarmup = false
@@ -262,12 +274,12 @@ struct ExcalidrawZApp: App {
                     context: PersistenceController.shared.container.viewContext,
                 ) { _ in }
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-                .environmentObject(appPrefernece)
-                .environmentObject(store)
-                .environmentObject(aiChatState)
-                .environmentObject(lockedContentState)
+                .environment(appPrefernece)
+                .environment(store)
+                .environment(aiChatState)
+                .environment(lockedContentState)
                 .environment(\.filePreviewLockStateStore, lockedContentState)
-                .llmProvider(state: llmState, client: .shared)
+                .llmProvider(state: defaultAISession.state, client: defaultAISession.client)
                 .lockedContentAutoRelock(lockedContentState: lockedContentState)
                 .onAppear {
 #if os(macOS)
@@ -417,17 +429,18 @@ struct ExcalidrawZApp: App {
 
         Settings {
             SettingsView()
+                .modifier(PaywallModifier())
                 .swiftyAlert(logs: true)
                 .containerSizeClassInjection()
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
                 .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-                .environmentObject(appPrefernece)
-                .environmentObject(store)
-                .environmentObject(lockedContentState)
+                .environment(appPrefernece)
+                .environment(store)
+                .environment(lockedContentState)
                 .environment(\.filePreviewLockStateStore, lockedContentState)
-                .llmProvider(state: llmState, client: .shared)
+                .llmProvider(state: defaultAISession.state, client: defaultAISession.client)
 #if !APP_STORE
-                .environmentObject(updateChecker)
+                .environment(updateChecker)
 #endif
         }
 #endif

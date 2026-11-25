@@ -56,7 +56,7 @@ struct PresentationInspectorPlaceholder: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(24)
+        .inspectorContentPadding()
     }
 
     private var spacing: CGFloat {

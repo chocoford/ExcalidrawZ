@@ -17,7 +17,7 @@ import UIKit
 @MainActor
 struct LockedContentAutoRelockModifier: ViewModifier {
     @Environment(\.scenePhase) private var scenePhase
-    @ObservedObject var lockedContentState: LockedContentStateStore
+    @Bindable var lockedContentState: LockedContentStateStore
 
 #if os(macOS)
     @State private var eventMonitor: Any?

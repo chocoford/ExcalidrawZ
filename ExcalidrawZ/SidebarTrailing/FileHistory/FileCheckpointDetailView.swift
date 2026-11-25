@@ -15,7 +15,7 @@ struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
     @Environment(\.managedObjectContext) var viewContext
     @Environment(\.dismiss) private var dismiss
 
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
 
     var checkpoint: Checkpoint
 

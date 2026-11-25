@@ -152,7 +152,7 @@ extension AISettingsView {
         }
         .labelsHidden()
         .pickerStyle(.segmented)
-        .mcpServiceModePickerShape()
+        .aiIntegrationModePickerShape()
         .fixedSize(horizontal: true, vertical: true)
         .id(mcpServiceModePickerID)
     }
@@ -169,7 +169,6 @@ extension AISettingsView {
             Spacer(minLength: 16)
 
             Button {
-                mcpBasicReadMeDraft = ExcalidrawMCPBasicReadMeStore.currentReadMe
                 isPresentingMCPBasicReadMeEditor = true
             } label: {
                 Label(.localizable(.toolbarEdit), systemSymbol: .pencil)
@@ -177,62 +176,8 @@ extension AISettingsView {
         }
     }
 
-    @ViewBuilder
     var mcpBasicReadMeEditorSheet: some View {
-        VStack(spacing: 0) {
-            mcpBasicReadMeEditorHeader
-
-            TextEditor(text: $mcpBasicReadMeDraft)
-                .font(.system(.body, design: .monospaced))
-                .scrollContentBackground(.hidden)
-                .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.secondary.opacity(0.08))
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.10))
-                }
-                .padding(.horizontal, 18)
-                .padding(.bottom, 18)
-        }
-        .mcpBasicReadMeEditorSheetFrame()
-    }
-
-    @ViewBuilder
-    var mcpBasicReadMeEditorHeader: some View {
-        ZStack {
-            Text(verbatim: "\(mcpServiceModeTitle(for: .basic)) MCP ReadMe")
-                .font(.headline)
-                .lineLimit(1)
-
-            HStack(spacing: 10) {
-                mcpSheetCloseButton {
-                    isPresentingMCPBasicReadMeEditor = false
-                }
-
-                Spacer(minLength: 16)
-
-                Button {
-                    mcpBasicReadMeDraft = ExcalidrawMCPBasicReadMeStore.defaultReadMe
-                } label: {
-                    Label(.localizable(.settingsAIMCPReadMeRestoreDefault), systemSymbol: .arrowCounterclockwise)
-                }
-                .disabled(mcpBasicReadMeDraft == ExcalidrawMCPBasicReadMeStore.defaultReadMe)
-
-                Button {
-                    ExcalidrawMCPBasicReadMeStore.save(mcpBasicReadMeDraft)
-                    isPresentingMCPBasicReadMeEditor = false
-                } label: {
-                    Text(localizable: .generalButtonDone)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(mcpBasicReadMeDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-        }
-        .padding(.horizontal, 18)
-        .padding(.top, 14)
-        .padding(.bottom, 10)
+        MCPBasicReadMeEditor(title: "\(mcpServiceModeTitle(for: .basic)) MCP ReadMe")
     }
 
     @ViewBuilder
@@ -339,30 +284,6 @@ extension AISettingsView {
         mcpSheetCloseButton {
             isPresentingMCPConnectionGuide = false
         }
-    }
-
-    @ViewBuilder
-    func mcpSheetCloseButton(action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemSymbol: .xmark)
-                .labelStyle(.iconOnly)
-                .frame(width: 36, height: 36)
-                .contentShape(Circle())
-                .background {
-                    if #available(macOS 26.0, iOS 26.0, *) {
-                        Circle()
-                            .fill(.clear)
-                            .glassEffect(.clear, in: Circle())
-                    } else {
-                        Circle()
-                            .fill(.regularMaterial)
-                    }
-                }
-        }
-        .buttonStyle(.plain)
-        .controlSize(.regular)
-        .contentShape(Circle())
-        .help(String(localizable: .generalButtonClose))
     }
 
     @ViewBuilder
@@ -655,6 +576,96 @@ extension AISettingsView {
         isPresentingMCPServiceModeHelp = true
     }
 
+}
+
+private struct MCPBasicReadMeEditor: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var draft: String
+
+    let title: String
+
+    init(title: String) {
+        self.title = title
+        _draft = State(initialValue: ExcalidrawMCPBasicReadMeStore.currentReadMe)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+
+            TextEditor(text: $draft)
+                .font(.system(.body, design: .monospaced))
+                .scrollContentBackground(.hidden)
+                .background {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.secondary.opacity(0.08))
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.10))
+                }
+                .padding(.horizontal, 18)
+                .padding(.bottom, 18)
+        }
+        .mcpBasicReadMeEditorSheetFrame()
+    }
+
+    private var header: some View {
+        ZStack {
+            Text(verbatim: title)
+                .font(.headline)
+                .lineLimit(1)
+
+            HStack(spacing: 10) {
+                mcpSheetCloseButton { dismiss() }
+
+                Spacer(minLength: 16)
+
+                Button {
+                    draft = ExcalidrawMCPBasicReadMeStore.defaultReadMe
+                } label: {
+                    Label(.localizable(.settingsAIMCPReadMeRestoreDefault), systemSymbol: .arrowCounterclockwise)
+                }
+                .disabled(draft == ExcalidrawMCPBasicReadMeStore.defaultReadMe)
+
+                Button {
+                    ExcalidrawMCPBasicReadMeStore.save(draft)
+                    dismiss()
+                } label: {
+                    Text(localizable: .generalButtonDone)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
+    }
+}
+
+@MainActor
+private func mcpSheetCloseButton(action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+        Image(systemSymbol: .xmark)
+            .labelStyle(.iconOnly)
+            .frame(width: 36, height: 36)
+            .contentShape(Circle())
+            .background {
+                if #available(macOS 26.0, iOS 26.0, *) {
+                    Circle()
+                        .fill(.clear)
+                        .glassEffect(.clear, in: Circle())
+                } else {
+                    Circle()
+                        .fill(.regularMaterial)
+                }
+            }
+    }
+    .buttonStyle(.plain)
+    .controlSize(.regular)
+    .contentShape(Circle())
+    .help(String(localizable: .generalButtonClose))
 }
 
 private struct MCPServiceModeHelpSheet: View {
@@ -1067,9 +1078,11 @@ private extension View {
         self
 #endif
     }
+}
 
+extension View {
     @ViewBuilder
-    func mcpServiceModePickerShape() -> some View {
+    func aiIntegrationModePickerShape() -> some View {
         if #available(macOS 14.0, *) {
             self
                 .buttonBorderShape(.capsule)

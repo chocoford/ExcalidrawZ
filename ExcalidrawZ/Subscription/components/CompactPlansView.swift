@@ -10,7 +10,7 @@ import StoreKit
 
 struct CompactPlansView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject private var store: Store
+    @Environment(Store.self) private var store
     
     @Binding var selection: SubscriptionItem?
     var plans: [SubscriptionItem]

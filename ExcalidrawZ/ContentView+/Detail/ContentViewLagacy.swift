@@ -10,8 +10,8 @@ import SwiftyAlert
 
 struct ContentViewLagacy: View {
     @Environment(\.alertToast) var alertToast
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var layoutState: LayoutState
+    @Environment(FileState.self) var fileState
+    @Environment(LayoutState.self) var layoutState
     
     var body: some View {
         ZStack {

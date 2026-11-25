@@ -1,3 +1,4 @@
+import Observation
 #if os(macOS)
 import AppKit
 import Combine
@@ -162,7 +163,8 @@ enum ScreenAnnotationImageQuality: String, CaseIterable, Codable, Hashable {
 }
 
 @MainActor
-final class ScreenAnnotationSaveConfiguration: ObservableObject {
+@Observable
+final class ScreenAnnotationSaveConfiguration {
     private enum DestinationKind: String, Codable, Hashable {
         case file
         case clipboard
@@ -197,17 +199,17 @@ final class ScreenAnnotationSaveConfiguration: ObservableObject {
         "ScreenAnnotationSavePreferences"
     private static let recentFileDestinationLimit = 5
 
-    @Published private(set) var destination: ScreenAnnotationSaveDestination
-    @Published private(set) var fileDestination: ScreenAnnotationSaveDestination
-    @Published private(set) var recentFileDestinations:
+    private(set) var destination: ScreenAnnotationSaveDestination
+    private(set) var fileDestination: ScreenAnnotationSaveDestination
+    private(set) var recentFileDestinations:
         [ScreenAnnotationSaveDestination] = []
-    @Published var format: ScreenAnnotationSaveFormat {
+    var format: ScreenAnnotationSaveFormat {
         didSet {
             preferredFormats[Self.kind(for: destination)] = format
             savePreferences()
         }
     }
-    @Published var imageQuality: ScreenAnnotationImageQuality {
+    var imageQuality: ScreenAnnotationImageQuality {
         didSet {
             preferredQualities[Self.kind(for: destination)] = imageQuality
             savePreferences()
@@ -228,9 +230,10 @@ final class ScreenAnnotationSaveConfiguration: ObservableObject {
         imageQuality: ScreenAnnotationImageQuality = .balanced
     ) {
         let storedRecentFileReferences = Self.loadRecentFileReferences()
-        recentFileReferences = storedRecentFileReferences.filter {
+        let recentFileReferences = storedRecentFileReferences.filter {
             Self.resolveDestination(from: $0) != nil
         }
+        self.recentFileReferences = recentFileReferences
         recentFileDestinations = Self.resolveDestinations(
             from: recentFileReferences
         )

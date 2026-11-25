@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftyAlert
 import CoreData
+import Observation
 
 import ChocofordUI
 #if os(macOS)
@@ -40,7 +41,7 @@ struct LocalFoldersListContent: View {
 
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     let folders: FetchedResults<LocalFolder>
     let showFiles: Bool
@@ -48,14 +49,14 @@ struct LocalFoldersListContent: View {
 
     var body: some View {
         LazyVStack(alignment: .leading, spacing: 0) {
-            ForEach(folders) { folder in
+            ForEach(folders, id: \.sidebarGroupScrollTarget) { folder in
                 Section {
                     LocalFoldersView(
                         folder: folder,
                         sortField: fileState.sortField,
                         showFiles: showFiles
                     ) {
-                        handleSelectedFolderDeletion(folder)
+                        fileState.selectNeighborAfterRemovingLocalFolder(folder, from: folders)
                     }
                 }
             }
@@ -77,33 +78,65 @@ struct LocalFoldersListContent: View {
                     .transition(.scale(scale: 0, anchor: .topTrailing).combined(with: .opacity))
             }
         }
+        .modifier(LocalFolderSidebarExpansionModifier())
         .animation(.smooth, value: showLocalFolderEmptyPlaceholder)
-        .onAppear {
-            for folder in folders {
-                do {
-                    try folder.refreshChildren(context: viewContext)
-                } catch {
-                    alertToast(error)
+#if DEBUG
+        .onAppear { showLocalFolderEmptyPlaceholder = true }
+#endif
+    }
+}
+
+struct LocalFolderSidebarExpansionModifier: ViewModifier {
+    @Environment(\.sidebarFileReveal) private var sidebarFileReveal
+    @State private var expansion = LocalFolderSidebarExpansionState()
+
+    func body(content: Content) -> some View {
+        content
+            .environment(expansion)
+            .watch(value: sidebarFileReveal, initial: true) { reveal in
+                guard let reveal, case .localFile = reveal.file else { return }
+                withAnimation(.smooth(duration: 0.2)) {
+                    for case .localFolder(let id) in reveal.folders {
+                        expansion.setExpanded(true, for: id)
+                    }
                 }
             }
-#if DEBUG
-            showLocalFolderEmptyPlaceholder = true
-#endif
-        }
+            .onReceive(NotificationCenter.default.publisher(for: .shouldExpandGroup)) { notification in
+                guard let objectID = notification.object as? NSManagedObjectID,
+                      objectID.entity.name == "LocalFolder" else { return }
+                withAnimation(.smooth(duration: 0.2)) {
+                    expansion.setExpanded(true, for: objectID)
+                }
+            }
+    }
+}
+
+@MainActor
+extension FileState {
+    func selectNeighborAfterRemovingLocalFolder(_ folder: LocalFolder, from folders: some RandomAccessCollection<LocalFolder>) {
+        guard currentActiveGroup == .localFolder(folder),
+              let index = folders.firstIndex(of: folder) else { return }
+        let neighbor = index == folders.startIndex
+            ? folders.dropFirst().first
+            : folders.first
+        currentActiveGroup = neighbor.map(ActiveGroup.localFolder)
+    }
+}
+
+/// Expansion belongs to the list so offscreen lazy rows can receive navigation
+/// requests and retain their state when SwiftUI releases their view storage.
+@MainActor @Observable
+final class LocalFolderSidebarExpansionState {
+    private var expandedIDs: Set<NSManagedObjectID> = []
+
+    func isExpanded(_ objectID: NSManagedObjectID) -> Bool {
+        expandedIDs.contains(objectID)
     }
 
-    private func handleSelectedFolderDeletion(_ folder: LocalFolder) {
-        guard case .localFolder(let localFolder) = fileState.currentActiveGroup,
-              localFolder == folder,
-              let index = folders.firstIndex(of: folder) else {
-            return
-        }
-
-        if index == 0 {
-            fileState.currentActiveGroup = folders.count > 1 ? .localFolder(folders[1]) : nil
-        } else {
-            fileState.currentActiveGroup = .localFolder(folders[0])
-        }
+    func setExpanded(_ expanded: Bool, for objectID: NSManagedObjectID) {
+        guard isExpanded(objectID) != expanded else { return }
+        if expanded { expandedIDs.insert(objectID) }
+        else { expandedIDs.remove(objectID) }
     }
 }
 

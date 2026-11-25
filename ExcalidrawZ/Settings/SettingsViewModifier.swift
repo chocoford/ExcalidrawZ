@@ -45,7 +45,7 @@ struct SettingsViewButton: View {
 
 struct SettingsSheetPresentationModifier: ViewModifier {
 #if os(iOS)
-    @ObservedObject private var router = SettingsRouter.shared
+    @Bindable private var router = SettingsRouter.shared
     @State private var isSettingsPresented = false
 #endif
 

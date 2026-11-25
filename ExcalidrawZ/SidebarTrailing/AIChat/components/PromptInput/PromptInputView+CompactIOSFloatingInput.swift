@@ -30,6 +30,7 @@ extension PromptInputView {
 
 
     private var compactIOSFloatingShowsLowCreditsCapsule: Bool {
+        guard !inferenceBilling.usesBYOK else { return false }
         guard let balance = llmState.creditsInfo?.balance else { return false }
         return balance < LowCreditsBannerView.defaultThreshold
     }
@@ -357,7 +358,7 @@ extension PromptInputView {
         )
         .clipShape(Circle())
         .contentShape(Circle())
-        .disabled(!primaryActionIsStop && !hasInputText)
+        .disabled(!primaryActionIsStop && (!hasInputText || isUpdatingConversationRoute))
     }
 
     @ViewBuilder
@@ -395,28 +396,43 @@ extension PromptInputView {
 
     @ViewBuilder
     var compactIOSFloatingModelPicker: some View {
-        Menu {
-            modelTierPickerButtons()
-        } label: {
-            Text(compactIOSFloatingModelPickerTitle)
-                .font(.system(size: 11, weight: .semibold))
-                .monospaced()
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .frame(
-                    width: compactIOSFloatingInlineControlLabelLength,
-                    height: compactIOSFloatingInlineControlLabelLength
-                )
+        SwiftUI.Group {
+            if modelPickerUsesDirectSheet {
+                Button {
+                    openBYOKModelPicker()
+                } label: {
+                    compactIOSFloatingModelPickerLabel
+                }
+            } else {
+                Menu {
+                    modelProfilePickerButtons()
+                } label: {
+                    compactIOSFloatingModelPickerLabel
+                }
+            }
         }
         .fixedSize()
         .menuIndicator(.hidden)
         .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
-        .disabled(modelPickerTiers.isEmpty)
+        .disabled(isGenerating || isCompactingContext || isUpdatingConversationRoute || inferenceBilling.isBusy)
+        .accessibilityLabel(modelPickerTitle)
+        .help(modelPickerTitle)
+    }
+
+    private var compactIOSFloatingModelPickerLabel: some View {
+        Text(compactIOSFloatingModelPickerTitle)
+            .font(.system(size: 11, weight: .semibold))
+            .monospaced()
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .frame(width: compactIOSFloatingInlineControlLabelLength,
+                   height: compactIOSFloatingInlineControlLabelLength)
     }
 
     @MainActor
     var compactIOSFloatingModelPickerTitle: String {
-        activeModelProfileOption?.tier.compactIOSFloatingShortLabel ?? "..."
+        if modelPickerUsesBYOK || (conversationID != nil && conversation?.schemeConnection == nil) { return "AI" }
+        return activeModelProfileOption.map { String($0.title.prefix(2)) } ?? "..."
     }
 
     @ViewBuilder
@@ -498,7 +514,7 @@ extension PromptInputView {
             .disabled(!hasActiveFileForAIAccessControl || !canToggleAIFileAccess)
 
             Menu {
-                modelTierPickerButtons()
+                modelProfilePickerButtons()
             } label: {
                 Text(modelPickerTitle)
             }
@@ -559,18 +575,4 @@ extension PromptInputView {
 
 }
 
-private extension ExcalidrawModelTier {
-    var compactIOSFloatingShortLabel: String {
-        switch self {
-            case .low:
-                return "L"
-            case .medium:
-                return "M"
-            case .high:
-                return "H"
-            case .extraHigh:
-                return "X"
-        }
-    }
-}
 #endif

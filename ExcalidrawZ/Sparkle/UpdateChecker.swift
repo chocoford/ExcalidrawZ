@@ -4,15 +4,19 @@
 //
 //  Created by Dove Zachary on 2023/1/1.
 //
+import Observation
 #if os(macOS)
 import Foundation
+import Combine
 import SwiftUI
 import Sparkle
 
-final class UpdateChecker: ObservableObject {
+@Observable
+final class UpdateChecker {
+    @ObservationIgnored private var updaterSubscriptions: Set<AnyCancellable> = []
     var updater: SPUUpdater? = nil
-    @Published private(set) var canCheckForUpdates = false
-    @Published var automaticallyChecksForUpdates = false {
+    private(set) var canCheckForUpdates = false
+    var automaticallyChecksForUpdates = false {
         didSet {
             if automaticallyChecksForUpdates != updater?.automaticallyChecksForUpdates {
                 updater?.automaticallyChecksForUpdates = automaticallyChecksForUpdates
@@ -23,12 +27,15 @@ final class UpdateChecker: ObservableObject {
     init() {}
     
     func assignUpdater(updater: SPUUpdater) {
+        updaterSubscriptions.removeAll()
         self.updater = updater
         updater.publisher(for: \.canCheckForUpdates)
-            .assign(to: &$canCheckForUpdates)
+            .sink { [weak self] in self?.canCheckForUpdates = $0 }
+            .store(in: &updaterSubscriptions)
 
         updater.publisher(for: \.automaticallyChecksForUpdates)
-            .assign(to: &$automaticallyChecksForUpdates)
+            .sink { [weak self] in self?.automaticallyChecksForUpdates = $0 }
+            .store(in: &updaterSubscriptions)
     }
 }
 #endif

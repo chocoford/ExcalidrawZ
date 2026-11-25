@@ -16,7 +16,7 @@ import Logging
 struct StartupSyncModifier: ViewModifier {
     private let logger = Logger(label: "StartupSyncModifier")
 
-    @EnvironmentObject private var migrationState: MigrationState
+    @Environment(MigrationState.self) private var migrationState
     @State private var hasEnabledSync = false
 
     func body(content: Content) -> some View {

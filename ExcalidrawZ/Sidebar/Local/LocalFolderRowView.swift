@@ -16,8 +16,8 @@ struct LocalFolderRowView: View {
 
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var localFolderState: LocalFolderState
+    @Environment(FileState.self) private var fileState
+    @Environment(LocalFolderState.self) private var localFolderState
 
     var folder: LocalFolder
     // @Binding var isBeingDropped: Bool
@@ -66,14 +66,7 @@ struct LocalFolderRowView: View {
             folderLabel
         } else {
             Button {
-                // Check if folder path exists using shared method
-                switch folder.checkPathExists() {
-                case .success:
-                    // Path exists, set as active
-                    fileState.currentActiveGroup = .localFolder(folder)
-                    fileState.setActiveFile(nil)
-                case .failure(let error):
-                    // Path doesn't exist, show alert
+                fileState.selectLinkedFolder(folder) { error in
                     folderNotFoundMessage = error.message
                     showFolderNotFoundAlert = true
                 }

@@ -5,19 +5,21 @@
 //  Persists device-local remote roots while providers keep credentials in Keychain.
 //
 
+import Observation
 import Combine
 import Foundation
 import Logging
 
 @MainActor
-final class CloudStorageConnectionStore: ObservableObject {
+@Observable
+final class CloudStorageConnectionStore {
     static let shared = CloudStorageConnectionStore()
 
-    @Published private(set) var providerDescriptors: [CloudStorageProviderDescriptor] = []
-    @Published private(set) var accountsByProvider: [CloudStorageProviderID: [CloudStorageAccount]] = [:]
-    @Published private(set) var locations: [CloudStorageLocation]
-    @Published private(set) var connectingProviderIDs: Set<CloudStorageProviderID> = []
-    @Published private(set) var authenticationRequiredLocationIDs: Set<UUID> = []
+    private(set) var providerDescriptors: [CloudStorageProviderDescriptor] = []
+    private(set) var accountsByProvider: [CloudStorageProviderID: [CloudStorageAccount]] = [:]
+    private(set) var locations: [CloudStorageLocation]
+    private(set) var connectingProviderIDs: Set<CloudStorageProviderID> = []
+    private(set) var authenticationRequiredLocationIDs: Set<UUID> = []
 
     private var missingAccountLocationIDs: Set<UUID> = []
     private var accessFailureLocationIDs: Set<UUID> = []
@@ -26,12 +28,12 @@ final class CloudStorageConnectionStore: ObservableObject {
     private let userDefaults: UserDefaults
     private let locationsDefaultsKey = "CloudStorageLocations.v1"
     private let logger = Logger(label: "CloudStorageConnectionStore")
-    private var accountRefreshTask: Task<Void, Never>?
-    private var accountRefreshTaskID: UUID?
-    private var authorizationTasks: [
+    @ObservationIgnored private var accountRefreshTask: Task<Void, Never>?
+    @ObservationIgnored private var accountRefreshTaskID: UUID?
+    @ObservationIgnored private var authorizationTasks: [
         CloudStorageProviderID: Task<CloudStorageAccount, Error>
     ] = [:]
-    private var authorizationTaskIDs: [CloudStorageProviderID: UUID] = [:]
+    @ObservationIgnored private var authorizationTaskIDs: [CloudStorageProviderID: UUID] = [:]
 
     init(
         registry: CloudStorageProviderRegistry = .shared,
@@ -221,6 +223,37 @@ final class CloudStorageConnectionStore: ObservableObject {
                 storeConnectedAccount(account)
         }
         return selection
+    }
+
+    /// Adds per-file Google Drive grants without replacing the linked root.
+    func authorizeAdditionalGoogleDriveItems(in location: CloudStorageLocation) async throws {
+        guard location.providerID == .googleDrive else {
+            throw CloudStorageError.unsupportedOperation(.authorize)
+        }
+        guard locations.contains(location),
+              !connectingProviderIDs.contains(location.providerID) else {
+            throw CloudStorageError.authorizationCancelled
+        }
+        connectingProviderIDs.insert(location.providerID)
+        defer { connectingProviderIDs.remove(location.providerID) }
+
+        let provider = try await registry.provider(withID: location.providerID)
+        guard let googleDrive = provider as? GoogleDriveCloudStorageProvider else {
+            throw CloudStorageError.unsupportedOperation(.authorize)
+        }
+        let accountHint = account(for: location) ?? CloudStorageAccount(
+            providerID: location.providerID,
+            id: location.accountID,
+            displayName: location.displayName,
+            emailAddress: nil
+        )
+        let account = try await googleDrive.authorizeAdditionalItems(for: accountHint)
+        try Task.checkCancellation()
+        guard locations.contains(location) else {
+            throw CloudStorageError.authorizationCancelled
+        }
+        storeConnectedAccount(account)
+        clearAuthenticationRequirement(for: location)
     }
 
     /// Validates a persisted location before a user-initiated operation. A

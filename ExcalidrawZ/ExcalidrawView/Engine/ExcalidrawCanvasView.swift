@@ -17,11 +17,11 @@ struct ExcalidrawCanvasView: View {
 
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.scenePhase) var scenePhase
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var exportState: ExportState
-    @EnvironmentObject var toolState: ToolState
-    @EnvironmentObject var canvasPreferencesState: CanvasPreferencesState
+    @Environment(AppPreference.self) var appPreference
+    @Environment(FileState.self) var fileState
+    @Environment(ExportState.self) var exportState
+    @Environment(ToolState.self) var toolState
+    @Environment(CanvasPreferencesState.self) var canvasPreferencesState
     @Environment(\.excalidrawNativeViewportInsets) private var nativeViewportInsets
 #if os(iOS)
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
@@ -70,13 +70,15 @@ struct ExcalidrawCanvasView: View {
     @Binding var loadingState: LoadingState
     var savingType: UTType
     var onDocumentLoadFinished: (String) -> Void
+    var canReplaceDroppedDrawing: Bool
+    var onReplaceDroppedDrawing: (@MainActor (DroppedDrawing) async throws -> Void)?
     var onError: (Error) -> Void
     var interactionEnabled: Bool
     
     
     // MARK: - State
     
-    @StateObject private var excalidrawCore = ExcalidrawCore()
+    @State private var excalidrawCore = ExcalidrawCore()
     @State private var hasSetupCore = false
     @State private var pendingErrorEvent: IdentifiableError?
     
@@ -95,6 +97,8 @@ struct ExcalidrawCanvasView: View {
         loadingState: Binding<LoadingState>,
         interactionEnabled: Bool = true,
         onDocumentLoadFinished: @escaping (String) -> Void = { _ in },
+        canReplaceDroppedDrawing: Bool = false,
+        onReplaceDroppedDrawing: (@MainActor (DroppedDrawing) async throws -> Void)? = nil,
         onError: @escaping (Error) -> Void
     ) {
         self.type = type
@@ -103,6 +107,8 @@ struct ExcalidrawCanvasView: View {
         self._loadingState = loadingState
         self.interactionEnabled = interactionEnabled
         self.onDocumentLoadFinished = onDocumentLoadFinished
+        self.canReplaceDroppedDrawing = canReplaceDroppedDrawing
+        self.onReplaceDroppedDrawing = onReplaceDroppedDrawing
         self.onError = onError
     }
     
@@ -110,6 +116,19 @@ struct ExcalidrawCanvasView: View {
     
     var body: some View {
         canvasWithSettings
+            .onChange(of: fileState.currentActiveFile?.id) { _, fileID in
+                if let session = excalidrawCore.nativeFileDrop, session.targetFileID != fileID {
+                    excalidrawCore.dismissNativeFileDrop(session)
+                }
+            }
+            .sheet(item: nativeFileDropBinding) { session in
+                NativeFileDropSheet(
+                    session: session,
+                    coordinator: excalidrawCore,
+                    replacementTargetName: replacementTargetName(for:),
+                    onReplace: onReplaceDroppedDrawing
+                )
+            }
             .watch(value: scenePhase) { scenePhase in
 #if os(iOS)
                 if scenePhase == .active {
@@ -150,6 +169,24 @@ struct ExcalidrawCanvasView: View {
             }
     }
 
+    private var nativeFileDropBinding: Binding<NativeFileDropSession?> {
+        let session = excalidrawCore.nativeFileDrop
+        return Binding {
+            excalidrawCore.nativeFileDrop
+        } set: { value in
+            if value == nil, let session {
+                excalidrawCore.dismissNativeFileDrop(session)
+            }
+        }
+    }
+
+    private func replacementTargetName(for drawing: DroppedDrawing) -> String? {
+        guard canReplaceDroppedDrawing,
+              let target = fileState.currentActiveFile,
+              target.id == drawing.targetFileID else { return nil }
+        return target.name ?? String(localizable: .generalUntitled)
+    }
+
     private var canvasContent: some View {
         ExcalidrawViewRepresentable(nativeInteractionEnabled: interactionEnabled)
 #if os(macOS)
@@ -157,7 +194,7 @@ struct ExcalidrawCanvasView: View {
 #endif
             .modifier(MediaItemSyncModifier())
             .modifier(MathImageEditSheetViewModifier(coordinator: excalidrawCore, onError: onError))
-            .environmentObject(excalidrawCore)
+            .environment(excalidrawCore)
 #if os(macOS)
             .onWindowEvent(.didBecomeKey) { _ in
                 applyColorMode()
@@ -230,6 +267,9 @@ struct ExcalidrawCanvasView: View {
     }
 
     private func handleDisappear() {
+        if let session = excalidrawCore.nativeFileDrop {
+            excalidrawCore.dismissNativeFileDrop(session)
+        }
         clearToolStateCoordinatorBindingIfNeeded()
 #if os(macOS)
         ViewerMirrorController.shared.unregister(editor: excalidrawCore)
@@ -279,11 +319,20 @@ struct ExcalidrawCanvasView: View {
     }
     
     // MARK: - Async Listeners
+
+    @MainActor
+    private var isWaitingForCurrentDocument: Bool {
+        guard type == .normal,
+              let activeFileID = fileState.currentActiveFile?.id else { return false }
+        return file?.id != activeFileID
+            || excalidrawCore.documentSyncController.currentLoadedFileID != activeFileID
+            || excalidrawCore.documentSyncController.hasPendingFileLoad
+    }
     
     private func listenToLoadingState() async {
         var previousIsLoading: Bool?
 
-        for await isLoading in excalidrawCore.$isLoading.values {
+        for await isLoading in observedValues({ excalidrawCore.isLoading }) {
             if isLoading, previousIsLoading != true {
                 excalidrawCore.documentSyncController.resetFileLoadState()
             }
@@ -294,7 +343,8 @@ struct ExcalidrawCanvasView: View {
             }
             if !preservesDocumentLoadError {
                 await MainActor.run {
-                    loadingState = (isLoading || hasPendingFileLoad) ? .loading : .loaded
+                    loadingState = (isLoading || hasPendingFileLoad || isWaitingForCurrentDocument)
+                        ? .loading : .loaded
                 }
             }
 
@@ -332,23 +382,21 @@ struct ExcalidrawCanvasView: View {
 #endif
             switch event {
                 case .started(let fileID):
-                    let isCurrent = await MainActor.run { file?.id == fileID }
-                    guard isCurrent else { continue }
                     await MainActor.run {
+                        guard file?.id == fileID,
+                              fileState.currentActiveFile?.id == fileID else { return }
                         loadingState = .loading
                     }
 
                 case .finished(let fileID, let completion):
-                    let isCurrent = await MainActor.run { file?.id == fileID }
+                    let isCurrent = await MainActor.run {
+                        file?.id == fileID && fileState.currentActiveFile?.id == fileID
+                    }
                     guard isCurrent else { continue }
 
                     switch completion {
                         case .succeeded:
-                            await applyLoadedFilePresentationSettings()
-                            await MainActor.run {
-                                loadingState = .loaded
-                                onDocumentLoadFinished(fileID)
-                            }
+                            guard await finishLoadedDocumentPresentation(fileID: fileID) else { continue }
 
 #if os(iOS)
                             await enterCompactDragModeAfterLoadIfNeeded()
@@ -356,6 +404,8 @@ struct ExcalidrawCanvasView: View {
 
                         case .failed(let error):
                             await MainActor.run {
+                                guard file?.id == fileID,
+                                      fileState.currentActiveFile?.id == fileID else { return }
                                 loadingState = .error(error)
                             }
 
@@ -364,12 +414,30 @@ struct ExcalidrawCanvasView: View {
                     }
 
                 case .reset:
-                    let isCoreLoading = await MainActor.run { excalidrawCore.isLoading }
                     await MainActor.run {
-                        loadingState = isCoreLoading ? .loading : .loaded
+                        loadingState = (excalidrawCore.isLoading || isWaitingForCurrentDocument)
+                            ? .loading : .loaded
                     }
             }
         }
+    }
+
+    @MainActor
+    private func isCurrentDocumentLoaded(_ fileID: String) -> Bool {
+        !Task.isCancelled
+            && file?.id == fileID
+            && fileState.currentActiveFile?.id == fileID
+            && !isWaitingForCurrentDocument
+    }
+
+    @MainActor
+    private func finishLoadedDocumentPresentation(fileID: String) async -> Bool {
+        guard isCurrentDocumentLoaded(fileID) else { return false }
+        await applyLoadedFilePresentationSettings()
+        guard isCurrentDocumentLoaded(fileID) else { return false }
+        loadingState = .loaded
+        onDocumentLoadFinished(fileID)
+        return true
     }
 
 #if os(iOS)

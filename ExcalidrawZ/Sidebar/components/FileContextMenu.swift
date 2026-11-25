@@ -135,7 +135,7 @@ struct FileMenuProvider<Content: View>: View {
 }
 
 struct FileContextMenuModifier: ViewModifier {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     var file: File
 
@@ -184,7 +184,7 @@ struct FileContextMenuWithFileStateModifier: ViewModifier {
 }
 
 struct FileMenu: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
 
     var file: File?
     var label: AnyView

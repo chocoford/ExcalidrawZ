@@ -13,7 +13,7 @@ import ChocofordUI
 
 struct StoreKitEntitlementRefreshModifier: ViewModifier {
     @Environment(\.scenePhase) private var scenePhase
-    @EnvironmentObject private var store: Store
+    @Environment(Store.self) private var store
 
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -38,9 +38,11 @@ struct StoreKitEntitlementRefreshModifier: ViewModifier {
                 }
             }
 #endif
+#if !os(macOS)
             .onReceive(NotificationCenter.default.publisher(for: PaywallPresentationState.didPresentNotification)) { _ in
                 refresh(reason: .paywallPresented, force: true)
             }
+#endif
 #endif
     }
 

@@ -21,7 +21,7 @@ import SFSafeSymbols
 
 struct ApprovalPromptView: View {
     @EnvironmentObject private var llmState: LLMStateObject
-    @EnvironmentObject private var aiChatState: AIChatState
+    @Environment(AIChatState.self) private var aiChatState
 
     private let autofocusDenyReason: Bool
 

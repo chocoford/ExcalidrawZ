@@ -5,6 +5,7 @@
 //  Created by Codex on 6/15/26.
 //
 
+import Observation
 import Foundation
 import Combine
 
@@ -16,7 +17,8 @@ enum ExcalidrawMCPServiceMode: String, CaseIterable, Identifiable {
 }
 
 @MainActor
-final class ExcalidrawZMCPServerController: ObservableObject {
+@Observable
+final class ExcalidrawZMCPServerController {
     enum State: Equatable {
         case off
         case starting
@@ -37,15 +39,15 @@ final class ExcalidrawZMCPServerController: ObservableObject {
     private static let isEnabledDefaultsKey = "ExcalidrawZMCPServerEnabled"
     private static let serviceModeDefaultsKey = "ExcalidrawZMCPServiceMode"
 
-    @Published private(set) var state: State = .off
-    @Published private(set) var isEnabled: Bool
-    @Published private(set) var serviceMode: ExcalidrawMCPServiceMode
+    private(set) var state: State = .off
+    private(set) var isEnabled: Bool
+    private(set) var serviceMode: ExcalidrawMCPServiceMode
 
     let port: UInt16
 
     private var server: ExcalidrawZMCPServer?
     private var router: ExcalidrawMCPToolRouter?
-    private var serverTask: Task<Void, Never>?
+    @ObservationIgnored private var serverTask: Task<Void, Never>?
 
     private init(port: UInt16 = ExcalidrawZMCPServer.defaultPort) {
         self.port = port

@@ -24,6 +24,10 @@
 //    capability filters survive relaunch.
 //  - `ChatMessageContent.id / role / content / usage` — stored as
 //    columns on `AIConversationMessage`.
+//  - `ChatMessageContent.inferenceUsage` — optional JSON request records,
+//    separate from platform credits; retains provider tokens and billing
+//    identity through streaming updates, retries and auxiliary requests.
+//  - `ChatMessageContent.citations` — optional JSON provider source links.
 //  - `ChatMessageContent.toolCalls` — stored as JSON (`toolCallsData`).
 //    Required for native tool-use roundtrip: without it, a restored
 //    assistant message that had pending tool calls comes back empty,
@@ -53,8 +57,9 @@ import LLMCore
 import LLMKit
 
 @MainActor
-struct LLMPersistenceProvider: PersistenceProvider {
+struct LLMPersistenceProvider: LLMSchemeConversationPersistenceProvider {
     var preview: Bool = false
+    var directConnectionID: String? = nil
 
     private var repository: AIConversationRepository {
         PersistenceController.shared.aiConversationRepository
@@ -73,21 +78,25 @@ struct LLMPersistenceProvider: PersistenceProvider {
         // the `messages` relationship after the perform block exits
         // returned an empty set, which used to make every restored
         // conversation look like it had no history.
+        let routeRevision = AIChatInferenceSessions.shared.metadataRevision
         let snapshots = try await repository.fetchAllConversationSnapshots()
+        try AIChatInferenceSessions.shared.register(snapshots.compactMap { snapshot in
+            snapshot.conversationID.map { (id: $0, data: snapshot.inferenceRouteData) }
+        }, readRevision: routeRevision)
 
         // TaskGroup fan-out — each snapshot's conversion is
         // independent and may do async work (attachment resolution),
         // so parallelism is fine. Order doesn't matter; the caller
         // (LLMKit) sorts by `lastChatAt` itself.
-        let llmConversations = await withTaskGroup(of: LLMKit.Conversation?.self) { group in
+        let llmConversations = try await withThrowingTaskGroup(of: LLMKit.Conversation?.self) { group in
             for snapshot in snapshots {
                 group.addTask {
-                    await convertToLLMKitConversation(snapshot)
+                    try await convertToLLMKitConversation(snapshot)
                 }
             }
 
             var results: [LLMKit.Conversation] = []
-            for await result in group {
+            for try await result in group {
                 if let result = result {
                     results.append(result)
                 }
@@ -110,28 +119,38 @@ struct LLMPersistenceProvider: PersistenceProvider {
 
             case .delete(let conversationID):
                 try await repository.deleteConversation(conversationID: conversationID)
+                AIChatInferenceSessions.shared.removed(conversationID)
         }
+    }
+
+    func updateSchemeConnection(_ binding: LLMSchemeConversationBinding, in conversationID: String) async throws {
+        guard let data = try AIChatRouteStorage.encode(binding) else { throw AIChatRoutingError.invalidRoute }
+        try await repository.updateInferenceRoute(conversationID: conversationID, data: data)
+        AIChatInferenceSessions.shared.inserted(conversationID, direct: nil, scheme: binding)
     }
 
     // MARK: - Conversion: Core Data → LLMKit
 
-    private func convertToLLMKitConversation(_ snapshot: AIConversationSnapshot) async -> LLMKit.Conversation? {
+    private func convertToLLMKitConversation(_ snapshot: AIConversationSnapshot) async throws -> LLMKit.Conversation? {
         var chatMessages: [ChatMessage] = []
         for messageSnapshot in snapshot.messages {
             guard let msg = await convertToLLMKitMessage(messageSnapshot) else { continue }
             chatMessages.append(msg)
         }
 
+        let direct = try AIChatRouteStorage.decodeDirect(snapshot.inferenceRouteData)
         return LLMKit.Conversation(
             id: snapshot.conversationID ?? UUID().uuidString,
             type: decodeConversationType(snapshot.type),
-            agentConfig: ExcalidrawAgentConfig.defaultConfig(
-                tools: decodeToolNames(snapshot.toolsData)
-            ),
+            agentConfig: direct == nil
+                ? ExcalidrawAgentConfig.defaultConfig(tools: decodeToolNames(snapshot.toolsData))
+                : ExcalidrawAgentConfig.basicConfig(tools: decodeToolNames(snapshot.toolsData)),
             title: snapshot.title ?? "Untitled",
             messages: chatMessages,
             createdAt: snapshot.createdAt ?? Date(),
-            lastChatAt: snapshot.lastChatAt ?? Date()
+            lastChatAt: snapshot.lastChatAt ?? Date(),
+            directConnection: direct?.binding,
+            schemeConnection: try AIChatRouteStorage.decode(snapshot.inferenceRouteData)
         )
     }
 
@@ -161,7 +180,9 @@ struct LLMPersistenceProvider: PersistenceProvider {
                     toolCalls: toolCalls,
                     toolCallId: snapshot.toolCallId,
                     isCompactedOut: snapshot.isCompactedOut,
-                    isCompactSummary: snapshot.isCompactSummary
+                    isCompactSummary: snapshot.isCompactSummary,
+                    inferenceUsage: AIInferenceUsageStorage.decode(snapshot.inferenceUsageData),
+                    citations: AISourceCitationStorage.decode(snapshot.citationsData)
                 )
                 return .content(content)
 
@@ -203,13 +224,26 @@ struct LLMPersistenceProvider: PersistenceProvider {
         // `Conversation.type` rawValue is canonical for normal/temporary;
         // for `.custom(label)` it's just the label. We persist that
         // string verbatim and reverse it in `decodeConversationType`.
+        let direct: AIDirectConversationRecord?
+        let routeData: Data?
+        if let binding = conversation.directConnection {
+            guard let directConnectionID, conversation.schemeConnection == nil else { throw AIChatRoutingError.invalidRoute }
+            let record = AIDirectConversationRecord(connectionID: directConnectionID, binding: binding)
+            direct = record
+            routeData = try AIChatRouteStorage.encodeDirect(record)
+        } else {
+            direct = nil
+            routeData = try AIChatRouteStorage.encode(conversation.schemeConnection)
+        }
         let conversationObjectID = try await repository.createConversation(
             conversationID: conversation.id,
             title: conversation.title,
             type: conversation.type.rawValue,
-            toolsData: ExcalidrawAgentConfig.encodeToolNames(conversation.agentConfig.tools)
+            toolsData: ExcalidrawAgentConfig.encodeToolNames(conversation.agentConfig.tools),
+            inferenceRouteData: routeData
         )
 
+        AIChatInferenceSessions.shared.inserted(conversation.id, direct: direct, scheme: conversation.schemeConnection)
         for message in conversation.messages {
             try await createMessageFromChatMessage(
                 message,
@@ -267,6 +301,8 @@ struct LLMPersistenceProvider: PersistenceProvider {
                     toolCallsData: encodeToolCalls(message.toolCalls),
                     toolCallId: message.toolCallId,
                     filesData: filesData,
+                    inferenceUsageData: try AIInferenceUsageStorage.encode(message.inferenceUsage),
+                    citationsData: try AISourceCitationStorage.encode(message.citations),
                     isCompactedOut: message.isCompactedOut,
                     isCompactSummary: message.isCompactSummary,
                     conversationObjectID: conversationObjectID
@@ -327,6 +363,8 @@ struct LLMPersistenceProvider: PersistenceProvider {
                     content: content.content,
                     usageConsumed: content.usage?.consumed,
                     usageRemains: content.usage?.remains,
+                    inferenceUsageData: try AIInferenceUsageStorage.encode(content.inferenceUsage),
+                    citationsData: try AISourceCitationStorage.encode(content.citations),
                     toolCallsData: encodedToolCalls,
                     clearToolCalls: encodedToolCalls == nil,
                     toolCallId: content.toolCallId,

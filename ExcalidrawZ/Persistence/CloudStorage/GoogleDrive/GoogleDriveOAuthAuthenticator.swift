@@ -113,6 +113,15 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
         return try await task.value
     }
 
+    func authorizeAdditionalItems(for account: CloudStorageAccount) async throws -> CloudStorageAccount {
+        try await performAuthorization(
+            accountHint: account,
+            pickerMode: .additionalItems,
+            folderIDHint: nil,
+            expectedAccountID: account.id
+        ).account
+    }
+
     func signOut(accountID: CloudStorageAccountID) async throws {
         guard let credential = try credentialStore.credential(for: accountID) else { return }
         do {
@@ -143,8 +152,9 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
 
     private func performAuthorization(
         accountHint: CloudStorageAccount?,
-        pickerMode: PickerMode,
-        folderIDHint: CloudStorageItemID?
+        pickerMode: GoogleDrivePickerMode,
+        folderIDHint: CloudStorageItemID?,
+        expectedAccountID: CloudStorageAccountID? = nil
     ) async throws -> AuthorizationResult {
         let state = UUID().uuidString
         let verifier = try Self.makeCodeVerifier()
@@ -176,7 +186,7 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
             .split(separator: ",")
             .map { CloudStorageItemID(rawValue: String($0)) }
             ?? []
-        if case .folder = pickerMode, pickedItemIDs.isEmpty {
+        if pickerMode.requiresSelection, pickedItemIDs.isEmpty {
             throw CloudStorageError.authorizationCancelled
         }
 
@@ -189,6 +199,12 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
         ])
         let user = try await currentUser(accessToken: token.accessToken)
         let accountID = CloudStorageAccountID(rawValue: user.permissionId)
+        if let expectedAccountID, accountID != expectedAccountID {
+            throw CloudStorageError.invalidProviderResponse(
+                String(localizable: .cloudStorageGoogleDriveUseLinkedAccount)
+            )
+        }
+        try Task.checkCancellation()
         let existingCredential = try credentialStore.credential(for: accountID)
         let reusableRefreshToken = existingCredential?.hasRequiredScope == true
             ? existingCredential?.refreshToken
@@ -231,7 +247,7 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
         state: String,
         codeChallenge: String,
         accountHint: CloudStorageAccount?,
-        pickerMode: PickerMode,
+        pickerMode: GoogleDrivePickerMode,
         folderIDHint: CloudStorageItemID?
     ) async throws -> URL {
         guard var components = URLComponents(
@@ -254,22 +270,7 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
             URLQueryItem(name: "code_challenge_method", value: "S256"),
             URLQueryItem(name: "state", value: state),
         ]
-        switch pickerMode {
-        case .none:
-            break
-        case .folder:
-            queryItems.append(contentsOf: [
-                URLQueryItem(name: "trigger_onepick", value: "true"),
-                URLQueryItem(name: "allow_folder_selection", value: "true"),
-                URLQueryItem(name: "allow_multiple", value: "false"),
-                URLQueryItem(name: "mimetypes", value: GoogleDriveFile.folderMIMEType),
-            ])
-            if let folderIDHint {
-                queryItems.append(
-                    URLQueryItem(name: "file_ids", value: folderIDHint.rawValue)
-                )
-            }
-        }
+        queryItems.append(contentsOf: pickerMode.queryItems(folderIDHint: folderIDHint?.rawValue))
         if let loginHint = accountHint?.emailAddress {
             queryItems.append(URLQueryItem(name: "login_hint", value: loginHint))
         }
@@ -403,11 +404,6 @@ final class GoogleDriveOAuthAuthenticator: NSObject, GoogleDriveAuthenticating {
 private struct AuthorizationResult {
     let account: CloudStorageAccount
     let pickedItemIDs: [CloudStorageItemID]
-}
-
-private enum PickerMode {
-    case none
-    case folder
 }
 
 extension GoogleDriveOAuthAuthenticator: ASWebAuthenticationPresentationContextProviding {

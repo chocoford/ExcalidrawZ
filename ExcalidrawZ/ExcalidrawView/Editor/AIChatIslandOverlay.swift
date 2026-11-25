@@ -12,9 +12,9 @@ struct AIChatIslandOverlay: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerSize) private var containerSize
 
-    @EnvironmentObject private var layoutState: LayoutState
-    @EnvironmentObject private var fileState: FileState
-    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
+    @Environment(LayoutState.self) private var layoutState
+    @Environment(FileState.self) private var fileState
+    @Bindable private var aiChatPreferences = AIChatPreferences.shared
 
     let canvasSize: CGSize
 

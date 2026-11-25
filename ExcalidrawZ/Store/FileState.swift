@@ -5,6 +5,7 @@
 //  Created by Dove Zachary on 2024/10/8.
 //
 
+import Observation
 import SwiftUI
 import WebKit
 import Combine
@@ -13,15 +14,19 @@ import UniformTypeIdentifiers
 @preconcurrency import CoreData
 import ChocofordEssentials
 
-final class FileState: ObservableObject {
+@Observable
+final class FileState {
     let logger = Logger(label: "FileState")
 
     private let openInPlaceAccessStore = OpenInPlaceAccessStore()
     
     var stateUpdateQueue: DispatchQueue = DispatchQueue(label: "StateUpdateQueue")
     
-    var currentGroupPublisherCancellables: [AnyCancellable] = []
-    var currentFilePublisherCancellables: [AnyCancellable] = []
+    @ObservationIgnored var currentGroupPublisherCancellables: [AnyCancellable] = []
+    @ObservationIgnored var currentFilePublisherCancellables: [AnyCancellable] = []
+    @ObservationIgnored private var pendingCanvasWrites: [String: [UUID: Task<Void, Never>]] = [:]
+    @ObservationIgnored private var replacingDrawingFileIDs: Set<String> = []
+    @ObservationIgnored @MainActor private var linkedFolderSelectionTask: Task<Void, Never>?
     private var isRestoringActiveGroupAfterBlockedSwitch = false
     private var pendingActiveFileCloseTransitionIDs: Set<String> = []
     private var activeFileCloseTransitionContinuations: [
@@ -51,7 +56,7 @@ final class FileState: ObservableObject {
         }
     }
     
-    @Published var currentActiveGroup: ActiveGroup? {
+    var currentActiveGroup: ActiveGroup? {
         didSet {
             if shouldRestoreActiveGroupAfterBlockedSwitch(from: oldValue) {
                 return
@@ -64,6 +69,46 @@ final class FileState: ObservableObject {
     func setActiveGroupIfNeeded(_ group: ActiveGroup?) {
         guard currentActiveGroup != group else { return }
         currentActiveGroup = group
+    }
+
+    @MainActor
+    func selectLinkedFolder(
+        _ folder: LocalFolder,
+        onFailure: @escaping (LocalFolderPathError) -> Void
+    ) {
+        linkedFolderSelectionTask?.cancel()
+        let folderID = folder.objectID
+        let previousGroup = currentActiveGroup
+        let fileChangeGeneration = activeFileChangeGeneration
+        let context = PersistenceController.shared.newTaskContext()
+
+        linkedFolderSelectionTask = Task { @MainActor [weak self] in
+            let result = await context.perform { () -> Result<Void, LocalFolderPathError> in
+                do {
+                    guard let folder = try context.existingObject(with: folderID) as? LocalFolder,
+                          !folder.isDeleted else {
+                        return .failure(LocalFolderPathError(message: String(localizable: .generalUnknown)))
+                    }
+                    return folder.checkPathExists()
+                } catch {
+                    return .failure(LocalFolderPathError(message: error.localizedDescription))
+                }
+            }
+
+            guard let self, !Task.isCancelled else { return }
+            self.linkedFolderSelectionTask = nil
+            guard self.activeFileChangeGeneration == fileChangeGeneration,
+                  self.currentActiveGroup == previousGroup,
+                  !folder.isDeleted, folder.managedObjectContext != nil else { return }
+
+            switch result {
+                case .success:
+                    self.setActiveGroupIfNeeded(.localFolder(folder))
+                    self.setActiveFile(nil)
+                case .failure(let error):
+                    onFailure(error)
+            }
+        }
     }
 
     /// Keeps an open local-file session attached when Finder renames or moves
@@ -409,8 +454,8 @@ final class FileState: ObservableObject {
         let kind: Kind
     }
     
-    @Published private(set) var activeFileIndex: Int? = 0
-    @Published private(set) var activeFiles: [ActiveFile?] = [nil] {
+    private(set) var activeFileIndex: Int? = 0
+    private(set) var activeFiles: [ActiveFile?] = [nil] {
         willSet {
             guard let activeFileIndex else { return }
             self.activeFileIndex = min(newValue.endIndex - 1, activeFileIndex)
@@ -603,7 +648,10 @@ final class FileState: ObservableObject {
     }
 
     @MainActor
-    private func capturedCanvasSaveTarget(for activeFile: ActiveFile) -> CapturedCanvasSaveTarget? {
+    private func capturedCanvasSaveTarget(
+        for activeFile: ActiveFile,
+        forceNewCheckpoint: Bool = false
+    ) -> CapturedCanvasSaveTarget? {
         switch activeFile {
             case .file(let file):
                 guard !file.inTrash else { return nil }
@@ -615,7 +663,7 @@ final class FileState: ObservableObject {
                         fileName: file.name ?? "Untitled",
                         newCheckpoint: suppressCheckpoint
                             ? false
-                            : shouldCreateUserCheckpoint(for: activeFile),
+                            : forceNewCheckpoint || shouldCreateUserCheckpoint(for: activeFile),
                         suppressCheckpoint: suppressCheckpoint
                     )
                 )
@@ -628,7 +676,7 @@ final class FileState: ObservableObject {
                         url: url,
                         newCheckpoint: suppressCheckpoint
                             ? false
-                            : shouldCreateUserCheckpoint(for: activeFile),
+                            : forceNewCheckpoint || shouldCreateUserCheckpoint(for: activeFile),
                         suppressCheckpoint: suppressCheckpoint
                     )
                 )
@@ -651,7 +699,7 @@ final class FileState: ObservableObject {
                         reference: reference,
                         newCheckpoint: suppressCheckpoint
                             ? false
-                            : shouldCreateUserCheckpoint(for: activeFile),
+                            : forceNewCheckpoint || shouldCreateUserCheckpoint(for: activeFile),
                         suppressCheckpoint: suppressCheckpoint
                     )
                 )
@@ -770,19 +818,19 @@ final class FileState: ObservableObject {
                            let activeFolderPath = activeFolder.filePath,
                            URL(fileURLWithPath: activeFolderPath).standardizedFileURL.path
                             == parentURL.path {
-                            expandToGroup(activeFolder.objectID)
                             return
                         }
 
-                        let folder = try await context.perform {
+                        let navigationContext = PersistenceController.shared.newTaskContext()
+                        let folderID = try await navigationContext.perform {
                             try LocalFolder.deepestFolder(
                                 containingLocalFileAt: url,
-                                in: context
-                            )
+                                in: navigationContext
+                            )?.objectID
                         }
-                        if let folder {
+                        guard shouldApplyNavigationUpdate(fileID: activeFileID, generation: generation) else { return }
+                        if let folderID, let folder = try context.existingObject(with: folderID) as? LocalFolder {
                             setActiveGroupIfNeeded(.localFolder(folder))
-                            expandToGroup(folder.objectID)
                         } else {
                             setActiveGroupIfNeeded(nil)
                         }
@@ -829,9 +877,6 @@ final class FileState: ObservableObject {
                         setActiveGroupIfNeeded(.group(trashGroup ?? dbFile.group!))
                     } else {
                         setActiveGroupIfNeeded(.group(dbFile.group!))
-                    }
-                    if let groupID = dbFile.group?.objectID, dbFile.inTrash == false {
-                        expandToGroup(groupID)
                     }
                 }
                 
@@ -934,16 +979,16 @@ final class FileState: ObservableObject {
         }
     }
     
-    @Published var selectedGroups: Set<NSManagedObjectID> = []
-    // @Published var selectedLocalFolders: Set<LocalFolder> = []
+    var selectedGroups: Set<NSManagedObjectID> = []
+    // var selectedLocalFolders: Set<LocalFolder> = []
     
-    @Published var selectedFiles: Set<File> = []
-    @Published var selectedStartFile: File?
+    var selectedFiles: Set<File> = []
+    var selectedStartFile: File?
     
-    @Published var selectedLocalFiles: Set<URL> = []
-    @Published var selectedStartLocalFile: URL?
+    var selectedLocalFiles: Set<URL> = []
+    var selectedStartLocalFile: URL?
     
-    @Published var temporaryFiles: [URL] = [] {
+    var temporaryFiles: [URL] = [] {
         didSet {
             updateOpenInPlaceOwnership(from: oldValue, to: temporaryFiles)
         }
@@ -1008,11 +1053,11 @@ final class FileState: ObservableObject {
         }
     }
     
-    @Published var selectedTemporaryFiles: Set<URL> = []
-    @Published var selectedStartTemporaryFile: URL?
+    var selectedTemporaryFiles: Set<URL> = []
+    var selectedStartTemporaryFile: URL?
 
-    @Published var selectedCloudStorageFiles: Set<CloudStorageDocumentReference> = []
-    @Published var selectedStartCloudStorageFile: CloudStorageDocumentReference?
+    var selectedCloudStorageFiles: Set<CloudStorageDocumentReference> = []
+    var selectedStartCloudStorageFile: CloudStorageDocumentReference?
     
     // Collab
     var isInCollaborationSpace: Bool {
@@ -1031,8 +1076,8 @@ final class FileState: ObservableObject {
         case aiGenerationInProgress
     }
 
-    @Published var activeFileSwitchBlockedReason: ActiveFileSwitchBlockedReason?
-    @Published var activeFileSwitchBlockedToken: Int = 0
+    var activeFileSwitchBlockedReason: ActiveFileSwitchBlockedReason?
+    var activeFileSwitchBlockedToken: Int = 0
 
     /// The currently active AI chat conversation id.
     ///
@@ -1043,8 +1088,8 @@ final class FileState: ObservableObject {
     /// the AIChatView/AIChatIslandView read and write through here so the
     /// inspector and the floating island stay in sync across presentation
     /// toggles.
-    @Published var aiChatConversationID: String? = nil
-    @Published var isAIChatConversationLoading: Bool = false
+    var aiChatConversationID: String? = nil
+    var isAIChatConversationLoading: Bool = false
 
     /// Active AI chat session, if any. While this is non-nil:
     ///
@@ -1061,7 +1106,7 @@ final class FileState: ObservableObject {
     /// One session per (FileState, conversationID) — each user message
     /// inside the same conversation re-enters begin/end with a fresh
     /// (pre, post) pair anchored to that message round.
-    @Published var aiChatSession: AIChatSessionState?
+    var aiChatSession: AIChatSessionState?
 
     /// Nested MCP mutation depth. While non-zero, normal canvas save paths
     /// still persist file content but must not create user-edit checkpoints;
@@ -1096,10 +1141,10 @@ final class FileState: ObservableObject {
     }
 
     /// Files that is currently under collaboration.
-    @Published var collaboratingFiles: [CollaborationFile] = []
-    @Published var collaboratingFilesState: [CollaborationFile : ExcalidrawCanvasView.LoadingState] = [:]
-    @Published var collaborators: [CollaborationFile : [Collaborator]] = [:]
-    @Published var isFinalizingActiveFileClose = false
+    var collaboratingFiles: [CollaborationFile] = []
+    var collaboratingFilesState: [CollaborationFile : ExcalidrawCanvasView.LoadingState] = [:]
+    var collaborators: [CollaborationFile : [Collaborator]] = [:]
+    var isFinalizingActiveFileClose = false
 
     var activeCollaborationFileIsLoading: Bool {
         guard case .collaborationFile(let file) = currentActiveFile else {
@@ -1136,7 +1181,21 @@ final class FileState: ObservableObject {
         }
     }
     
-    @AppStorage("ExcalidrawFileSortField") var sortField: ExcalidrawFileSortField = .updatedAt
+    @ObservationIgnored @AppStorage("ExcalidrawFileSortField")
+    private var storedSortField: ExcalidrawFileSortField = .updatedAt
+
+    var sortField: ExcalidrawFileSortField {
+        get {
+            access(keyPath: \.sortField)
+            return storedSortField
+        }
+        set {
+            guard storedSortField != newValue else { return }
+            withMutation(keyPath: \.sortField) {
+                storedSortField = newValue
+            }
+        }
+    }
     
     var excalidrawWebCoordinator: ExcalidrawCanvasView.Coordinator?
     var excalidrawCollaborationWebCoordinator: ExcalidrawCanvasView.Coordinator?
@@ -1150,7 +1209,7 @@ final class FileState: ObservableObject {
     private var pendingProgrammaticCanvasCommitDates: [String: Date] = [:]
     private var recentLocalCanvasMutationDates: [String: Date] = [:]
     
-    var recoverWatchUpdateWorkItem: DispatchWorkItem?
+    @ObservationIgnored var recoverWatchUpdateWorkItem: DispatchWorkItem?
     
     private func recoverWatchUpdate() {
         recoverWatchUpdateWorkItem?.cancel()
@@ -1327,7 +1386,7 @@ final class FileState: ObservableObject {
             ? false
             : shouldCreateUserCheckpoint(for: activeFile)
         self.didUpdateFileState[activeFile] = true
-        Task.detached {
+        return enqueueCanvasWrite(for: activeFile.id) {
             do {
                 guard let content = excalidrawFile.content else { return }
                 
@@ -1351,12 +1410,27 @@ final class FileState: ObservableObject {
                     checkpoint: checkpointPolicy
                 )
                 self.logger.debug("File update saved")
-                await MainActor.run {
-                    // already throttled
-                    self.objectWillChange.send()
-                }
+                self.invalidateFileMetadata()
             } catch {
                 self.logger.error("Failed to update file \(file.name ?? "Untitled"): \(error)")
+            }
+        }
+    }
+
+    @MainActor
+    @discardableResult
+    func enqueueCanvasWrite(
+        for fileID: String,
+        operation: @escaping @MainActor () async -> Void
+    ) -> Bool {
+        guard !replacingDrawingFileIDs.contains(fileID) else { return false }
+        let writeID = UUID()
+        pendingCanvasWrites[fileID, default: [:]][writeID] = Task { [weak self] in
+            await operation()
+            guard let self else { return }
+            pendingCanvasWrites[fileID]?.removeValue(forKey: writeID)
+            if pendingCanvasWrites[fileID]?.isEmpty == true {
+                pendingCanvasWrites.removeValue(forKey: fileID)
             }
         }
         return true
@@ -1380,7 +1454,7 @@ final class FileState: ObservableObject {
             suppressCheckpoint: suppressCheckpoint,
             logger: logger
         )
-        objectWillChange.send()
+        invalidateFileMetadata()
     }
 
     static func saveCapturedCanvasUpdate(
@@ -1568,15 +1642,18 @@ final class FileState: ObservableObject {
         with file: ExcalidrawFile,
         newCheckpoint: Bool,
         suppressCheckpoint: Bool,
-        logger: Logger
+        logger: Logger,
+        openInPlaceAccessStore: OpenInPlaceAccessStore? = nil
     ) async throws {
         var file = file
         try file.updateContentFilesFromFiles()
         guard let data = file.content else { return }
 
-        try await LocalFolder.withSecurityScopedAccessToContainingFolder(for: url) {
-            try await FileCoordinator.shared.coordinatedWrite(url: url, data: data)
-            touchLocalFileModificationDate(url, logger: logger)
+        if try await openInPlaceAccessStore?.save(data, to: url) != true {
+            try await LocalFolder.withSecurityScopedAccessToContainingFolder(for: url) {
+                try await FileCoordinator.shared.coordinatedWrite(url: url, data: data)
+                touchLocalFileModificationDate(url, logger: logger)
+            }
         }
 
         guard !suppressCheckpoint else {
@@ -1614,7 +1691,7 @@ final class FileState: ObservableObject {
                 guard !file.inTrash else { return }
                 let fileObjectID = file.objectID
                 let fileName = file.name ?? "Untitled"
-                Task.detached {
+                enqueueCanvasWrite(for: activeFile.id) {
                     do {
                         try await PersistenceController.shared.fileRepository.updateElements(
                             fileObjectID: fileObjectID,
@@ -1629,7 +1706,7 @@ final class FileState: ObservableObject {
                 }
 
             case .localFile(let url), .temporaryFile(let url):
-                Task.detached {
+                enqueueCanvasWrite(for: activeFile.id) {
                     do {
                         try await LocalFolder.withSecurityScopedAccessToContainingFolder(for: url) {
                             try await FileCoordinator.shared.coordinatedWrite(url: url, data: content)
@@ -1644,7 +1721,7 @@ final class FileState: ObservableObject {
                 break
 
             case .cloudStorageFile(let reference):
-                Task {
+                enqueueCanvasWrite(for: activeFile.id) {
                     do {
                         try await Self.stageCloudStorageUpload(content, for: reference)
                         self.logger.debug("AppState-only cloud storage file update cached")
@@ -1693,6 +1770,57 @@ final class FileState: ObservableObject {
                 target: saveTarget,
                 forceCurrentAppState: true
             )
+    }
+
+    @MainActor
+    func replaceActiveDrawing(
+        with drawing: ExcalidrawFile,
+        expectedFileID: String,
+        canReplace: () -> Bool
+    ) async throws -> ExcalidrawFile {
+        guard canReplace(), currentActiveFile?.id == expectedFileID,
+              replacingDrawingFileIDs.insert(expectedFileID).inserted else {
+            throw DroppedDrawing.ImportError.replacementUnavailable
+        }
+        defer { replacingDrawingFileIDs.remove(expectedFileID) }
+
+        // The snapshot drain is separate from the disk writes it schedules.
+        // Finish both before saving the imported content under the same ID.
+        if let writes = pendingCanvasWrites[expectedFileID] {
+            for write in writes.values {
+                await write.value
+            }
+        }
+        await flushPendingCanvasSnapshotBeforeExternalMutation(fileID: expectedFileID)
+
+        guard canReplace(), let activeFile = currentActiveFile, activeFile.id == expectedFileID,
+              let target = capturedCanvasSaveTarget(for: activeFile, forceNewCheckpoint: true) else {
+            throw DroppedDrawing.ImportError.replacementUnavailable
+        }
+
+        var replacement = drawing
+        replacement.id = expectedFileID
+        try replacement.prepareContentForExport(fileName: activeFile.name)
+        if case .temporaryFile(let url) = activeFile {
+            try await Self.saveCapturedLocalCanvasUpdate(
+                to: url,
+                with: replacement,
+                newCheckpoint: true,
+                suppressCheckpoint: false,
+                logger: logger,
+                openInPlaceAccessStore: openInPlaceAccessStore
+            )
+        } else {
+            try await Self.persistCapturedCanvasUpdate(target, with: replacement, logger: logger)
+        }
+
+        if currentActiveFile?.id == expectedFileID {
+            userCheckpointWindowStartedAt[expectedFileID] = Date()
+            didUpdateFileState[activeFile] = true
+        }
+        invalidateFileMetadata()
+        FileCoverCacheCoordinator.shared.refreshCover(for: activeFile)
+        return replacement
     }
 
     @discardableResult
@@ -1748,7 +1876,7 @@ final class FileState: ObservableObject {
         if suppressCheckpoint {
             await MainActor.run {
                 self.didUpdateFile = true
-                self.objectWillChange.send()
+                self.invalidateFileMetadata()
             }
             return
         }
@@ -1765,7 +1893,7 @@ final class FileState: ObservableObject {
 
         await MainActor.run {
             self.didUpdateFile = true
-            self.objectWillChange.send()
+            self.invalidateFileMetadata()
         }
     }
 
@@ -1825,7 +1953,7 @@ final class FileState: ObservableObject {
                 
                 await MainActor.run {
                     self.didUpdateFile = true
-                    self.objectWillChange.send()
+                    self.invalidateFileMetadata()
                 }
             } catch {
                 self.logger.error("Failed to update collaboration file: \(error)")
@@ -1840,6 +1968,10 @@ final class FileState: ObservableObject {
     }
     func importFile(_ url: URL, to targetGroupType: ImportGroupType = .current) async throws {
         let excalidrawFile = try ExcalidrawFile(contentsOf: url)
+        try await importFile(excalidrawFile, to: targetGroupType)
+    }
+
+    func importFile(_ excalidrawFile: ExcalidrawFile, to targetGroupType: ImportGroupType = .current) async throws {
         let context = PersistenceController.shared.newTaskContext()
         let currentGroup: Group? = {
             if case .group(let currentGroup) = self.currentActiveGroup {
@@ -2088,7 +2220,7 @@ final class FileState: ObservableObject {
                     await PersistenceController.shared.spotlightIndexingService.indexFile(id: id)
                 }
             }
-            self.objectWillChange.send()
+            self.invalidateFileMetadata()
         }
     }
     
@@ -2098,7 +2230,7 @@ final class FileState: ObservableObject {
         Task {
             await PersistenceController.shared.spotlightIndexingService.scheduleRebuild()
         }
-        self.objectWillChange.send()
+        self.invalidateFileMetadata()
     }
     
     @discardableResult
@@ -2376,14 +2508,21 @@ final class FileState: ObservableObject {
         return true
     }
 
+    /// Core Data mutates these referenced objects without replacing the navigation
+    /// values. Invalidate their Observation dependencies without changing identity.
+    private func invalidateFileMetadata() {
+        withMutation(keyPath: \.activeFiles) {}
+        withMutation(keyPath: \.currentActiveGroup) {}
+    }
+
     private func resetCurrentGroupChangesListener() {
         currentGroupPublisherCancellables.forEach {$0.cancel()}
         currentGroupPublisherCancellables = []
         if case .group(let group) = currentActiveGroup {
             currentGroupPublisherCancellables = [
-                group.publisher(for: \.name).sink { [weak self] _ in
+                group.publisher(for: \.name, options: [.new]).sink { [weak self] _ in
                     DispatchQueue.main.async {
-                        self?.objectWillChange.send()
+                        self?.invalidateFileMetadata()
                     }
                 }
             ]
@@ -2394,7 +2533,7 @@ final class FileState: ObservableObject {
     }
 
     /// Reset the current file changes listener.
-    /// Everytime the current file changes, the listeners will send a `objectWillChange` event.
+    /// KVO bridges changes to Core Data metadata into the active-file dependency.
     private func resetCurrentFileChangesListener() {
         currentFilePublisherCancellables.forEach{$0.cancel()}
         
@@ -2402,17 +2541,17 @@ final class FileState: ObservableObject {
             currentFilePublisherCancellables = [
                 currentFile.publisher(for: \.name).sink { [weak self] _ in
                     DispatchQueue.main.async {
-                        self?.objectWillChange.send()
+                        self?.invalidateFileMetadata()
                     }
                 },
                 currentFile.publisher(for: \.updatedAt).sink { [weak self] _ in
                     DispatchQueue.main.async {
-                        self?.objectWillChange.send()
+                        self?.invalidateFileMetadata()
                     }
                 },
                 currentFile.publisher(for: \.inTrash).sink { [weak self] _ in
                     DispatchQueue.main.async {
-                        self?.objectWillChange.send()
+                        self?.invalidateFileMetadata()
                     }
                 }
             ]

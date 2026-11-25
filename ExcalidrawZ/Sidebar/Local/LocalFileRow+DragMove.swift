@@ -9,7 +9,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct LocalFileDragModifier: ViewModifier {
-    @EnvironmentObject private var sidebarDragState: ItemDragState
+    @Environment(ItemDragState.self) private var sidebarDragState
 
     var file: URL
 

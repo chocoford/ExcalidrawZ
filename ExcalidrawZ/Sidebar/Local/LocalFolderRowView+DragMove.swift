@@ -32,13 +32,14 @@ struct LocalFolderRowDragDropModifier: ViewModifier {
 }
 
 struct LocalFolderDragModifier: ViewModifier {
-    @EnvironmentObject private var sidebarDragState: ItemDragState
+    @Environment(ItemDragState.self) private var sidebarDragState
 
     var folder: LocalFolder
 
     func body(content: Content) -> some View {
         content
             .opacity(sidebarDragState.currentDragItem == .localFolder(folder.objectID) ? 0.3 : 1)
+            .contentShape(Rectangle())
             .onDrag {
                 let url = folder.objectID.uriRepresentation()
                 sidebarDragState.currentDragItem = .localFolder(folder.objectID)
@@ -55,11 +56,12 @@ struct LocalFolderDropModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var sidebarDragState: ItemDragState
-    @EnvironmentObject private var localFolderState: LocalFolderState
+    @Environment(FileState.self) private var fileState
+    @Environment(ItemDragState.self) private var sidebarDragState
+    @Environment(LocalFolderState.self) private var localFolderState
     
     var folder: LocalFolder
+    var allowsLocalFolder: (NSManagedObjectID) -> Bool = { _ in true }
     var dropTarget: (ItemDragState.DragItem) -> ItemDragState.GroupDropTarget
     
     @State private var groupIDWillBeDropped: NSManagedObjectID?
@@ -81,21 +83,22 @@ struct LocalFolderDropModifier: ViewModifier {
     }
     
     func body(content: Content) -> some View {
-         content
+        let acceptsLocalFolder: Bool = if case .localFolder(let folderID) = sidebarDragState.currentDragItem {
+            allowsLocalFolder(folderID)
+        } else {
+            true
+        }
+        return content
             .modifier(
                 SidebarRowDropModifier(
-                    allow: [
-                        .excalidrawFileRow,
-                        .excalidrawGroupRow,
-                        .excalidrawLocalFolderRow,
-                        .fileURL
-                    ],
+                    allow: [.excalidrawFileRow, .excalidrawGroupRow, .fileURL]
+                        + (acceptsLocalFolder ? [.excalidrawLocalFolderRow] : []),
                     onTargeted: { val in
                         sidebarDragState.currentDropGroupTarget = val
                         ? dropTarget(.localFolder(folder.objectID))
                         : nil
                     },
-                    onDrop: { item in
+                    onDrop: { item, _ in
                         Task {
                             let success: Bool = await {
                                 switch item {
@@ -104,6 +107,7 @@ struct LocalFolderDropModifier: ViewModifier {
                                     case .file(let fileID):
                                         return await handleDropFile(id: fileID)
                                     case .localFolder(let folderID):
+                                        guard allowsLocalFolder(folderID) else { return false }
                                         return await handleDropLocalFolder(id: folderID, context: viewContext)
                                     case .localFile(let url):
                                         return await handleDropLocalFile(url: url, context: viewContext)
@@ -111,6 +115,8 @@ struct LocalFolderDropModifier: ViewModifier {
                                         return await handleDropCollaborationFile(id: roomID)
                                     case .temporaryFile(let url):
                                         return await handleDropTemporaryFile(url: url)
+                                    case .cloudStorageLocation:
+                                        return false
                                 }
                             }()
                             

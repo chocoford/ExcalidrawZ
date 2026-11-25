@@ -56,7 +56,7 @@ extension Paywall {
         }
         .animation(.easeOut(duration: 0.3), value: route)
 #if os(macOS)
-        .frame(width: horizontalSizeClass == .compact ? 630 : 1040)
+        .frame(idealWidth: horizontalSizeClass == .compact ? 630 : 1040)
 #endif
     }
 
@@ -66,6 +66,9 @@ extension Paywall {
             regularLayout()
         }
         .padding(50)
+#if os(macOS)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+#endif
         .background {
             if #available(iOS 26.0, macOS 26.0, *) {
                 PaywallAuroraBackground(colorScheme: colorScheme)
@@ -137,7 +140,7 @@ extension Paywall {
                     HStack(spacing: 4) {
                         // Keep center
                         Button {
-                            dismiss()
+                            dismissPaywall()
                         } label: {
                             Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
                                 .labelStyle(.iconOnly)
@@ -152,7 +155,7 @@ extension Paywall {
                         purchaseButton()
 
                         Button {
-                            dismiss()
+                            dismissPaywall()
                         } label: {
                             Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
                                 .labelStyle(.iconOnly)

@@ -17,11 +17,11 @@ struct CompactAIChatInputOverlay: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerSize) private var containerSize
 
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(FileState.self) private var fileState
+    @Environment(LayoutState.self) private var layoutState
     @EnvironmentObject private var llmState: LLMStateObject
-    @EnvironmentObject private var aiChatState: AIChatState
-    @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
+    @Environment(AIChatState.self) private var aiChatState
+    @Bindable private var aiChatPreferences = AIChatPreferences.shared
 
     @State private var keyboardHeight: CGFloat = 0
     @State private var keyboardAnimationDuration: TimeInterval = 0.25
@@ -54,7 +54,7 @@ struct CompactAIChatInputOverlay: View {
         if isVisible {
             PromptInputView(
                 conversationID: conversationIDBinding,
-                pendingQueue: $aiChatState.pendingQueue,
+                pendingQueue: Bindable(aiChatState).pendingQueue,
                 style: .compactIOS,
                 focusOnAppear: true,
                 dismissKeyboardOnSuccessfulSubmit: true,
@@ -130,8 +130,8 @@ struct CompactAIChatReplyTicker: View {
     let conversationID: String?
     let isGenerating: Bool
 
-    @EnvironmentObject private var layoutState: LayoutState
-    @EnvironmentObject private var aiChatState: AIChatState
+    @Environment(LayoutState.self) private var layoutState
+    @Environment(AIChatState.self) private var aiChatState
     @State private var renderedReplyText: String?
     @State private var isTickerPresented = false
     @State private var isTickerCollapsing = false

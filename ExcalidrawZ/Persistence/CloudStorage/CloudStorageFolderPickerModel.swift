@@ -3,20 +3,22 @@
 //  ExcalidrawZ
 //
 
+import Observation
 import Combine
 import SwiftUI
 
 @MainActor
-final class CloudStorageFolderPickerModel: ObservableObject {
-    @Published private(set) var path: [CloudStorageItem] = []
-    @Published private(set) var folders: [CloudStorageItem] = []
-    @Published private(set) var isLoading = false
-    @Published private(set) var errorMessage: String?
+@Observable
+final class CloudStorageFolderPickerModel {
+    private(set) var path: [CloudStorageItem] = []
+    private(set) var folders: [CloudStorageItem] = []
+    private(set) var isLoading = false
+    private(set) var errorMessage: String?
 
     private let session: any CloudStorageSession
-    private var folderCache: [CloudStorageItemID: [CloudStorageItem]] = [:]
-    private var folderRequests: [CloudStorageItemID: Task<[CloudStorageItem], Error>] = [:]
-    private var prefetchTask: Task<Void, Never>?
+    @ObservationIgnored private var folderCache: [CloudStorageItemID: [CloudStorageItem]] = [:]
+    @ObservationIgnored private var folderRequests: [CloudStorageItemID: Task<[CloudStorageItem], Error>] = [:]
+    @ObservationIgnored private var prefetchTask: Task<Void, Never>?
 
     init(session: any CloudStorageSession) {
         self.session = session

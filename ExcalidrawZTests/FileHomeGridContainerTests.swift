@@ -1,8 +1,9 @@
 #if os(macOS)
 import AppKit
-import Combine
+import Observation
 import SwiftUI
 import XCTest
+import os
 @testable import ExcalidrawZ
 
 final class FileHomeGridContainerTests: XCTestCase {
@@ -61,8 +62,12 @@ final class FileHomeGridContainerTests: XCTestCase {
     @MainActor
     func testCellReuseDoesNotPublishTransitionUpdatesDuringOrdinaryScrolling() async {
         let bridge = FileHomeNativeTransitionBridge()
-        var notifications = 0
-        let subscription = bridge.objectWillChange.sink { notifications += 1 }
+        let notifications = OSAllocatedUnfairLock(initialState: 0)
+        withObservationTracking {
+            _ = bridge.revision
+        } onChange: {
+            notifications.withLock { $0 += 1 }
+        }
         for index in 0..<100 {
             let view = NSView()
             let id = "file-\(index)"
@@ -71,27 +76,32 @@ final class FileHomeGridContainerTests: XCTestCase {
             bridge.removeSource(view, fileID: id)
         }
         await nextMainQueueTurn()
-        XCTAssertEqual(notifications, 0)
-        withExtendedLifetime(subscription) {}
+        XCTAssertEqual(notifications.withLock { $0 }, 0)
+        XCTAssertEqual(bridge.revision, 0)
     }
 
     @MainActor
     func testOnlyActiveTransitionRegistrationsPublishAndTheyAreCoalesced() async {
         let bridge = FileHomeNativeTransitionBridge()
         bridge.activeFileID = "active"
-        var notifications = 0
-        let subscription = bridge.objectWillChange.sink { notifications += 1 }
+        let notifications = OSAllocatedUnfairLock(initialState: 0)
+        withObservationTracking {
+            _ = bridge.revision
+        } onChange: {
+            notifications.withLock { $0 += 1 }
+        }
         let source = NSView()
         bridge.registerSource(source, fileID: "other")
         await nextMainQueueTurn()
-        XCTAssertEqual(notifications, 0)
+        XCTAssertEqual(notifications.withLock { $0 }, 0)
+        XCTAssertEqual(bridge.revision, 0)
 
         bridge.registerSource(source, fileID: "active")
         bridge.sourceBecameVisible(fileID: "active")
         bridge.sourceBecameVisible(fileID: "active")
         await nextMainQueueTurn()
-        XCTAssertEqual(notifications, 1)
-        withExtendedLifetime(subscription) {}
+        XCTAssertEqual(notifications.withLock { $0 }, 1)
+        XCTAssertEqual(bridge.revision, 1)
     }
 
     @MainActor

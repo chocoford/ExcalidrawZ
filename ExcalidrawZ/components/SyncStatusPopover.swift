@@ -12,7 +12,7 @@ import ChocofordUI
 /// Displays as a rectangular card at bottom-trailing of ExcalidrawHomeView
 struct SyncStatusPopover: View {
     // Observe syncState for reactive UI updates
-    @ObservedObject private var syncState = FileStatusService.shared.syncState
+    @Bindable private var syncState = FileStatusService.shared.syncState
     
     init() {}
     
@@ -88,7 +88,7 @@ struct SyncStatusPopover: View {
 
 
 struct SyncStatusContentView: View {
-    @ObservedObject private var syncState: SyncState = FileStatusService.shared.syncState
+    @Bindable private var syncState: SyncState = FileStatusService.shared.syncState
     
     // Debounced syncing files count to avoid flickering when transitioning between files
     @State private var debouncedSyncingFilesCount = 0

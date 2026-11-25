@@ -106,15 +106,13 @@ struct NativeChatScrollView<Content: View>: View {
         #endif
     }
 
-    /// Mirrors the chrome that `ChatScrollView`'s LazyVStack applies:
-    /// 10 pt horizontal gutter + a 20 pt clear tail so the last row
-    /// doesn't sit flush against the bottom edge.
+    /// Keeps the same clear tail as the SwiftUI backend. The containing
+    /// ChatScrollView owns the inspector's outer margins for every backend.
     private var wrappedContent: some View {
         VStack(spacing: 0) {
             content
             Color.clear.frame(height: 20 + bottomContentPadding)
         }
-        .padding(.horizontal, 10)
     }
 }
 

@@ -14,9 +14,10 @@ import ChocofordUI
 struct MathInputSheetView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    @EnvironmentObject private var canvasPreferencesState: CanvasPreferencesState
+    @Environment(CanvasPreferencesState.self) private var canvasPreferencesState
     @EnvironmentObject var llmState: LLMStateObject
-    @ObservedObject var aiChatPreferences = AIChatPreferences.shared
+    @Bindable var aiChatPreferences = AIChatPreferences.shared
+    @Bindable var inferenceBilling = AIInferenceBillingState.shared
 
     let logger = Logger(label: "MathInputSheetView")
 
@@ -259,5 +260,5 @@ struct MathInputSheetView: View {
     MathInputSheetView { _ in
 
     }
-    .environmentObject(CanvasPreferencesState())
+    .environment(CanvasPreferencesState())
 }

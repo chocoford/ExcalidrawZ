@@ -16,9 +16,9 @@ import UIKit
 
 struct MathInputSheetViewModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var canvasPreferencesState: CanvasPreferencesState
-    @ObservedObject private var paywallPresentation = PaywallPresentationState.shared
+    @Environment(FileState.self) private var fileState
+    @Environment(CanvasPreferencesState.self) private var canvasPreferencesState
+    @Bindable private var paywallPresentation = PaywallPresentationState.shared
 
     @Binding var isPresented: Bool
     @State private var restoredSnapshot: MathInputSheetSnapshot?
@@ -101,10 +101,10 @@ struct MathInputSheetViewModifier: ViewModifier {
 }
 
 struct MathImageEditSheetViewModifier: ViewModifier {
-    @EnvironmentObject private var canvasPreferencesState: CanvasPreferencesState
-    @ObservedObject private var paywallPresentation = PaywallPresentationState.shared
+    @Environment(CanvasPreferencesState.self) private var canvasPreferencesState
+    @Bindable private var paywallPresentation = PaywallPresentationState.shared
 
-    @ObservedObject var coordinator: ExcalidrawCore
+    @Bindable var coordinator: ExcalidrawCore
     var onError: (Error) -> Void
     @State private var restoredSnapshot: MathInputSheetSnapshot?
     @State private var restoredEditRequest: ExcalidrawCore.MathImageEditRequest?

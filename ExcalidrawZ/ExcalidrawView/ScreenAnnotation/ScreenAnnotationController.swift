@@ -149,7 +149,7 @@ final class ScreenAnnotationController {
             \.managedObjectContext,
             PersistenceController.shared.container.viewContext
         )
-        .environmentObject(ItemDragState())
+        .environment(ItemDragState())
 
         let panel = ScreenAnnotationPanel(
             screen: screen,

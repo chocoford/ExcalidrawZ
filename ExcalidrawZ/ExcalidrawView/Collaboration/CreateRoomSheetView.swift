@@ -9,7 +9,7 @@ import SwiftUI
 
 struct CreateRoomSheetView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var collaborationState: CollaborationState
+    @Environment(CollaborationState.self) private var collaborationState
     
     var onCreate: (_ name: String, _ isBlank: Bool) -> Void
     

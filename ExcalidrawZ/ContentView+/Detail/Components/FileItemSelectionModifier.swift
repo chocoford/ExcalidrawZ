@@ -84,7 +84,7 @@ struct FileHomeItemSelectModifier: ViewModifier {
 #if os(iOS)
     @Environment(\.editMode) private var editMode
 #endif
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
     
     var file: FileState.ActiveFile
     var selectionSiblings: [FileState.ActiveFile]?

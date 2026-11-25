@@ -5,6 +5,7 @@
 //  Created by Codex on 2026/7/27.
 //
 
+import Observation
 import SwiftUI
 
 #if os(macOS)
@@ -12,10 +13,11 @@ import AppKit
 #endif
 
 @MainActor
-final class ExcalidrawPresentationController: ObservableObject {
+@Observable
+final class ExcalidrawPresentationController {
     static let shared = ExcalidrawPresentationController()
 
-    @Published var session: ExcalidrawPresentationSession?
+    var session: ExcalidrawPresentationSession?
 
 #if os(macOS)
     private var presentationWindow: NSWindow?

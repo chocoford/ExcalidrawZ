@@ -26,6 +26,7 @@ actor LLMCreditsRefreshCoordinator {
     private var isSyncingSubscription = false
 
     func refreshCredits(reason: Reason, force: Bool = false) async {
+        guard !AIChatAvailability.usesDirectInference else { return }
         guard AIChatAvailability.isAvailable else {
             logger.debug("[Credits] refresh skipped reason=\(reason.rawValue) aiAvailable=false")
             return
@@ -64,6 +65,7 @@ actor LLMCreditsRefreshCoordinator {
 
 #if APP_STORE
     func syncSubscriptionState(reason: Reason, force: Bool = false) async {
+        guard !AIChatAvailability.usesDirectInference else { return }
         guard AIChatAvailability.isAvailable else {
             logger.debug("[Credits] subscription sync skipped reason=\(reason.rawValue) aiAvailable=false")
             return
@@ -116,6 +118,7 @@ actor LLMCreditsRefreshCoordinator {
         default:
             await refreshCredits(reason: .storeKitEntitlementRefresh, force: entitlementChanged || force)
         }
+        await AIChatSchemeCatalog.shared.refresh(force: true)
     }
 #endif
 }

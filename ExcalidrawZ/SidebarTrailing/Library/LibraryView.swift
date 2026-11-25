@@ -19,9 +19,9 @@ struct LibraryView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
     @Environment(\.alertToast) var alertToast
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject var exportState: ExportState
-    @EnvironmentObject var layoutState: LayoutState
+    @Environment(AppPreference.self) var appPreference
+    @Environment(ExportState.self) var exportState
+    @Environment(LayoutState.self) var layoutState
         
     @FetchRequest(sortDescriptors: [SortDescriptor(\.id)], animation: .smooth)
     var libraries: FetchedResults<Library>
@@ -34,7 +34,7 @@ struct LibraryView: View {
         self._librariesToImport = librariesToImport
     }
     
-    @StateObject private var viewModel = LibraryViewModel()
+    @State private var viewModel = LibraryViewModel()
     
     // each library contains one library item...
     @State private var image: Image?
@@ -49,8 +49,6 @@ struct LibraryView: View {
     @State private var selectedItems = Set<LibraryItem>()
 
     @State private var searchQuery: String = ""
-    private let searchHeaderReservedHeight: CGFloat = 52
-
     @State private var isLibraryBrowserPresented: Bool = false
     /// Set inside the browser sheet when the user opts to import from file —
     /// consumed in `onDismiss` to trigger the file importer once the sheet has
@@ -66,6 +64,8 @@ struct LibraryView: View {
     }
     
     var body: some View {
+        // Core Data metadata can change without replacing the library objects.
+        let _ = viewModel.metadataRevision
         ZStack {
             if #available(macOS 13.0, *), usesInspectorToolbarChrome {
                 content()
@@ -95,7 +95,7 @@ struct LibraryView: View {
             }
             self.librariesToImport = libraries
         }
-        .environmentObject(viewModel)
+        .environment(viewModel)
         .onAppear {
             viewModel.excalidrawWebCoordinator = exportState.excalidrawWebCoordinator
         }
@@ -281,11 +281,11 @@ struct LibraryView: View {
                         bottomBar()
 #if os(iOS)
                             .padding(.vertical, 8)
-                            .padding(.horizontal, 16)
+                            .inspectorContentPadding(.horizontal)
                             .frame(height: 56, alignment: .top)
 #else
                             .padding(.vertical, 2)
-                            .padding(.horizontal, 8)
+                            .inspectorContentPadding(.horizontal)
                             .frame(height: 32)
 #endif
                     }
@@ -294,52 +294,11 @@ struct LibraryView: View {
         }
     }
 
-    @ViewBuilder
     private var searchField: some View {
-        HStack(spacing: 8) {
-            Image(systemSymbol: .magnifyingglass)
-                .foregroundStyle(.secondary)
-            TextField(
-                "",
-                text: $searchQuery,
-                prompt: Text(localizable: .libraryItemsSearchPrompt)
-            )
-            .textFieldStyle(.plain)
-            if !searchQuery.isEmpty {
-                Button {
-                    searchQuery = ""
-                } label: {
-                    Image(systemSymbol: .xmarkCircleFill)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background {
-            searchFieldBackground
-        }
-    }
-
-    @ViewBuilder
-    private var searchFieldBackground: some View {
-        Capsule()
-            .fill(.clear)
-            .background {
-                if #available(macOS 26.0, iOS 26.0, *) {
-                    Capsule()
-                        .fill(.clear)
-                        .glassEffect(.regular.interactive(), in: Capsule())
-                } else {
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                }
-            }
-            .overlay {
-                Capsule()
-                    .strokeBorder(Color.primary.opacity(0.10), lineWidth: 0.5)
-            }
+        InspectorSearchField(
+            text: $searchQuery,
+            prompt: Text(localizable: .libraryItemsSearchPrompt)
+        )
     }
     
 #if os(iOS)
@@ -389,7 +348,6 @@ struct LibraryView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 10)
             }
             VStack(spacing: 8) {
                 importButton()
@@ -403,6 +361,7 @@ struct LibraryView: View {
             
             Spacer()
         }
+        .inspectorContentPadding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
@@ -417,26 +376,14 @@ struct LibraryView: View {
                         selections: inSelectionMode ? $selectedItems : nil,
                         searchQuery: searchQuery
                     )
-                    .padding(.horizontal, 10)
                 }
-
-                Color.clear.frame(height: 100)
             }
-            .padding(.top, searchHeaderReservedHeight)
+            .inspectorContentPadding([.horizontal, .bottom])
         }
-        .overlay(alignment: .top) {
-            searchHeader()
+        .safeAreaInset(edge: .top, spacing: 0) {
+            searchField
+                .inspectorContentPadding()
         }
-    }
-
-    @ViewBuilder
-    private func searchHeader() -> some View {
-        searchField
-            .padding(.horizontal, 10)
-            .padding(.top, 8)
-            .padding(.bottom, 4)
-            .frame(height: searchHeaderReservedHeight, alignment: .top)
-            .zIndex(1)
     }
     
     @ViewBuilder
@@ -624,7 +571,7 @@ struct LibraryView: View {
                     }
                     try context.save()
                     DispatchQueue.main.async {
-                        viewModel.objectWillChange.send()
+                        viewModel.refreshLibraryMetadata()
                     }
                 } catch {
                     alertToast(error)

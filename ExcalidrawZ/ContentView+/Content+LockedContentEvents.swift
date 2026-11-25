@@ -10,8 +10,8 @@ import CoreData
 import SwiftUI
 
 struct LockedContentEventModifier: ViewModifier {
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
-    @ObservedObject var fileState: FileState
+    @Environment(LockedContentStateStore.self) private var lockedContentState
+    @Bindable var fileState: FileState
 
     func body(content: Content) -> some View {
         content

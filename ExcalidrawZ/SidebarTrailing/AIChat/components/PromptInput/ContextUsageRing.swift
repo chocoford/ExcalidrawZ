@@ -47,7 +47,7 @@ struct ContextUsageRing: View {
     var body: some View {
         let _ = AIChatRenderDebug.hit("ContextUsageRing.body")
 
-        ZStack {
+        SwiftUI.Group {
             if fraction > 0.5 {
                 Button {
                     onTap?()

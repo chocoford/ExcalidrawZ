@@ -21,11 +21,11 @@ struct NewFileButton: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @Environment(\.alert) private var alert
-    @EnvironmentObject private var store: Store
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var collaborationState: CollaborationState
-    @EnvironmentObject private var localFolderState: LocalFolderState
-    @ObservedObject private var cloudStorageDocumentStore = CloudStorageDocumentStore.shared
+    @Environment(Store.self) private var store
+    @Environment(FileState.self) private var fileState
+    @Environment(CollaborationState.self) private var collaborationState
+    @Environment(LocalFolderState.self) private var localFolderState
+    @Bindable private var cloudStorageDocumentStore = CloudStorageDocumentStore.shared
     
     
     var usesFileHomeOpenTransition: Bool

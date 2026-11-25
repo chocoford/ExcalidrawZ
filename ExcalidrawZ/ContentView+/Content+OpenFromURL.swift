@@ -57,14 +57,14 @@ struct OpenFromURLModifier: ViewModifier {
     @Environment(\.alertToast) private var alertToast
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     let logger = Logger(label: "OpenFromURLModifier")
     
     @State private var externalURLToBeOpen: URL?
     @State private var isCommandKeyDown = false
 
-    @State private var webViewIsLoadingCancellable: AnyCancellable?
+    @State private var webViewIsLoadingCancellable: ObservationSubscription?
 
 #if os(macOS)
     @State private var window: NSWindow?
@@ -194,22 +194,21 @@ struct OpenFromURLModifier: ViewModifier {
         let context = viewContext
         var canAddToTemp = true
         do {
-            let folder: LocalFolder? = try context.performAndWait {
-                let folderFetchRequest = NSFetchRequest<LocalFolder>(entityName: "LocalFolder")
-                folderFetchRequest.predicate = NSPredicate(format: "filePath == %@", url.deletingLastPathComponent().filePath)
-                return try context.fetch(folderFetchRequest).first
-            }
-            if let folder {
+            let root = try LocalFolder.rootFolder(containing: url, in: context)
+            if root != nil {
                 canAddToTemp = false
                 Task {
-                    await MainActor.run {
+                    do {
+                        let navigationContext = PersistenceController.shared.newTaskContext()
+                        let folderID = try await navigationContext.perform {
+                            try LocalFolder.deepestFolder(containingLocalFileAt: url, in: navigationContext)?.objectID
+                        }
+                        guard let folderID,
+                              let folder = try context.existingObject(with: folderID) as? LocalFolder else { return }
                         fileState.currentActiveGroup = .localFolder(folder)
                         fileState.expandToGroup(folder.objectID)
-                    }
-                    try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.1))
-                    await MainActor.run {
                         fileState.setActiveFile(.localFile(url))
-                    }
+                    } catch { alertToast(error) }
                 }
             }
             
@@ -292,8 +291,11 @@ struct OpenFromURLModifier: ViewModifier {
                     try? await Task.sleep(nanoseconds: UInt64(1e+9 * 0.3))
                 }
                 
-                if fileState.excalidrawWebCoordinator?.isLoading == true {
-                    self.webViewIsLoadingCancellable = fileState.excalidrawWebCoordinator?.$isLoading.sink { isLoading in
+                if let coordinator = fileState.excalidrawWebCoordinator, coordinator.isLoading {
+                    self.webViewIsLoadingCancellable = ObservationSubscription(initial: false) { [weak coordinator] in
+                        coordinator?.isLoading ?? true
+                    } onChange: { isLoading in
+                        guard !isLoading else { return }
                         Task {
                             try? await Task.sleep(nanoseconds: UInt64(1e+9 * 2.3))
                             _ = try? await fileState.excalidrawWebCoordinator?.loadImageToExcalidrawCanvas(

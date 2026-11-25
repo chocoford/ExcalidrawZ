@@ -14,7 +14,7 @@ struct CreateGroupModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
     
     @FetchRequest
     var groups: FetchedResults<Group>

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct FileHistorySettingsView: View {
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     @State private var currentCheckpoint: FileCheckpoint?
     
@@ -34,5 +34,5 @@ struct FileHistorySettingsView: View {
 
 #Preview {
     FileHistorySettingsView()
-        .environmentObject(FileState())
+        .environment(FileState())
 }

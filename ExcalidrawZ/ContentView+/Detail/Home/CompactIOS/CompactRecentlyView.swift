@@ -11,7 +11,7 @@ import ChocofordUI
 #if os(iOS)
 @available(iOS 26.0, *)
 struct CompactRecentlyView: View {
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(LayoutState.self) private var layoutState
     
     @State private var editMode: EditMode = .inactive
     

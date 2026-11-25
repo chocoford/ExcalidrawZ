@@ -77,12 +77,15 @@ extension AIChatView {
         .menuIndicator(.hidden)
     }
 
+    @ViewBuilder
     private var aiChatCreditsMenuItem: some View {
+        if conversation?.directConnection == nil && !AIChatAvailability.usesDirectInference {
         Button {} label: {
             Label(.localizable(.aiChatButtonCreditsCount(creditsDisplayText)),
                   systemSymbol: .sparkles)
         }
         .disabled(true)
+        }
     }
 
     private var aiChatWelcomeMenuItem: some View {

@@ -10,7 +10,7 @@ import SwiftUI
 import ChocofordUI
 
 struct SidebarToggle: View {
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(LayoutState.self) private var layoutState
     
     init() {}
     

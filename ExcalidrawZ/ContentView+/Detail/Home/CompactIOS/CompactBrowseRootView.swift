@@ -14,8 +14,8 @@ import SFSafeSymbols
 #if os(iOS)
 struct CompactBrowseRootView: View {
     @Environment(\.managedObjectContext) private var viewContext
-    @EnvironmentObject private var fileState: FileState
-    @StateObject private var cloudStorageConnections = CloudStorageConnectionStore.shared
+    @Environment(FileState.self) private var fileState
+    @State private var cloudStorageConnections = CloudStorageConnectionStore.shared
 
     @FetchRequest
     private var groups: FetchedResults<Group>
@@ -293,8 +293,8 @@ struct CompactBrowseRootView: View {
 
 private struct TemporaryFileBrowseRow: View {
     @Environment(\.fileHomeItemTransitionSourceEnabled) private var transitionSourceEnabled
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var fileHomeItemTransitionItemState: FileHomeItemTransitionItemState
+    @Environment(FileState.self) private var fileState
+    @Environment(FileHomeItemTransitionItemState.self) private var fileHomeItemTransitionItemState
 
     let file: URL
 
@@ -356,8 +356,8 @@ struct CompactBrowserDestinationView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.editMode) private var editMode
     
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var layoutState: LayoutState
+    @Environment(FileState.self) private var fileState
+    @Environment(LayoutState.self) private var layoutState
 
     var objectID: NSManagedObjectID
 
@@ -541,8 +541,8 @@ struct CompactBrowserDestinationView: View {
 
 struct CompactContentMoreMenu<HomeGroup: ExcalidrawGroup>: View {
     @Environment(\.editMode) private var editMode
-    @EnvironmentObject private var layoutState: LayoutState
-    @EnvironmentObject private var fileState: FileState
+    @Environment(LayoutState.self) private var layoutState
+    @Environment(FileState.self) private var fileState
     
     enum Capability {
         case select
@@ -631,7 +631,7 @@ struct CompactContentMoreMenu<HomeGroup: ExcalidrawGroup>: View {
                 }
 
                 Section {
-                    Picker("", selection: $layoutState.compactBrowserLayout) {
+                    Picker("", selection: Bindable(layoutState).compactBrowserLayout) {
                         Label(
                             .localizable(.compactBrowserLayoutGrid),
                             systemSymbol: .squareGrid2x2
@@ -674,7 +674,7 @@ struct CompactContentMoreMenu<HomeGroup: ExcalidrawGroup>: View {
 
 struct SelectAllToolbarButton: View {
     @Environment(\.editMode) private var editMode
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     @FetchRequest
     private var subgroups: FetchedResults<Group>

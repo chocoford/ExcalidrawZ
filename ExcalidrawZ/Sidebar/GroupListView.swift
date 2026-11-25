@@ -13,13 +13,14 @@ import ChocofordEssentials
 import ChocofordUI
 
 struct GroupListView: View {
+    @AppStorage("FolderStructureStyle") private var folderStyle: FolderStructureStyle = .disclosureGroup
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @Environment(\.alert) var alert
     @Environment(\.searchExcalidrawAction) private var searchExcalidraw
 
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
     
     init(sortField: ExcalidrawFileSortField) {
         self.sortField = sortField
@@ -31,145 +32,137 @@ struct GroupListView: View {
     @State private var isCreateLocalFolderDialogPresented = false
     
     @State private var createGroupType: CreateGroupSheetView.CreateGroupType = .group
+    @State private var lastRevealStep: SidebarFileRevealStep?
+
+    private var sidebarFileReveal: SidebarFileReveal? {
+        SidebarFileReveal(fileState: fileState, folderStyle: folderStyle)
+    }
     
     var body: some View {
         content
     }
     
-    @State private var scrollViewHeight: CGFloat = .zero
-    @State private var scrollViewContentHeight: CGFloat = .zero
-    
     @ViewBuilder
     private var content: some View {
+        let reveal = sidebarFileReveal
         VStack(alignment: .leading, spacing: 0) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(spacing: 0) {
-                        VStack(spacing: 8) {
-                            VStack(spacing: 0) {
-                                Button {
-                                    fileState.setActiveFile(nil)
-                                    fileState.setActiveGroupIfNeeded(nil)
-                                } label: {
-                                    HStack {
-                                        Image(systemSymbol: .house)
-                                            .frame(width: 30, alignment: .leading)
-                                        Text(localizable: .sidebarRowHomeTitle)
-                                    }
-                                }
-                                .buttonStyle(
-                                    .excalidrawSidebarRow(
-                                        isSelected: fileState.currentActiveFile == nil && fileState.currentActiveGroup == nil,
-                                        isMultiSelected: false
-                                    )
-                                )
-                                .id("home")
-                                
-                                Button {
-                                    fileState.setActiveFile(nil)
-                                    fileState.setActiveGroupIfNeeded(.collaboration)
-                                } label: {
-                                    HStack {
-                                        Image(systemSymbol: .person3)
-                                            .frame(width: 30, alignment: .leading)
-                                        Text(.localizable(.sidebarGroupRowCollaborationTitle))
-                                        
-                                        Spacer()
-                                        
-                                        if !fileState.collaboratingFilesState.values.filter({$0 == .loaded}).isEmpty {
-                                            Text(
-                                                fileState.collaboratingFilesState.values.filter({$0 == .loaded}).count.formatted()
-                                            )
-                                            .foregroundStyle(.secondary)
-                                            .padding(.trailing, 4)
+            GeometryReader { viewport in
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            VStack(spacing: 8) {
+                                VStack(spacing: 0) {
+                                    Button {
+                                        fileState.setActiveFile(nil)
+                                        fileState.setActiveGroupIfNeeded(nil)
+                                    } label: {
+                                        HStack {
+                                            Image(systemSymbol: .house)
+                                                .frame(width: 30, alignment: .leading)
+                                            Text(localizable: .sidebarRowHomeTitle)
                                         }
                                     }
-                                }
-                                .buttonStyle(
-                                    .excalidrawSidebarRow(
-                                        isSelected: fileState.currentActiveGroup == .collaboration,
-                                        isMultiSelected: false
+                                    .buttonStyle(
+                                        .excalidrawSidebarRow(
+                                            isSelected: fileState.currentActiveFile == nil && fileState.currentActiveGroup == nil,
+                                            isMultiSelected: false
+                                        )
                                     )
-                                )
+                                    .id("home")
                                 
-                                // Temporary
-                                if !fileState.temporaryFiles.isEmpty {
-                                    TemporaryGroupRowView()
-                                }
-                            }
-                            
-                            
-                            Divider()
-                            
-                            // App-managed files, optionally synchronized through iCloud.
-                            DatabaseGroupsListView(sortField: sortField, fileState: fileState)
-                                .modifier(
-                                    ContentHeaderCreateButtonModifier(
-                                        groupType: .group,
-                                        title: .localizable(.sidebarGroupListSectionHeaderMyFiles)
+                                    Button {
+                                        fileState.setActiveFile(nil)
+                                        fileState.setActiveGroupIfNeeded(.collaboration)
+                                    } label: {
+                                        HStack {
+                                            Image(systemSymbol: .person3)
+                                                .frame(width: 30, alignment: .leading)
+                                            Text(.localizable(.sidebarGroupRowCollaborationTitle))
+                                        
+                                            Spacer()
+                                        
+                                            if !fileState.collaboratingFilesState.values.filter({$0 == .loaded}).isEmpty {
+                                                Text(
+                                                    fileState.collaboratingFilesState.values.filter({$0 == .loaded}).count.formatted()
+                                                )
+                                                .foregroundStyle(.secondary)
+                                                .padding(.trailing, 4)
+                                            }
+                                        }
+                                    }
+                                    .buttonStyle(
+                                        .excalidrawSidebarRow(
+                                            isSelected: fileState.currentActiveGroup == .collaboration,
+                                            isMultiSelected: false
+                                        )
                                     )
-                                )
-
-                            LinkedStorageSidebarSection()
-                        }
-                        .padding(8)
-                        .readHeight($scrollViewContentHeight)
-                        
-                        Color.clear
-                            .frame(height: max(0, scrollViewHeight - scrollViewContentHeight))
-                    }
-                    .background {
-                        Color.clear
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-#if os(macOS)
-                                if NSEvent.modifierFlags.contains(.command) || NSEvent.modifierFlags.contains(.shift) {
-                                    return
+                                    .id(SidebarGroupScrollTarget.collaboration)
+                                
+                                    // Temporary
+                                    if !fileState.temporaryFiles.isEmpty {
+                                        TemporaryGroupRowView()
+                                            .id(SidebarGroupScrollTarget.temporary)
+                                    }
                                 }
-#endif
-                                fileState.resetSelections()
+                            
+                            
+                                Divider()
+                            
+                                // App-managed files, optionally synchronized through iCloud.
+                                DatabaseGroupsListView(sortField: sortField, fileState: fileState)
+                                    .modifier(
+                                        ContentHeaderCreateButtonModifier(
+                                            groupType: .group,
+                                            title: .localizable(.sidebarGroupListSectionHeaderMyFiles)
+                                        )
+                                    )
+
+                                LinkedStorageSidebarSection()
                             }
+                            .padding(8)
+                        }
+                        .frame(minHeight: viewport.size.height, alignment: .top)
+                        .background {
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+#if os(macOS)
+                                    if NSEvent.modifierFlags.contains(.command) || NSEvent.modifierFlags.contains(.shift) {
+                                        return
+                                    }
+#endif
+                                    fileState.resetSelections()
+                                }
+                        }
                     }
-                }
-                .suppressSidebarHoverWhileScrolling()
-                .readHeight($scrollViewHeight)
-                .onReceive(NotificationCenter.default.publisher(for: .shouldExpandGroup)) { output in
-                    guard let targetGroupID = output.object as? NSManagedObjectID else { return }
-#if os(iOS)
-                    if fileState.currentActiveFile != nil,
-                       isCurrentActiveGroupExpansionTarget(targetGroupID) {
-                        scrollToCurrentActiveFileIfNeeded(using: proxy, delay: 0.45)
-                    } else {
+                    .environment(\.sidebarFileReveal, reveal)
+                    .suppressSidebarHoverWhileScrolling()
+                    .watch(value: reveal, initial: true) { reveal in
+                        if let step = reveal?.firstStep {
+                            Task { @MainActor in
+                                scrollToRevealStep(step, using: proxy)
+                            }
+                        } else {
+                            lastRevealStep = nil
+                        }
+                    }
+                    .onPreferenceChange(SidebarFileRevealStepPreference.self) { step in
+                        guard let step else { return }
+                        Task { @MainActor in
+                            scrollToRevealStep(step, using: proxy)
+                        }
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: .shouldExpandGroup)) { output in
+                        guard let targetGroupID = output.object as? NSManagedObjectID else { return }
                         scrollToGroupLabel(targetGroupID, using: proxy, delay: 0.7)
                     }
-#else
-                    withAnimation(.smooth(duration: 0.2).delay(0.7)) {
-                        proxy.scrollTo(targetGroupID)
-                        if let group = viewContext.object(with: targetGroupID) as? Group {
-                            proxy.scrollTo(group)
-                        }
-                        if let folder = viewContext.object(with: targetGroupID) as? LocalFolder {
-                            proxy.scrollTo(folder)
+                    .watch(value: fileState.currentActiveGroup) { newValue in
+                        if newValue == nil {
+                            withAnimation(.smooth(duration: 0.2)) {
+                                proxy.scrollTo("home")
+                            }
                         }
                     }
-#endif
-                }
-#if os(iOS)
-                .watch(value: fileState.currentActiveFile?.id) { _ in
-                    scrollToCurrentActiveFileIfNeeded(using: proxy, delay: 1.0)
-                }
-#endif
-                .watch(value: fileState.currentActiveGroup) { newValue in
-                    if newValue == nil {
-                        withAnimation(.smooth(duration: 0.2)) {
-                            proxy.scrollTo("home")
-                        }
-                    }
-#if os(iOS)
-                    if newValue != nil {
-                        scrollToCurrentActiveFileIfNeeded(using: proxy, delay: 0.35)
-                    }
-#endif
                 }
             }
             Divider()
@@ -256,69 +249,26 @@ struct GroupListView: View {
         }
     }
 
-#if os(iOS)
-    private func isCurrentActiveGroupExpansionTarget(_ groupID: NSManagedObjectID) -> Bool {
-        guard let activeGroup = fileState.currentActiveGroup else {
-            return false
-        }
-
-        switch activeGroup {
-            case .group(let group):
-                return group.containsInAncestorChain(groupID)
-            case .localFolder(let folder):
-                return folder.containsInAncestorChain(groupID)
-            case .cloudStorageFolder, .temporary, .collaboration:
-                return false
-        }
-    }
-
-    private func scrollToCurrentActiveFileIfNeeded(
-        using proxy: ScrollViewProxy,
-        delay: TimeInterval
-    ) {
-        guard let target = SidebarActiveFileScrollTarget(activeFile: fileState.currentActiveFile),
-              let activeFileID = fileState.currentActiveFile?.id else {
+    private func scrollToRevealStep(_ step: SidebarFileRevealStep, using proxy: ScrollViewProxy) {
+        guard step.reveal == sidebarFileReveal else { return }
+        if let lastRevealStep, lastRevealStep.reveal == step.reveal, lastRevealStep.index >= step.index {
             return
         }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            guard fileState.currentActiveFile?.id == activeFileID else { return }
-            withAnimation(.smooth(duration: 0.2)) {
-                proxy.scrollTo(target, anchor: .center)
+        lastRevealStep = step
+        func scroll() {
+            switch step.destination {
+                case .folder(let target): proxy.scrollTo(target, anchor: .center)
+                case .file(let target): proxy.scrollTo(target, anchor: .center)
             }
         }
-    }
-#endif
-    
-}
-
-#if os(iOS)
-private extension Group {
-    func containsInAncestorChain(_ objectID: NSManagedObjectID) -> Bool {
-        var currentGroup: Group? = self
-        while let group = currentGroup {
-            if group.objectID == objectID {
-                return true
-            }
-            currentGroup = group.parent
+        withAnimation(.smooth(duration: 0.2)) { scroll() }
+        // The lazy stack may register its IDs after the expansion animation starts.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            guard lastRevealStep == step, step.reveal == sidebarFileReveal else { return }
+            scroll()
         }
-        return false
     }
 }
-
-private extension LocalFolder {
-    func containsInAncestorChain(_ objectID: NSManagedObjectID) -> Bool {
-        var currentFolder: LocalFolder? = self
-        while let folder = currentFolder {
-            if folder.objectID == objectID {
-                return true
-            }
-            currentFolder = folder.parent
-        }
-        return false
-    }
-}
-#endif
 
 private struct DatabaseGroupsListView: View {
     @FetchRequest
@@ -334,37 +284,15 @@ private struct DatabaseGroupsListView: View {
     private var fileState: FileState
 
     init(sortField: ExcalidrawFileSortField, fileState: FileState) {
-        /// Put the important things first.
-        let sortDescriptors: [SortDescriptor<Group>] = {
-            switch sortField {
-                case .updatedAt:
-                    [
-                        // SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse)
-                    ]
-                case .name:
-                    [
-                        SortDescriptor(\.name, order: .reverse),
-                        SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse),
-                    ]
-                case .rank:
-                    [
-                        SortDescriptor(\.rank, order: .forward),
-                        // SortDescriptor(\.updatedAt, order: .reverse),
-                        SortDescriptor(\.createdAt, order: .reverse),
-                    ]
-            }
-        }()
-
         self.sortField = sortField
         self.fileState = fileState
         self._groups = FetchRequest(
-            sortDescriptors: sortDescriptors,
+            sortDescriptors: SidebarGroupOrder.sortDescriptors(isTopLevel: true),
             predicate: NSPredicate(
                 format: "parent = nil OR type == %@",
                 Group.GroupType.trash.rawValue
-            )
+            ),
+            animation: .smooth(duration: 0.2)
         )
     }
 
@@ -377,21 +305,24 @@ private struct DatabaseGroupsListView: View {
             .filter {
                 $0.groupType != .trash || trashedFilesCount > 0
             }
-            .sorted { a, b in
-                a.groupType == .default && b.groupType != .default ||
-                a.groupType == b.groupType && b.groupType == .normal && a.createdAt ?? .distantPast < b.createdAt ?? .distantPast  ||
-                a.groupType != .trash && b.groupType == .trash
-            }
+            .sorted { $0.groupType < $1.groupType }
     }
 
     var body: some View {
+        let displayedGroups = displayedGroups
+        let reorderableGroupIDs = Set(displayedGroups.lazy.filter { $0.groupType == .normal }.map(\.objectID))
         // ❕❕❕use `LazyVStack` will cause crash with error:
         //        FAULT: NSGenericException: The window has been marked as needing another Update Constraints in Window pass,
         //        but it has already had more Update Constraints in Window passes than there are views in the window.
         VStack(alignment: .leading, spacing: 0) {
             /// ❕❕❕use `id: \.self` can avoid multi-thread access crash when closing create-room-sheet...
             ForEach(displayedGroups, id: \.self) { group in
-                GroupsView(group: group, sortField: sortField, fileState: fileState)
+                GroupsView(
+                    group: group,
+                    sortField: sortField,
+                    fileState: fileState,
+                    reorderableGroupIDs: reorderableGroupIDs
+                )
             }
         }
         .watch(value: trashedFilesCount) { count in

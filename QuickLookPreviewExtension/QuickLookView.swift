@@ -24,7 +24,7 @@ struct QuickLookView: View {
         store: SharedAppAppearanceStore.defaults
     ) private var canvasAppearanceRawValue = SharedAppAppearance.auto.rawValue
 
-    @ObservedObject var state: PreviewState
+    @Bindable var state: PreviewState
     var file: ExcalidrawFile? { state.file }
     var error: Error? { state.error }
 

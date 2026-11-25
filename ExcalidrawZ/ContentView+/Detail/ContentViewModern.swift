@@ -16,9 +16,9 @@ struct ContentViewModern: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject var layoutState: LayoutState
+    @Environment(FileState.self) var fileState
+    @Environment(AppPreference.self) var appPreference
+    @Environment(LayoutState.self) var layoutState
         
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
     @State private var isSettingsPresented = false

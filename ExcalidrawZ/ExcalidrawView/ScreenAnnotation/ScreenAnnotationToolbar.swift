@@ -5,8 +5,8 @@ import SwiftUI
 struct ScreenAnnotationToolbar: View {
     static let coordinateSpaceName = "ScreenAnnotationToolbar"
 
-    @ObservedObject var session: ScreenAnnotationSession
-    @ObservedObject var saveConfiguration: ScreenAnnotationSaveConfiguration
+    @Bindable var session: ScreenAnnotationSession
+    @Bindable var saveConfiguration: ScreenAnnotationSaveConfiguration
     @Binding var isFilePickerPresented: Bool
     @Binding var captureScope: ScreenAnnotationCaptureScope
 

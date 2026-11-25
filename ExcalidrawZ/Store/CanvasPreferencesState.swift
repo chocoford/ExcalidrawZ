@@ -5,8 +5,8 @@
 //  Created by Chocoford on 5/2/26.
 //
 
+import Observation
 import SwiftUI
-import Combine
 
 /// Mirror of the canvas-level preferences exposed by `excalidrawZHelper`.
 ///
@@ -17,7 +17,8 @@ import Combine
 /// The `isApplyingFromWeb` guard breaks the web → apply → didSet → web echo loop. It works
 /// because `apply()` is synchronous on main, so each `didSet` runs while the flag is still set.
 @MainActor
-final class CanvasPreferencesState: ObservableObject {
+@Observable
+final class CanvasPreferencesState {
     enum Theme: String, Codable, Hashable, Sendable {
         case light
         case dark
@@ -46,49 +47,42 @@ final class CanvasPreferencesState: ObservableObject {
     }
 
     /// Drawing-level prefs (stroke color, font, roughness, etc.). Conceptually a
-    /// child of canvas preferences, but uses a different JS bridge so it's its own
-    /// ObservableObject. Changes here propagate via the manual forwarder below.
+    /// child of canvas preferences, with its own observable fields and JS bridge.
     let drawingSettings = CanvasDrawingSettingsState()
 
     private var isApplyingFromWeb = false
-    private var drawingSettingsCancellable: AnyCancellable?
 
-    init() {
-        drawingSettingsCancellable = drawingSettings.objectWillChange
-            .sink { [weak self] _ in self?.objectWillChange.send() }
-    }
-
-    @Published var theme: Theme = .light {
+    var theme: Theme = .light {
         didSet { pushField { $0.theme = theme } }
     }
-    @Published var viewBackgroundColor: String = "#ffffff" {
+    var viewBackgroundColor: String = "#ffffff" {
         didSet { pushField { $0.viewBackgroundColor = viewBackgroundColor } }
     }
-    @Published var gridModeEnabled: Bool = false {
+    var gridModeEnabled: Bool = false {
         didSet { pushField { $0.gridModeEnabled = gridModeEnabled } }
     }
-    @Published var zenModeEnabled: Bool = false {
+    var zenModeEnabled: Bool = false {
         didSet { pushField { $0.zenModeEnabled = zenModeEnabled } }
     }
-    @Published var viewModeEnabled: Bool = false {
+    var viewModeEnabled: Bool = false {
         didSet { pushField { $0.viewModeEnabled = viewModeEnabled } }
     }
-    @Published var objectsSnapModeEnabled: Bool = false {
+    var objectsSnapModeEnabled: Bool = false {
         didSet { pushField { $0.objectsSnapModeEnabled = objectsSnapModeEnabled } }
     }
-    @Published var isMidpointSnappingEnabled: Bool = true {
+    var isMidpointSnappingEnabled: Bool = true {
         didSet { pushField { $0.isMidpointSnappingEnabled = isMidpointSnappingEnabled } }
     }
-    @Published var bindingPreference: BindingPreference = .enabled {
+    var bindingPreference: BindingPreference = .enabled {
         didSet { pushField { $0.bindingPreference = bindingPreference } }
     }
-    @Published var preferredSelectionTool: PreferredSelectionTool = .selection {
+    var preferredSelectionTool: PreferredSelectionTool = .selection {
         didSet { pushField { $0.preferredSelectionTool = preferredSelectionTool } }
     }
-    @Published var boxSelectionMode: BoxSelectionMode = .contain {
+    var boxSelectionMode: BoxSelectionMode = .contain {
         didSet { pushField { $0.boxSelectionMode = boxSelectionMode } }
     }
-    @Published var stats: Bool = false {
+    var stats: Bool = false {
         didSet { pushField { $0.stats = stats } }
     }
 

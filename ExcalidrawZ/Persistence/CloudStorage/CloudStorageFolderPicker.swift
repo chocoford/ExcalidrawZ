@@ -20,7 +20,7 @@ struct CloudStorageFolderPicker: View {
     let context: CloudStorageFolderPickerContext
     let onSelect: (CloudStorageItem) -> Void
 
-    @StateObject private var model: CloudStorageFolderPickerModel
+    @State private var model: CloudStorageFolderPickerModel
     @State private var hoveredFolderID: CloudStorageItemID?
     @State private var navigationDirection: NavigationDirection = .forward
 
@@ -35,8 +35,8 @@ struct CloudStorageFolderPicker: View {
     ) {
         self.context = context
         self.onSelect = onSelect
-        self._model = StateObject(
-            wrappedValue: CloudStorageFolderPickerModel(session: context.session)
+        self._model = State(
+            initialValue: CloudStorageFolderPickerModel(session: context.session)
         )
     }
 
@@ -100,10 +100,7 @@ struct CloudStorageFolderPicker: View {
 
                 Spacer(minLength: 80)
 
-                Button(String(
-                    localized: "cloudStorageFolderPickerChoose",
-                    defaultValue: "Choose"
-                )) {
+                Button(.localizable(.cloudStorageFolderPickerChoose)) {
                     guard let folder = model.currentFolder else { return }
                     onSelect(folder)
                     dismiss()
@@ -163,10 +160,7 @@ struct CloudStorageFolderPicker: View {
         VStack(spacing: 10) {
             ProgressView()
                 .controlSize(.small)
-            Text(String(
-                localized: "cloudStorageFolderPickerLoading",
-                defaultValue: "Loading Folders"
-            ))
+            Text(.localizable(.cloudStorageFolderPickerLoading))
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }
@@ -178,10 +172,7 @@ struct CloudStorageFolderPicker: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 32, weight: .light))
                 .foregroundStyle(.secondary)
-            Text(String(
-                localized: "cloudStorageFolderPickerLoadFailed",
-                defaultValue: "Unable to Load Folders"
-            ))
+            Text(.localizable(.cloudStorageFolderPickerLoadFailed))
                 .font(.headline)
             Button(String(localizable: .generalButtonRetry)) {
                 Task { await model.start() }
@@ -232,15 +223,9 @@ struct CloudStorageFolderPicker: View {
             Image(systemName: "folder")
                 .font(.system(size: 36, weight: .light))
                 .foregroundStyle(.secondary)
-            Text(String(
-                localized: "cloudStorageFolderPickerEmpty",
-                defaultValue: "No Folders"
-            ))
+            Text(.localizable(.cloudStorageFolderPickerEmpty))
                 .font(.headline)
-            Text(String(
-                localized: "cloudStorageFolderPickerEmptyDescription",
-                defaultValue: "Choose the current folder or go back."
-            ))
+            Text(.localizable(.cloudStorageFolderPickerEmptyDescription))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

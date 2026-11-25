@@ -14,9 +14,9 @@ import ChocofordUI
 struct NewGroupButton: View {
     @Environment(\.alert) private var alert
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var fileState: FileState
-    @ObservedObject private var cloudStorageDocumentStore = CloudStorageDocumentStore.shared
-    @ObservedObject private var cloudStorageConnections = CloudStorageConnectionStore.shared
+    @Environment(FileState.self) private var fileState
+    @Bindable private var cloudStorageDocumentStore = CloudStorageDocumentStore.shared
+    @Bindable private var cloudStorageConnections = CloudStorageConnectionStore.shared
 
     enum GroupType {
         case localFolder

@@ -14,7 +14,7 @@ private struct FileStatusObserverModifier: ViewModifier {
     private let logger = Logger(label: "FileStatusObserverModifier")
 
     @Environment(\.scenePhase) private var scenePhase
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
     var activeFile: FileState.ActiveFile?
     var activeFileLockState: FileContentLockState

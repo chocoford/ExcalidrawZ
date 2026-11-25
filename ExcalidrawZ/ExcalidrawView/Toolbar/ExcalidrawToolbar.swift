@@ -19,10 +19,10 @@ struct ExcalidrawToolbar: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
     
-    @EnvironmentObject var appPreference: AppPreference
-    @EnvironmentObject var fileState: FileState
-    @EnvironmentObject var toolState: ToolState
-    @EnvironmentObject var layoutState: LayoutState
+    @Environment(AppPreference.self) var appPreference
+    @Environment(FileState.self) var fileState
+    @Environment(ToolState.self) var toolState
+    @Environment(LayoutState.self) var layoutState
 
     var body: some View {
         if fileState.currentActiveFile != nil {
@@ -158,7 +158,7 @@ struct ExcalidrawToolbar: View {
         withFooter: Bool = true
     ) -> some View {
         HStack(spacing: size / 2) {
-            SegmentedPicker(selection: $toolState.activatedTool) {
+            SegmentedPicker(selection: Bindable(toolState).activatedTool) {
                 primaryToolPikcerItems(
                     primaryPickerItems,
                     size: size,
@@ -309,7 +309,7 @@ struct ExcalidrawToolbar: View {
     
     @ViewBuilder
     private func secondaryPickerItemsPicker(_ secondaryPickerItems: [ExcalidrawTool]) -> some View {
-        Picker(selection: $toolState.activatedTool) {
+        Picker(selection: Bindable(toolState).activatedTool) {
             ForEach(secondaryPickerItems, id: \.self) { tool in
                 densePickerItems(tool: tool)
                     .tag(tool)
@@ -321,7 +321,7 @@ struct ExcalidrawToolbar: View {
     @ViewBuilder
     private func denseContent(_ toolbarTools: [ExcalidrawTool]) -> some View {
         HStack {
-            Picker(selection: $toolState.activatedTool) {
+            Picker(selection: Bindable(toolState).activatedTool) {
                 ForEach(toolbarTools, id: \.self) { tool in
                     densePickerItems(tool: tool)
                         .tag(tool)
@@ -844,8 +844,8 @@ private extension View {
 
 struct ExcalidrawToolbarToolContainer<Content: View>: View {
     @Environment(\.containerSize) private var containerSize
-    @EnvironmentObject private var layoutState: LayoutState
-    @EnvironmentObject private var fileState: FileState
+    @Environment(LayoutState.self) private var layoutState
+    @Environment(FileState.self) private var fileState
 
     var content: (_ size: ExcalidrawToolbarToolSizeClass) -> Content
 
@@ -957,7 +957,7 @@ struct ExcalidrawToolbarItemModifer: ViewModifier {
 struct CursorModeTrailingButton: View {
     @Environment(\.alertToast) private var alertToast
     
-    @ObservedObject var coordinator: ExcalidrawCanvasView.Coordinator
+    @Bindable var coordinator: ExcalidrawCanvasView.Coordinator
     var onDone: () -> Void
     
     private var hasSelection: Bool {

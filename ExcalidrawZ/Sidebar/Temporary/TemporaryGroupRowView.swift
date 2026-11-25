@@ -14,7 +14,7 @@ import ChocofordUI
 struct TemporaryGroupRowView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject var fileState: FileState
+    @Environment(FileState.self) var fileState
     
     var body: some View {
         Button {

@@ -13,7 +13,7 @@ struct IndicatorOverlay: View {
     private static let iconFrame: CGFloat = 24
     private static let expandedContentWidth: CGFloat = 132
 
-    @ObservedObject private var syncState: SyncState = FileStatusService.shared.syncState
+    @Bindable private var syncState: SyncState = FileStatusService.shared.syncState
 
     @State private var currentEvent: SyncIndicatorEvent?
     @State private var queuedEvents: [SyncIndicatorEvent] = []

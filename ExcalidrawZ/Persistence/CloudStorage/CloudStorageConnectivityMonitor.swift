@@ -3,12 +3,14 @@
 //  ExcalidrawZ
 //
 
+import Observation
 import Combine
 import Foundation
 import Network
 
 @MainActor
-final class CloudStorageConnectivityMonitor: ObservableObject {
+@Observable
+final class CloudStorageConnectivityMonitor {
     enum Status: Equatable, Sendable {
         case unknown
         case available
@@ -17,7 +19,7 @@ final class CloudStorageConnectivityMonitor: ObservableObject {
 
     static let shared = CloudStorageConnectivityMonitor()
 
-    @Published private(set) var status: Status = .unknown
+    private(set) var status: Status = .unknown
 
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "CloudStorageConnectivityMonitor")

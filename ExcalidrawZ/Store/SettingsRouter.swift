@@ -5,7 +5,7 @@
 //  Tiny app-level signal bus for "open Settings to tab X" deep-links.
 //
 //  `LayoutState` would have been the natural home, but it's a per-window
-//  `@StateObject` (created in `ContentView` and again inside collaboration
+//  `@State` (created in `ContentView` and again inside collaboration
 //  stacks) — the `Settings { ... }` scene at App level doesn't share that
 //  instance, so a published value there wouldn't reach the Settings UI.
 //
@@ -21,10 +21,12 @@
 //  a re-open doesn't sticky-route to the previous tab.
 //
 
+import Observation
 import SwiftUI
 import Combine
 
-final class SettingsRouter: ObservableObject {
+@Observable
+final class SettingsRouter {
     @MainActor static let shared = SettingsRouter()
 
     enum AISettingsRoute {
@@ -35,10 +37,10 @@ final class SettingsRouter: ObservableObject {
 
     /// Tab to switch to the next time `SettingsView` appears or this value
     /// changes. Cleared by `SettingsView` after consumption.
-    @Published var pendingRoute: SettingsView.Route?
-    @Published var pendingAISettingsRoute: AISettingsRoute?
+    var pendingRoute: SettingsView.Route?
+    var pendingAISettingsRoute: AISettingsRoute?
 #if os(iOS)
-    @Published var iOSSettingsPresentationRequestID = 0
+    var iOSSettingsPresentationRequestID = 0
 #endif
 
     private init() {}

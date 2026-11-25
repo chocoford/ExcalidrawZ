@@ -10,7 +10,7 @@ import SwiftUI
 import SFSafeSymbols
 
 struct ExcalidrawToolbarMoreToolsMenu: View {
-    @EnvironmentObject private var toolState: ToolState
+    @Environment(ToolState.self) private var toolState
 
     @State private var isMathInputSheetPresented = false
     @State private var isMermaidInputSheetPresented = false

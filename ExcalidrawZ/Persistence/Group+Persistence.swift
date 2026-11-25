@@ -62,7 +62,60 @@ extension Group {
             self.type = newValue.rawValue
         }
     }
-    
+}
+
+enum SidebarGroupOrder {
+    static func sortDescriptors(isTopLevel: Bool) -> [NSSortDescriptor] {
+        var descriptors = [NSSortDescriptor(keyPath: \Group.rank, ascending: true)]
+        if !isTopLevel {
+            descriptors.append(NSSortDescriptor(keyPath: \Group.name, ascending: true))
+        }
+        descriptors.append(NSSortDescriptor(keyPath: \Group.createdAt, ascending: true))
+        return descriptors
+    }
+
+    @MainActor
+    static func move(
+        _ sourceID: NSManagedObjectID,
+        relativeTo destinationID: NSManagedObjectID,
+        insertAfter: Bool,
+        in context: NSManagedObjectContext
+    ) throws {
+        guard sourceID != destinationID,
+              let destination = try context.existingObject(with: destinationID) as? Group,
+              !destination.isDeleted,
+              destination.groupType == .normal else { return }
+
+        let parent = destination.parent
+        let request = NSFetchRequest<Group>(entityName: "Group")
+        request.predicate = parent.map { NSPredicate(format: "parent == %@", $0) }
+            ?? NSPredicate(format: "parent == nil")
+        request.sortDescriptors = sortDescriptors(isTopLevel: parent == nil)
+        var siblings = try context.fetch(request).filter { $0.groupType == .normal }
+        guard let sourceIndex = siblings.firstIndex(where: { $0.objectID == sourceID }),
+              let destinationIndex = siblings.firstIndex(where: { $0.objectID == destinationID }) else { return }
+
+        let insertionOffset = destinationIndex + (insertAfter ? 1 : 0)
+        let insertionIndex = sourceIndex < insertionOffset ? insertionOffset - 1 : insertionOffset
+        guard insertionIndex != sourceIndex else { return }
+
+        let source = siblings.remove(at: sourceIndex)
+        siblings.insert(source, at: insertionIndex)
+        let previousRanks = siblings.map(\.rank)
+        for (index, sibling) in siblings.enumerated() {
+            // New groups keep their default rank of zero and appear after the manual order.
+            let rank = Int64(index - siblings.count)
+            if sibling.rank != rank { sibling.rank = rank }
+        }
+        do {
+            try context.save()
+        } catch {
+            for (sibling, rank) in zip(siblings, previousRanks) where sibling.rank != rank {
+                sibling.rank = rank
+            }
+            throw error
+        }
+    }
 }
 
 extension Group.GroupType: Comparable {

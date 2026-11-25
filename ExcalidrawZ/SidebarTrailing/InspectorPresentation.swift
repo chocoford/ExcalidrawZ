@@ -40,13 +40,13 @@ enum FloatingInspectorMetrics {
 struct InspectorPresentationModifier: ViewModifier {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
 
-    @EnvironmentObject private var appPreference: AppPreference
-    @EnvironmentObject private var layoutState: LayoutState
-    @EnvironmentObject private var fileState: FileState
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
+    @Environment(AppPreference.self) private var appPreference
+    @Environment(LayoutState.self) private var layoutState
+    @Environment(FileState.self) private var fileState
+    @Environment(LockedContentStateStore.self) private var lockedContentState
 
     @AppStorage(FloatingInspectorMetrics.widthStorageKey) private var floatingInspectorWidth = FloatingInspectorMetrics.defaultWidth
-    @StateObject private var presentationModel = ExcalidrawPresentationModel()
+    @State private var presentationModel = ExcalidrawPresentationModel()
     @State private var librariesToImport: [ExcalidrawLibrary] = []
 
     var shouldUseFloatingInspector: Bool {
@@ -116,12 +116,12 @@ struct InspectorPresentationModifier: ViewModifier {
                 floatingInspector(content: content)
             } else if containerHorizontalSizeClass == .compact {
                 content
-                    .sheet(isPresented: $layoutState.isInspectorPresented) {
+                    .sheet(isPresented: Bindable(layoutState).isInspectorPresented) {
                         compactInspectorContent()
                     }
             } else if #available(macOS 14.0, iOS 17.0, *) {
                 content
-                    .inspector(isPresented: $layoutState.isInspectorPresented) {
+                    .inspector(isPresented: Bindable(layoutState).isInspectorPresented) {
                         inspectorContent()
                             .disabled(shouldDisableInspectorContent)
                             .inspectorColumnWidth(min: 280, ideal: 350, max: 400)
@@ -376,7 +376,7 @@ struct InspectorPresentationModifier: ViewModifier {
 
 #if os(iOS)
 private struct ExcalidrawPresentationCoverModifier: ViewModifier {
-    @ObservedObject private var presentationController = ExcalidrawPresentationController.shared
+    @Bindable private var presentationController = ExcalidrawPresentationController.shared
 
     var isEnabled = true
 

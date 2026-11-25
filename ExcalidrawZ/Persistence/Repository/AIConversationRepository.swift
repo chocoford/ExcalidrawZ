@@ -41,6 +41,7 @@ struct AIConversationSnapshot: Sendable {
     var fileScopeKind: String?
     var fileScopeID: String?
     var toolsData: Data?
+    var inferenceRouteData: Data?
     var messages: [AIConversationMessageSnapshot]
 }
 
@@ -52,6 +53,8 @@ struct AIConversationMessageSnapshot: Sendable {
     var timeStamp: Date?
     var usageConsumed: Double
     var usageRemains: Double
+    var inferenceUsageData: Data?
+    var citationsData: Data?
     var toolCallsData: Data?
     var toolCallId: String?
     var filesData: Data?
@@ -70,6 +73,19 @@ actor AIConversationRepository {
     private let logger = Logger(label: "AIConversationRepository")
 
     // MARK: - Read Operations
+
+    func fetchInferenceRoutes() async throws -> [(id: String, data: Data?)] {
+        let context = PersistenceController.shared.newTaskContext()
+        return try await context.perform {
+            let request = NSFetchRequest<NSDictionary>(entityName: "AIConversation")
+            request.resultType = .dictionaryResultType
+            request.propertiesToFetch = ["conversationID", "inferenceRouteData"]
+            return try context.fetch(request).compactMap { row in
+                guard let id = row["conversationID"] as? String else { return nil }
+                return (id: id, data: row["inferenceRouteData"] as? Data)
+            }
+        }
+    }
 
     /// Fetch all conversations + their messages as Sendable snapshots,
     /// fully extracted from Core Data inside one `context.perform`
@@ -107,6 +123,8 @@ actor AIConversationRepository {
                             timeStamp: msg.timeStamp,
                             usageConsumed: msg.usageConsumed,
                             usageRemains: msg.usageRemains,
+                            inferenceUsageData: msg.inferenceUsageData,
+                            citationsData: msg.citationsData,
                             toolCallsData: msg.toolCallsData,
                             toolCallId: msg.toolCallId,
                             filesData: msg.filesData,
@@ -123,6 +141,7 @@ actor AIConversationRepository {
                     fileScopeKind: row.fileScopeKind,
                     fileScopeID: row.fileScopeID,
                     toolsData: row.toolsData,
+                    inferenceRouteData: row.inferenceRouteData,
                     messages: messageSnapshots
                 )
             }
@@ -178,6 +197,8 @@ actor AIConversationRepository {
                             timeStamp: msg.timeStamp,
                             usageConsumed: msg.usageConsumed,
                             usageRemains: msg.usageRemains,
+                            inferenceUsageData: msg.inferenceUsageData,
+                            citationsData: msg.citationsData,
                             toolCallsData: msg.toolCallsData,
                             toolCallId: msg.toolCallId,
                             filesData: msg.filesData,
@@ -194,6 +215,7 @@ actor AIConversationRepository {
                     fileScopeKind: row.fileScopeKind,
                     fileScopeID: row.fileScopeID,
                     toolsData: row.toolsData,
+                    inferenceRouteData: row.inferenceRouteData,
                     messages: messageSnapshots
                 )
             }
@@ -292,7 +314,8 @@ actor AIConversationRepository {
         conversationID: String,
         title: String,
         type: String,
-        toolsData: Data? = nil
+        toolsData: Data? = nil,
+        inferenceRouteData: Data? = nil
     ) async throws -> NSManagedObjectID {
         let context = PersistenceController.shared.newTaskContext()
 
@@ -302,6 +325,7 @@ actor AIConversationRepository {
             conversation.title = title
             conversation.type = type
             conversation.toolsData = toolsData
+            conversation.inferenceRouteData = inferenceRouteData
             conversation.createdAt = Date()
             conversation.lastChatAt = Date()
 
@@ -339,6 +363,8 @@ actor AIConversationRepository {
         toolCallsData: Data? = nil,
         toolCallId: String? = nil,
         filesData: Data? = nil,
+        inferenceUsageData: Data? = nil,
+        citationsData: Data? = nil,
         isCompactedOut: Bool = false,
         isCompactSummary: Bool = false,
         conversationObjectID: NSManagedObjectID
@@ -358,6 +384,8 @@ actor AIConversationRepository {
             message.toolCallsData = toolCallsData
             message.toolCallId = toolCallId
             message.filesData = filesData
+            message.inferenceUsageData = inferenceUsageData
+            message.citationsData = citationsData
             message.isCompactedOut = isCompactedOut
             message.isCompactSummary = isCompactSummary
             message.timeStamp = Date()
@@ -375,6 +403,46 @@ actor AIConversationRepository {
     }
 
     // MARK: - Update Operations
+
+    /// Commit transport, tool roster and generated prompt together. Visible history is untouched.
+    func migrateInferenceTransport(_ migration: AIChatBYOKTransportMigration) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+        try await context.perform {
+            let request = NSFetchRequest<AIConversation>(entityName: "AIConversation")
+            request.predicate = NSPredicate(format: "conversationID == %@", migration.conversationID)
+            request.fetchLimit = 1
+            guard let conversation = try context.fetch(request).first else { throw AppError.fileError(.notFound) }
+            conversation.inferenceRouteData = migration.routeData
+            conversation.toolsData = migration.toolsData
+            let messageRequest = NSFetchRequest<AIConversationMessage>(entityName: "AIConversationMessage")
+            messageRequest.predicate = NSPredicate(format: "conversation == %@ AND messageID == %@",
+                conversation, migration.systemMessage.id)
+            let message = try context.fetch(messageRequest).first ?? AIConversationMessage(context: context)
+            message.messageID = migration.systemMessage.id
+            message.messageType = "content"
+            message.role = "system"
+            message.content = migration.systemMessage.content
+            message.isCompactedOut = false
+            message.isCompactSummary = false
+            if message.timeStamp == nil { message.timeStamp = (conversation.createdAt ?? Date()).addingTimeInterval(-0.001) }
+            message.conversation = conversation
+            try context.save()
+        }
+    }
+
+    func updateInferenceRoute(conversationID: String, data: Data) async throws {
+        let context = PersistenceController.shared.newTaskContext()
+        try await context.perform {
+            let request = NSFetchRequest<AIConversation>(entityName: "AIConversation")
+            request.predicate = NSPredicate(format: "conversationID == %@", conversationID)
+            request.fetchLimit = 1
+            guard let conversation = try context.fetch(request).first else {
+                throw AppError.fileError(.notFound)
+            }
+            conversation.inferenceRouteData = data
+            try context.save()
+        }
+    }
 
     /// Persist the conversation-level tool roster used to rebuild
     /// `Conversation.agentConfig.tools` on restore.
@@ -427,8 +495,8 @@ actor AIConversationRepository {
     /// - Parameters:
     ///   - messageObjectID: The message objectID
     ///   - content: New content (optional — pass `nil` to leave unchanged)
-    ///   - usageConsumed: Token usage consumed (optional)
-    ///   - usageRemains: Token usage remains (optional)
+    ///   - usageConsumed: Platform credits consumed (optional)
+    ///   - usageRemains: Platform credits remaining (optional)
     ///   - toolCallsData: JSON-encoded `[ToolCall]` (optional — leaves
     ///     unchanged if `nil`; pass `clearToolCalls: true` to wipe)
     ///   - clearToolCalls: If true, sets `toolCallsData` to nil regardless
@@ -440,6 +508,8 @@ actor AIConversationRepository {
         content: String? = nil,
         usageConsumed: Double? = nil,
         usageRemains: Double? = nil,
+        inferenceUsageData: Data? = nil,
+        citationsData: Data? = nil,
         toolCallsData: Data? = nil,
         clearToolCalls: Bool = false,
         toolCallId: String? = nil,
@@ -472,6 +542,11 @@ actor AIConversationRepository {
             if let remains = usageRemains {
                 message.usageRemains = remains
             }
+
+            // Auxiliary/streaming updates can omit accounting; retain previously known usage.
+            if let inferenceUsageData { message.inferenceUsageData = inferenceUsageData }
+            // Omitted metadata does not erase sources from a previous streaming update.
+            if let citationsData { message.citationsData = citationsData }
 
             if clearToolCalls {
                 message.toolCallsData = nil

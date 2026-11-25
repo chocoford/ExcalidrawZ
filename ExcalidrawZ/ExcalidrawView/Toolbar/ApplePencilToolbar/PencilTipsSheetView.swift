@@ -11,7 +11,7 @@ import SwiftUI
 struct PencilTipsSheetView: View {
     @Environment(\.dismiss) private var dismiss
 
-    @EnvironmentObject private var toolState: ToolState
+    @Environment(ToolState.self) private var toolState
 
     @State private var selectedMode: ToolState.PencilInteractionMode = .fingerMove
     @State private var scrollPosition: ToolState.PencilInteractionMode?
@@ -587,6 +587,6 @@ private struct PencilTipPageView: View {
         .sheet(isPresented: .constant(true)) {
             PencilTipsSheetView()
         }
-        .environmentObject(ToolState())
+        .environment(ToolState())
 }
 #endif

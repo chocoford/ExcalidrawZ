@@ -14,8 +14,8 @@ struct CloudStorageDocumentSyncIndicator: View {
         case canvas
     }
 
-    @ObservedObject private var documentStore = CloudStorageDocumentStore.shared
-    @ObservedObject private var connectivity = CloudStorageConnectivityMonitor.shared
+    @Bindable private var documentStore = CloudStorageDocumentStore.shared
+    @Bindable private var connectivity = CloudStorageConnectivityMonitor.shared
 
     let reference: CloudStorageDocumentReference
     var presentation: Presentation = .iconOnly
@@ -194,10 +194,7 @@ struct CloudStorageDocumentSyncIndicator: View {
 
     private var displayText: String {
         if isWaitingForConnection {
-            return String(
-                localized: "cloudStorageStatusWaitingForConnection",
-                defaultValue: "Waiting for connection…"
-            )
+            return String(localizable: .cloudStorageStatusWaitingForConnection)
         }
         if presentation == .toolbar, isToolbarIdleState {
             return String(localizable: .fileStatusDescriptionSynced)
@@ -283,20 +280,11 @@ private extension CloudStorageDocumentSyncState {
     var displayText: String {
         switch self {
             case .local:
-                String(
-                    localized: "cloudStorageStatusLocal",
-                    defaultValue: "Saved locally"
-                )
+                String(localizable: .cloudStorageStatusLocal)
             case .queued:
-                String(
-                    localized: "cloudStorageStatusQueued",
-                    defaultValue: "Waiting to sync…"
-                )
+                String(localizable: .cloudStorageStatusQueued)
             case .checking:
-                String(
-                    localized: "cloudStorageStatusChecking",
-                    defaultValue: "Checking cloud status…"
-                )
+                String(localizable: .cloudStorageStatusChecking)
             case .downloading(let progress):
                 if let progress {
                     String(
@@ -305,20 +293,14 @@ private extension CloudStorageDocumentSyncState {
                         )
                     )
                 } else {
-                    String(
-                        localized: "cloudStorageStatusDownloading",
-                        defaultValue: "Downloading…"
-                    )
+                    String(localizable: .cloudStorageStatusDownloading)
                 }
             case .uploading:
                 String(localizable: .fileStatusDescriptionUploading)
             case .synced:
                 String(localizable: .fileStatusDescriptionSynced)
             case .processing:
-                String(
-                    localized: "cloudStorageStatusProcessing",
-                    defaultValue: "Processing in cloud…"
-                )
+                String(localizable: .cloudStorageStatusProcessing)
             case .conflict:
                 String(localizable: .fileStatusDescriptionConflict)
             case .failed(_, let message):

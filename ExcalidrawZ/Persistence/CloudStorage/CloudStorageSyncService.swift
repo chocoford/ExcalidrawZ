@@ -20,8 +20,8 @@ final class CloudStorageSyncService {
     private let logger = Logger(label: "CloudStorageSyncService")
 
     private var serviceTask: Task<Void, Never>?
-    private var locationObserver: AnyCancellable?
-    private var connectivityObserver: AnyCancellable?
+    private var locationObserver: ObservationSubscription?
+    private var connectivityObserver: ObservationSubscription?
     private var observedLocationIDs: Set<UUID> = []
     private var locationSynchronizationTasks: [UUID: Task<Void, Never>] = [:]
     private var locationSynchronizationTaskIDs: [UUID: UUID] = [:]
@@ -134,7 +134,8 @@ final class CloudStorageSyncService {
     func prioritizeDocuments(
         in location: CloudStorageLocation,
         parentID: CloudStorageItemID,
-        connections: CloudStorageConnectionStore? = nil
+        connections: CloudStorageConnectionStore? = nil,
+        reloadAfterCurrent: Bool = false
     ) async {
         let connections = connections ?? .shared
         connectivity.startIfNeeded()
@@ -142,7 +143,8 @@ final class CloudStorageSyncService {
         guard await documentStore.refresh(
             location,
             connections: connections,
-            force: true
+            force: true,
+            reloadAfterCurrent: reloadAfterCurrent
         ) else { return }
         scheduleDocumentSynchronizations(
             in: location,
@@ -293,63 +295,43 @@ final class CloudStorageSyncService {
     private func observeConnectivity(
         connections: CloudStorageConnectionStore
     ) {
-        connectivityObserver = connectivity.$status
-            .removeDuplicates()
-            // The service loop already performs the initial synchronization.
-            // Skip CurrentValueSubject's replay so launch does not queue a
-            // second pass for every connected location.
-            .dropFirst()
-            .sink { [weak self, weak connections] status in
-                Task { @MainActor [weak self, weak connections] in
-                    guard let self, let connections else { return }
-                    switch status {
-                        case .available:
-                            self.documentStore.resumeQueuedContentSynchronizations()
-                            for location in connections.locations {
-                                self.requestSynchronization(
-                                    for: location,
-                                    connections: connections
-                                )
-                            }
-                        case .unavailable:
-                            for locationID in Array(self.locationSynchronizationTasks.keys) {
-                                self.cancelSynchronization(for: locationID)
-                            }
-                        case .unknown:
-                            break
+        connectivityObserver = ObservationSubscription(initial: false) { [connectivity] in
+            connectivity.status
+        } onChange: { [weak self, weak connections] status in
+            guard let self, let connections else { return }
+            switch status {
+                case .available:
+                    self.documentStore.resumeQueuedContentSynchronizations()
+                    for location in connections.locations {
+                        self.requestSynchronization(for: location, connections: connections)
                     }
-                }
-            }
-    }
-
-    private func observeLocationChanges(
-        connections: CloudStorageConnectionStore
-    ) {
-        observedLocationIDs = Set(connections.locations.map(\.id))
-        locationObserver = connections.$locations
-            .dropFirst()
-            .sink { [weak self, weak connections] locations in
-                Task { @MainActor [weak self, weak connections] in
-                    guard let self, let connections else { return }
-                    let currentLocationIDs = Set(locations.map(\.id))
-                    let removedLocationIDs = self.observedLocationIDs
-                        .subtracting(currentLocationIDs)
-                    let addedLocations = locations.filter {
-                        !self.observedLocationIDs.contains($0.id)
-                    }
-                    self.observedLocationIDs = currentLocationIDs
-
-                    for locationID in removedLocationIDs {
+                case .unavailable:
+                    for locationID in Array(self.locationSynchronizationTasks.keys) {
                         self.cancelSynchronization(for: locationID)
                     }
-                    for location in addedLocations {
-                        self.requestSynchronization(
-                            for: location,
-                            connections: connections
-                        )
-                    }
-                }
+                case .unknown:
+                    break
             }
+        }
+    }
+
+    private func observeLocationChanges(connections: CloudStorageConnectionStore) {
+        observedLocationIDs = Set(connections.locations.map(\.id))
+        locationObserver = ObservationSubscription(initial: false) { [weak connections] in
+            connections?.locations ?? []
+        } onChange: { [weak self, weak connections] locations in
+            guard let self, let connections else { return }
+            let currentLocationIDs = Set(locations.map(\.id))
+            let removedLocationIDs = self.observedLocationIDs.subtracting(currentLocationIDs)
+            let addedLocations = locations.filter { !self.observedLocationIDs.contains($0.id) }
+            self.observedLocationIDs = currentLocationIDs
+            for locationID in removedLocationIDs {
+                self.cancelSynchronization(for: locationID)
+            }
+            for location in addedLocations {
+                self.requestSynchronization(for: location, connections: connections)
+            }
+        }
     }
 
     private func cancelSynchronization(for locationID: UUID) {

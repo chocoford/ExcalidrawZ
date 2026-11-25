@@ -17,9 +17,9 @@ struct LocalFolderMonitorModifier: ViewModifier {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     @Environment(\.scenePhase) private var scenePhase
-    @EnvironmentObject private var fileState: FileState
+    @Environment(FileState.self) private var fileState
     
-    @StateObject private var localFolderState = LocalFolderState()
+    @State private var localFolderState = LocalFolderState()
     
     private let logger = Logger(label: "LocalFolderMonitor")
     
@@ -37,15 +37,31 @@ struct LocalFolderMonitorModifier: ViewModifier {
     @State private var registeringFolders: Set<NSManagedObjectID> = []
     @State private var folderURLs: [NSManagedObjectID: URL] = [:]
 
+    private var indexRoots: [LinkedFolderIndex.Root] {
+        folders.compactMap { folder in
+            folder.url.map {
+                LinkedFolderIndex.Root(id: folder.objectID.uriRepresentation().absoluteString,
+                                       url: $0, bookmark: folder.bookmarkData)
+            }
+        }
+    }
+
     func body(content: Content) -> some View {
         content
-            .environmentObject(localFolderState)
+            .environment(localFolderState)
+            .task(id: indexRoots) {
+                await LinkedFolderIndexState.configureFromPersistence()
+            }
             .watch(value: folders) { newValue in
                 handleFoldersObservation(folders: newValue)
             }
             .watch(value: scenePhase) { newValue in
                 guard newValue == .active else { return }
                 handleFoldersObservation(folders: folders)
+                Task {
+                    await LinkedFolderIndexState.configureFromPersistence()
+                    await LinkedFolderIndex.shared.reconcile()
+                }
             }
             .onReceive(
                 NotificationCenter.default.publisher(for: .localFolderResolvedLocationDidChange)
@@ -181,6 +197,10 @@ struct LocalFolderMonitorModifier: ViewModifier {
         
         // Only handle .excalidraw files
         guard path.hasSuffix(".excalidraw") else { return }
+        Task { await LinkedFolderIndex.shared.invalidate([URL(fileURLWithPath: path)]) }
+        if case .renamed(let oldURL, _) = event {
+            Task { await LinkedFolderIndex.shared.invalidate([oldURL]) }
+        }
         
         switch event {
             case .created(let url):
@@ -245,20 +265,7 @@ struct LocalFolderMonitorModifier: ViewModifier {
     @MainActor
     private func refreshParentFolderIfNeeded(for url: URL) {
         let parentURL = url.deletingLastPathComponent()
-        
-        // Find the LocalFolder that contains this file
-        for folder in folders {
-            guard let folderURL = folder.url else { continue }
-            
-            if parentURL.filePath.hasPrefix(folderURL.filePath) {
-                do {
-                    try folder.refreshChildren(context: viewContext)
-                } catch {
-                    logger.error("Failed to refresh folder children: \(error)")
-                    alertToast(error)
-                }
-                break
-            }
-        }
+        // Browsers refresh only materialized, affected branches. No root traversal.
+        NotificationCenter.default.post(name: .linkedFolderContentsDidChange, object: [parentURL])
     }
 }

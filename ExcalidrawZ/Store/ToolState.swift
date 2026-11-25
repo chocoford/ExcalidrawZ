@@ -5,6 +5,7 @@
 //  Created by Dove Zachary on 2024/10/8.
 //
 
+import Observation
 import SwiftUI
 import WebKit
 import Combine
@@ -383,21 +384,22 @@ enum ExcalidrawTool: Int, Hashable, CaseIterable {
     }
 }
 
-final class ToolState: ObservableObject {
+@Observable
+final class ToolState {
     let logger = Logger(label: "ToolState")
     var excalidrawWebCoordinator: ExcalidrawCanvasView.Coordinator?
 
-    @Published var activatedTool: ExcalidrawTool? = .cursor
-    @Published var isToolLocked: Bool = false
-    @Published var previousActivatedTool: ExcalidrawTool? = nil
+    var activatedTool: ExcalidrawTool? = .cursor
+    var isToolLocked: Bool = false
+    var previousActivatedTool: ExcalidrawTool? = nil
     var inDragMode: Bool {
         !inPenMode && activatedTool == .hand
     }
     
-    @Published var inPenMode: Bool = false
+    var inPenMode: Bool = false
     
-    @Published var isActionsMenuPresneted = true
-    @Published var isBottomBarPresented = true
+    var isActionsMenuPresneted = true
+    var isBottomBarPresented = true
     
     enum PencilInteractionMode: Int, Hashable {
         case fingerSelect = 0
@@ -433,11 +435,15 @@ final class ToolState: ObservableObject {
     }
 
     var pencilInteractionMode: PencilInteractionMode {
-        get { Self.storedPencilInteractionMode() }
+        get {
+            access(keyPath: \.pencilInteractionMode)
+            return Self.storedPencilInteractionMode()
+        }
         set {
             guard newValue != pencilInteractionMode else { return }
-            objectWillChange.send()
-            UserDefaults.standard.set(newValue.rawValue, forKey: Self.pencilInteractionModeDefaultsKey)
+            withMutation(keyPath: \.pencilInteractionMode) {
+                UserDefaults.standard.set(newValue.rawValue, forKey: Self.pencilInteractionModeDefaultsKey)
+            }
         }
     }
     

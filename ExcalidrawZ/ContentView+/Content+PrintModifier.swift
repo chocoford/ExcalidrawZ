@@ -11,7 +11,7 @@ import SwiftyAlert
 struct PrintModifier: ViewModifier {
     @Environment(\.alertToast) var alertToast
 
-    @EnvironmentObject var exportState: ExportState
+    @Environment(ExportState.self) var exportState
 
 #if canImport(AppKit)
     @State private var window: NSWindow?

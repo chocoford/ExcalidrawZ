@@ -26,7 +26,6 @@ struct ChatScrollView<RowContent: View>: View {
     private let isStreaming: Bool
     private let configuration: ChatScrollConfiguration
     private let bottomContentPadding: CGFloat
-    private let topContentPadding: CGFloat
     private let onReachTop: (() -> Void)?
     private let onUserDragStart: (() -> Void)?
     private let onScrollAnimationComplete: ((Int) -> Void)?
@@ -52,7 +51,6 @@ struct ChatScrollView<RowContent: View>: View {
         self.isStreaming = isStreaming
         self.configuration = configuration
         self.bottomContentPadding = bottomContentPadding
-        self.topContentPadding = 54
         self.onReachTop = onReachTop
         self.onUserDragStart = onUserDragStart
         self.onScrollAnimationComplete = onScrollAnimationComplete
@@ -61,6 +59,7 @@ struct ChatScrollView<RowContent: View>: View {
     
     var body: some View {
         scrollContent
+            .inspectorContentPadding([.horizontal, .top])
     }
     
     @ViewBuilder
@@ -74,7 +73,7 @@ struct ChatScrollView<RowContent: View>: View {
                     bottomContentPadding: bottomContentPadding,
                     onUserDragStart: onUserDragStart
                 ) {
-                    scrollRowsContent
+                    rowsContent
                 }
                 
 #if os(macOS)
@@ -109,7 +108,7 @@ struct ChatScrollView<RowContent: View>: View {
                     bottomContentPadding: bottomContentPadding,
                     onUserDragStart: onUserDragStart
                 ) {
-                    scrollRowsContent
+                    rowsContent
                 }
 #endif
                 
@@ -124,7 +123,7 @@ struct ChatScrollView<RowContent: View>: View {
                     onUserDragStart: onUserDragStart,
                     onScrollAnimationComplete: onScrollAnimationComplete
                 ) {
-                    scrollRowsContent
+                    rowsContent
                 }
         }
     }
@@ -132,7 +131,6 @@ struct ChatScrollView<RowContent: View>: View {
     private var contentRevision: String {
         (
             nativeRows.map { "\($0.id):\($0.renderKey)" }
-            + ["top:\(topContentPadding)"]
             + ["bottom:\(bottomContentPadding)"]
         )
         .joined(separator: "|")
@@ -153,16 +151,9 @@ struct ChatScrollView<RowContent: View>: View {
                 .id(row.id)
         }
     }
-    
-    @ViewBuilder
-    private var scrollRowsContent: some View {
-        Color.clear.frame(height: topContentPadding)
-        rowsContent
-    }
 }
 
-/// Per-row chrome (padding, etc). With the List-backed implementation we used
-/// `listRowInsets`; now it's plain padding so every row controls its own gutters.
+/// Vertical spacing between chat rows. ChatScrollView supplies the outer margins.
 struct ChatScrollRow<Content: View>: View {
     private let content: Content
     
@@ -174,7 +165,6 @@ struct ChatScrollRow<Content: View>: View {
     var body: some View {
         content
             .padding(.vertical, 6)
-            .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

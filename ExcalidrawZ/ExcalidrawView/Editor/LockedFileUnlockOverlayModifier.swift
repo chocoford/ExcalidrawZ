@@ -21,7 +21,7 @@ private enum LockedFileUnlockPhase {
 }
 
 struct LockedFileUnlockOverlayModifier: ViewModifier {
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
+    @Environment(LockedContentStateStore.self) private var lockedContentState
 
     var activeFile: FileState.ActiveFile?
     var documentLoadCompletion: ExcalidrawDocumentLoadCompletion?

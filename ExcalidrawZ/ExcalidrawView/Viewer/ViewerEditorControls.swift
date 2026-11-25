@@ -8,7 +8,7 @@ import SwiftUI
 
 /// Controls Viewer from the presenter's editor, keeping the audience window clean.
 struct ViewerEditorControls: View {
-    @ObservedObject private var controller = ViewerMirrorController.shared
+    @Bindable private var controller = ViewerMirrorController.shared
 
     var body: some View {
         if let session = controller.session {
@@ -31,8 +31,8 @@ private struct ViewerFloatingToolbar: View {
     }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ObservedObject var controller: ViewerMirrorController
-    @ObservedObject var session: ViewerMirrorSession
+    @Bindable var controller: ViewerMirrorController
+    @Bindable var session: ViewerMirrorSession
 
     @State private var displayMode: DisplayMode = .dense
     @State private var isShowingColorSettings = false

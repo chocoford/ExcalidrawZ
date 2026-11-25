@@ -13,7 +13,7 @@ import ChocofordUI
 
 struct SecuritySettingsView: View {
     @Environment(\.alertToast) private var alertToast
-    @EnvironmentObject private var lockedContentState: LockedContentStateStore
+    @Environment(LockedContentStateStore.self) private var lockedContentState
 
     @State private var lockedFiles: [LockedFileSummary] = []
     @State private var isLoading = false

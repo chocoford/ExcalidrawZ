@@ -16,15 +16,18 @@ import SFSafeSymbols
 struct Paywall: View {
     private static let minimumRegularIOSWidth: CGFloat = 760
 
+    var onDismiss: (@MainActor () -> Void)? = nil
+    var onInteractionChanged: (@MainActor (Bool) -> Void)? = nil
+
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.dismiss) var dismiss
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
     @Environment(\.alert) private var alert
     
-    @EnvironmentObject var store: Store
+    @Environment(Store.self) var store
     @EnvironmentObject var llmState: LLMStateObject
-    @ObservedObject var paywallPresentation = PaywallPresentationState.shared
+    @Bindable var paywallPresentation = PaywallPresentationState.shared
     
     @State var selectedSubscriptionItem: SubscriptionItem?
     @State var isPresented = false
@@ -206,6 +209,9 @@ struct Paywall: View {
                     maxCreditTier = .standard
                 }
             }
+            .watch(value: presentedMCPFeatureHelpID != nil) { isPresented in
+                onInteractionChanged?(isPresented)
+            }
             .task {
                 if selectedSubscriptionItem == nil {
                     selectedSubscriptionItem = defaultSubscriptionItem()
@@ -213,6 +219,12 @@ struct Paywall: View {
             }
     }
     
+    @MainActor
+    func dismissPaywall() {
+        if let onDismiss { onDismiss() }
+        else { dismiss() }
+    }
+
     @ViewBuilder
     private func content() -> some View {
 #if os(iOS)
@@ -304,26 +316,29 @@ struct Paywall: View {
             
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 8) {
-                    Text(feature.title)
-                        .font(.callout.weight(.semibold))
+                    if let badge = feature.badge {
+                        // Keep the original title layout when the BYOK badge will not fit.
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: 8) {
+                                Text(feature.title)
+                                    .font(.callout.weight(.semibold))
+                                featureBadge(badge)
+                            }
+                            .fixedSize(horizontal: true, vertical: true)
+
+                            Text(feature.title)
+                                .font(.callout.weight(.semibold))
+                        }
+                    } else {
+                        Text(feature.title)
+                            .font(.callout.weight(.semibold))
+                    }
 
                     if let mcpServiceMode = feature.mcpServiceMode {
                         mcpFeatureHelpButton(
                             feature: feature,
                             initialMode: mcpServiceMode
                         )
-                    }
-                    
-                    if let badge = feature.badge {
-                        Text(badge)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background {
-                                Capsule()
-                                    .fill(Color.orange.opacity(colorScheme == .dark ? 0.18 : 0.12))
-                            }
                     }
                 }
                 
@@ -333,6 +348,19 @@ struct Paywall: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+    }
+
+    private func featureBadge(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background {
+                Capsule()
+                    .fill(Color.orange.opacity(colorScheme == .dark ? 0.18 : 0.12))
+            }
     }
 
     @ViewBuilder
@@ -405,8 +433,7 @@ struct Paywall: View {
     @ViewBuilder
     func restorePurchasesButton() -> some View {
         AsyncButton {
-            await store.refreshEntitlements(reason: .restorePurchases, force: true)
-            alertToast(.init(displayMode: .hud, type: .complete(.green), title: String(localizable: .paywallRestorePurchasesDoneAlertTitle)))
+            await restorePurchases()
         } label: {
             Text(localizable: .paywallButtonRestorePurchases)
         }
@@ -416,12 +443,22 @@ struct Paywall: View {
     @MainActor
     func purchaseSelectedPlan() async throws {
         if let product = selectedBillingProduct {
+            onInteractionChanged?(true)
+            defer { onInteractionChanged?(false) }
             if let _ = try await store.purchase(product, handleVerifiedPurchase: { verificationResult in
                 try await llmState.handlePurchase(verificationResult: verificationResult)
             }) {
-                dismiss()
+                dismissPaywall()
             }
         }
+    }
+
+    @MainActor
+    private func restorePurchases() async {
+        onInteractionChanged?(true)
+        defer { onInteractionChanged?(false) }
+        await store.refreshEntitlements(reason: .restorePurchases, force: true)
+        alertToast(.init(displayMode: .hud, type: .complete(.green), title: String(localizable: .paywallRestorePurchasesDoneAlertTitle)))
     }
 #else
     @State private var isSwitchToAppStoreSheetPresented = false
@@ -460,7 +497,7 @@ struct Paywall: View {
 #if os(macOS)
         if #available(macOS 14.0, *) {
             OpenAIUsageSettingsButton {
-                dismiss()
+                dismissPaywall()
             }
         } else {
             fallbackAIUsageSettingsButton
@@ -474,13 +511,13 @@ struct Paywall: View {
     var fallbackAIUsageSettingsButton: some View {
         Button {
 #if os(iOS)
-            dismiss()
+            dismissPaywall()
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: 350_000_000)
                 SettingsRouter.shared.requestOpenAIUsage()
             }
 #else
-            dismiss()
+            dismissPaywall()
             SettingsRouter.shared.requestOpenAIUsage()
 #endif
         } label: {
@@ -593,10 +630,11 @@ struct Paywall: View {
     }
     
     var starterFeatureLines: [Feature] {
+        // Mac presents BYOK on the existing MCP row; iOS keeps its dedicated benefit.
         [
             .unlimitedCollaborationTools,
             .presentation
-        ]
+        ] + (AIChatAvailability.isAvailable && !ExcalidrawZMCPServerController.isAvailable ? [.optimizedBYOK] : [])
     }
     
     var proFeatureLines: [Feature] {
