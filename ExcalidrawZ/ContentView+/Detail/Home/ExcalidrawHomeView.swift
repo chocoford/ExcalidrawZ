@@ -280,6 +280,9 @@ struct ExcalidrawHomeView: View {
     }
 
     private func handleActiveGroupChanged(_ newValue: FileState.ActiveGroup?) {
+        // A new destination supersedes any cleanup queued by the previous slide.
+        folderTransitionGeneration += 1
+        isTransitioning = false
         switch newValue {
             case .group(let newValue):
                 currentFolders.removeAll()
@@ -315,7 +318,9 @@ struct ExcalidrawHomeView: View {
                         renderedGroups = [previousGroup]
                     }
                     currentGroups = targetGroups
+                    let generation = folderTransitionGeneration
                     DispatchQueue.main.async {
+                        guard folderTransitionGeneration == generation else { return }
                         withAnimation(.smooth(duration: folderNavigationTransitionDuration)) {
                             if let previousGroup {
                                 renderedGroups = [previousGroup, newValue]
@@ -361,7 +366,9 @@ struct ExcalidrawHomeView: View {
                         renderedFolders = [previousFolder]
                     }
                     currentFolders = targetFolders
+                    let generation = folderTransitionGeneration
                     DispatchQueue.main.async {
+                        guard folderTransitionGeneration == generation else { return }
                         withAnimation(.smooth(duration: folderNavigationTransitionDuration)) {
                             if let previousFolder {
                                 renderedFolders = [previousFolder, newValue]
@@ -408,7 +415,9 @@ struct ExcalidrawHomeView: View {
                         renderedCloudFolders = [previousFolder]
                     }
                     currentCloudFolders = targetFolders
+                    let generation = folderTransitionGeneration
                     DispatchQueue.main.async {
+                        guard folderTransitionGeneration == generation else { return }
                         withAnimation(.smooth(duration: folderNavigationTransitionDuration)) {
                             if let previousFolder {
                                 renderedCloudFolders = [previousFolder, newValue]
@@ -468,7 +477,6 @@ struct ExcalidrawHomeView: View {
     }
 
     private func startFolderTransition() {
-        folderTransitionGeneration += 1
         isTransitioning = true
     }
 

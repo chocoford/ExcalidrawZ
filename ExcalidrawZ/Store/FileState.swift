@@ -26,6 +26,7 @@ final class FileState {
     @ObservationIgnored var currentFilePublisherCancellables: [AnyCancellable] = []
     @ObservationIgnored private var pendingCanvasWrites: [String: [UUID: Task<Void, Never>]] = [:]
     @ObservationIgnored private var replacingDrawingFileIDs: Set<String> = []
+    @ObservationIgnored @MainActor private var linkedFolderSelectionTask: Task<Void, Never>?
     private var isRestoringActiveGroupAfterBlockedSwitch = false
     private var pendingActiveFileCloseTransitionIDs: Set<String> = []
     private var activeFileCloseTransitionContinuations: [
@@ -68,6 +69,46 @@ final class FileState {
     func setActiveGroupIfNeeded(_ group: ActiveGroup?) {
         guard currentActiveGroup != group else { return }
         currentActiveGroup = group
+    }
+
+    @MainActor
+    func selectLinkedFolder(
+        _ folder: LocalFolder,
+        onFailure: @escaping (LocalFolderPathError) -> Void
+    ) {
+        linkedFolderSelectionTask?.cancel()
+        let folderID = folder.objectID
+        let previousGroup = currentActiveGroup
+        let fileChangeGeneration = activeFileChangeGeneration
+        let context = PersistenceController.shared.newTaskContext()
+
+        linkedFolderSelectionTask = Task { @MainActor [weak self] in
+            let result = await context.perform { () -> Result<Void, LocalFolderPathError> in
+                do {
+                    guard let folder = try context.existingObject(with: folderID) as? LocalFolder,
+                          !folder.isDeleted else {
+                        return .failure(LocalFolderPathError(message: String(localizable: .generalUnknown)))
+                    }
+                    return folder.checkPathExists()
+                } catch {
+                    return .failure(LocalFolderPathError(message: error.localizedDescription))
+                }
+            }
+
+            guard let self, !Task.isCancelled else { return }
+            self.linkedFolderSelectionTask = nil
+            guard self.activeFileChangeGeneration == fileChangeGeneration,
+                  self.currentActiveGroup == previousGroup,
+                  !folder.isDeleted, folder.managedObjectContext != nil else { return }
+
+            switch result {
+                case .success:
+                    self.setActiveGroupIfNeeded(.localFolder(folder))
+                    self.setActiveFile(nil)
+                case .failure(let error):
+                    onFailure(error)
+            }
+        }
     }
 
     /// Keeps an open local-file session attached when Finder renames or moves
@@ -2479,7 +2520,7 @@ final class FileState {
         currentGroupPublisherCancellables = []
         if case .group(let group) = currentActiveGroup {
             currentGroupPublisherCancellables = [
-                group.publisher(for: \.name).sink { [weak self] _ in
+                group.publisher(for: \.name, options: [.new]).sink { [weak self] _ in
                     DispatchQueue.main.async {
                         self?.invalidateFileMetadata()
                     }

@@ -61,21 +61,11 @@ struct LocalFoldersView: View {
             fileState.currentActiveGroup == .localFolder(folder) &&
             fileState.currentActiveFile == nil
             )
-        } set: { val in
-            DispatchQueue.main.async {
-                if val {
-                    // Check if folder path exists using shared method
-                    switch folder.checkPathExists() {
-                    case .success:
-                        // Path exists, set as active
-                        fileState.currentActiveGroup = .localFolder(folder)
-                        fileState.setActiveFile(nil)
-                    case .failure(let error):
-                        // Path doesn't exist, show alert
-                        folderNotFoundMessage = error.message
-                        showFolderNotFoundAlert = true
-                    }
-                }
+        } set: { selected in
+            guard selected else { return }
+            fileState.selectLinkedFolder(folder) { error in
+                folderNotFoundMessage = error.message
+                showFolderNotFoundAlert = true
             }
         }
     }
@@ -198,9 +188,6 @@ struct LocalFoldersView: View {
                 onDelete: onDeleteSelected
             )
             .id(folder.sidebarGroupScrollTarget)
-            .simultaneousGesture(TapGesture(count: 2).onEnded {
-                fileState.expandToGroup(folder.objectID)
-            })
         }
         .extraLabelStyle { content in
             content
