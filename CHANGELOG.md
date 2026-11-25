@@ -1,19 +1,30 @@
-## 2.6.0
+## 3.0.0
+
+Requires macOS 14+, iOS 17+, or iPadOS 17+.
 
 #### Features
 
-- Added Bring Your Own Key (BYOK) for AI Chat and AI formulas, with presets for OpenAI, Anthropic, Gemini, OpenRouter, DeepSeek and more, plus custom providers compatible with Chat Completions.
-- Added multiple saved AI connections with separate API keys and model choices. Choose a connection in AI Settings, then browse its model list or enter a model ID directly in Chat.
-- Added Basic BYOK with a direct provider connection and shared Basic MCP drawing tools, without an ExcalidrawZ AI subscription or credits, including Sparkle builds. Optimized BYOK uses the enhanced assistant through ExcalidrawZ servers with Starter or higher. Model usage is billed by the provider; platform services in Optimized may also use ExcalidrawZ credits.
-- Added opt-in provider-hosted web search in Basic BYOK, with provider-reported sources and token usage in Chat. Availability depends on the connection and model.
-- Added separate enable confirmations for ExcalidrawZ AI and BYOK, explaining data sharing and billing. API keys are stored in the device's Keychain.
+- Added Bring Your Own Key (BYOK) for AI Chat and AI formulas. Save multiple connections with separate keys and models, use provider presets or a custom Chat Completions-compatible endpoint, and browse models or enter a model ID in Chat.
+- Basic BYOK connects directly to your provider and includes Basic MCP drawing tools without an ExcalidrawZ subscription, including in Sparkle builds. Optimized BYOK is available on Starter and higher and adds ExcalidrawZ's enhanced assistant. Providers bill model usage directly. Optimized platform services may also use ExcalidrawZ credits.
+- Added opt-in provider-hosted web search in Basic BYOK, with sources and token usage shown when available. ExcalidrawZ AI and BYOK each explain data sharing and billing when enabled. API keys are stored in Keychain.
+- Enabled Google Drive in Linked Storage using the `drive.file` scope. You can grant access to additional existing files and subfolders from the linked folder.
+- Added a native import sheet for dropped `.excalidraw` files. Preview the drawing and choose whether to replace the current drawing's contents or import it as a new file. File drops show progress and can be cancelled.
+- Added drag-to-reorder for sibling groups in My Files. Drop near a row's edge to reorder, or in the middle to move into that group. Default and Recently Deleted stay fixed.
 
 #### Optimizations
 
+- Streamlined File Home with folder paths and actions in the toolbar, more responsive sidebar navigation, and smoother transitions when switching folders.
+- Linked folders load their contents as needed, and opening a drawing reveals it in the sidebar.
 - Added pinning and animated expand/collapse for trailing canvas controls, keeping active controls visible when collapsed.
+- Made subscription details available in Settings and moved the macOS paywall into its own panel.
+- Added an unofficial-client notice in What’s New and About, with support directed to ExcalidrawZ.
 
 #### Bug fixed
 
+- Improved reliability when opening large drawings and switching between canvases.
+- Fixed OneDrive sync for names with leading or trailing spaces and kept other pending metadata changes moving when a request fails.
+- Fixed PNG exports being copied to the macOS clipboard as TIFF.
+- Fixed the Basic MCP ReadMe opening blank when using the default instructions.
 - Fixed library thumbnails occasionally remaining blank.
 - Fixed imported images appearing as placeholders after closing and reopening a drawing.
 
