@@ -21,10 +21,10 @@ Requires macOS 14+, iOS 17+, or iPadOS 17+.
 
 #### Bug fixed
 
-- Improved reliability when opening large drawings and switching between canvases.
-- Fixed OneDrive sync for names with leading or trailing spaces and kept other pending metadata changes moving when a request fails.
+- Moved linked-folder indexing into the background and reused saved results to reduce launch stalls with large folder trees. ([#199](https://github.com/chocoford/ExcalidrawZ/issues/199))
+- Reduced WebKit overhead when opening large drawings. ([#200](https://github.com/chocoford/ExcalidrawZ/issues/200))
+- Fixed OneDrive sync failures caused by leading or trailing spaces in item names and prevented those failures from blocking unrelated queued changes.
 - Fixed PNG exports being copied to the macOS clipboard as TIFF.
-- Fixed the Basic MCP ReadMe opening blank when using the default instructions.
 - Fixed library thumbnails occasionally remaining blank.
 - Fixed imported images appearing as placeholders after closing and reopening a drawing.
 
